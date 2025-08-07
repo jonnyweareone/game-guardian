@@ -126,7 +126,8 @@ const Auth = () => {
                     variant="outline" 
                     className="w-full" 
                     onClick={() => {
-                      // Direct navigation to dashboard for demo
+                      // Set demo mode in localStorage and navigate
+                      localStorage.setItem('demo-mode', 'true');
                       window.location.href = '/';
                     }}
                     disabled={isLoading}
