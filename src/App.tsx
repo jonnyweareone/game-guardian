@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import DeviceActivation from "./pages/DeviceActivation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/activate" element={<DeviceActivation />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
