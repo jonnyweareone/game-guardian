@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Clock, User, ArrowRight } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
+import Navigation from "@/components/Navigation";
 
 const Blog = () => {
   const navigate = useNavigate();
@@ -96,6 +97,7 @@ const Blog = () => {
       />
 
       <div className="min-h-screen bg-background">
+        <Navigation />
         <div className="container mx-auto px-4 py-16">
           {/* Header */}
           <div className="text-center mb-16">

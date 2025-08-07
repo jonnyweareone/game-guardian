@@ -23,6 +23,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import gamingHeadsetAI from '@/assets/gaming-headset-ai.png';
 import guardianDevice from '@/assets/guardian-device.png';
+import guardianLogo from '@/assets/guardian-logo.png';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -152,12 +153,18 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-primary" />
+              <img src={guardianLogo} alt="Guardian AI Logo" className="h-8 w-8" />
               <div>
                 <h1 className="text-xl font-bold text-foreground">Game Guardian AI™</h1>
                 <p className="text-xs text-muted-foreground">Intelligent Gaming Protection</p>
               </div>
             </div>
+            <nav className="hidden md:flex items-center gap-6">
+              <Button variant="ghost" onClick={() => navigate('/products')}>Products</Button>
+              <Button variant="ghost" onClick={() => navigate('/how-to-guide')}>How-to Guide</Button>
+              <Button variant="ghost" onClick={() => navigate('/blog')}>Blog</Button>
+              <Button variant="ghost" onClick={() => navigate('/about')}>About</Button>
+            </nav>
             <div className="flex items-center gap-4">
               <Button variant="ghost" onClick={() => navigate('/auth')}>
                 Sign In
@@ -346,8 +353,74 @@ const HomePage = () => {
             ))}
           </Card>
         </div>
-      </section>
+        </section>
 
+      {/* Products Section */}
+      <section className="py-24 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+              Complete Gaming Protection Ecosystem
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Choose the solution that fits your family's gaming setup and protection needs
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => navigate('/products/device')}>
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="p-4 bg-primary/10 rounded-lg w-fit mx-auto">
+                  <Shield className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-bold text-lg">Game Guardian Device</h3>
+                <p className="text-muted-foreground text-sm">AI-powered device for any PC or console with Bluetooth, USB, and headset support</p>
+                <Button variant="outline" size="sm" className="w-full">Learn More</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => navigate('/products/os-mini')}>
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="p-4 bg-primary/10 rounded-lg w-fit mx-auto">
+                  <Brain className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-bold text-lg">Game Guardian OS Mini</h3>
+                <p className="text-muted-foreground text-sm">Lightweight Linux OS for Raspberry Pi, Orange Pi, and compact hardware</p>
+                <Button variant="outline" size="sm" className="w-full">Learn More</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => navigate('/products/os')}>
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="p-4 bg-primary/10 rounded-lg w-fit mx-auto">
+                  <Lock className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-bold text-lg">Game Guardian OS</h3>
+                <p className="text-muted-foreground text-sm">Full-featured Linux OS transforming gaming PCs into AI-powered safe zones</p>
+                <Button variant="outline" size="sm" className="w-full">Learn More</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-dashed border-2 border-primary/30">
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg w-fit mx-auto">
+                  <Volume2 className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-bold text-lg text-muted-foreground">Game Guardian Receiver</h3>
+                <Badge variant="outline" className="mb-2">Coming Soon</Badge>
+                <p className="text-muted-foreground text-sm">Wireless controller headset jack plugin for seamless console integration</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-12">
+            <Button size="lg" onClick={() => navigate('/products')} className="text-lg px-8 py-6">
+              View All Products
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-br from-primary/10 to-secondary/10">
@@ -388,14 +461,74 @@ const HomePage = () => {
       {/* Footer */}
       <footer className="bg-card border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="font-semibold text-foreground">Game Guardian AI™</span>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <img src={guardianLogo} alt="Guardian AI Logo" className="h-6 w-6" />
+                <span className="font-semibold text-foreground">Game Guardian AI™</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Protecting children in online gaming with AI-powered voice monitoring and real-time alerts.
+              </p>
             </div>
+            
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Products</h4>
+              <div className="space-y-2 text-sm">
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/products/device')}>
+                  Game Guardian Device
+                </Button>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/products/os-mini')}>
+                  OS Mini
+                </Button>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/products/os')}>
+                  OS Full
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Resources</h4>
+              <div className="space-y-2 text-sm">
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/how-to-guide')}>
+                  How-to Guide
+                </Button>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/blog')}>
+                  Blog
+                </Button>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/press-releases')}>
+                  Press Releases
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Company</h4>
+              <div className="space-y-2 text-sm">
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/about')}>
+                  About Us
+                </Button>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/auth')}>
+                  Sign In
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2024 Game Guardian AI. All rights reserved.
+              © 2024 Game Guardian AI. All rights reserved. UK Patent Pending.
             </p>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                GDPR Compliant
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                COPPA Certified
+              </div>
+            </div>
           </div>
         </div>
       </footer>
