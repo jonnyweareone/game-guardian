@@ -128,9 +128,9 @@ const Auth = () => {
                     onClick={async () => {
                       setIsLoading(true);
                       // First try to sign up the demo user (will fail if already exists)
-                      await signUp('demo.parent@gamegiuardian.com', 'demopassword123', 'Demo Parent');
+                      await signUp('demo@example.com', 'demopassword123', 'Demo Parent');
                       // Then try to sign in
-                      const { error } = await signIn('demo.parent@gamegiuardian.com', 'demopassword123');
+                      const { error } = await signIn('demo@example.com', 'demopassword123');
                       if (error) {
                         toast({
                           title: "Demo login failed",
