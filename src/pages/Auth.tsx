@@ -124,12 +124,50 @@ const Auth = () => {
                     type="button" 
                     variant="outline" 
                     className="w-full" 
-                    onClick={() => {
-                      setEmail('demo@parent.com');
-                      setPassword('demopassword123');
+                    onClick={async () => {
+                      const demoEmail = 'demo@parent.com';
+                      const demoPassword = 'demopassword123';
+                      
+                      setIsLoading(true);
+                      try {
+                        // Try to sign in first
+                        const { error: signInError } = await signIn(demoEmail, demoPassword);
+                        
+                        if (signInError) {
+                          // If sign in fails, try to create the account
+                          const { error: signUpError } = await signUp(demoEmail, demoPassword, 'Demo Parent');
+                          
+                          if (signUpError && !signUpError.message.includes('already registered')) {
+                            toast({
+                              title: "Demo Setup Error",
+                              description: "Failed to create demo account. Please try again.",
+                              variant: "destructive",
+                            });
+                          } else {
+                            // If signup succeeded or user exists, try signing in again
+                            const { error: retrySignInError } = await signIn(demoEmail, demoPassword);
+                            if (retrySignInError) {
+                              toast({
+                                title: "Demo Login Error",
+                                description: "Demo account created but login failed. Please try the demo login again.",
+                                variant: "destructive",
+                              });
+                            }
+                          }
+                        }
+                      } catch (error) {
+                        toast({
+                          title: "Demo Login Error",
+                          description: "An unexpected error occurred.",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setIsLoading(false);
+                      }
                     }}
+                    disabled={isLoading}
                   >
-                    Use Demo Login
+                    {isLoading ? 'Setting up demo...' : 'Use Demo Login'}
                   </Button>
                 </form>
               </TabsContent>
