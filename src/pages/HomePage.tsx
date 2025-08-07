@@ -20,6 +20,8 @@ import {
   Lock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import gamingHeadsetAI from '@/assets/gaming-headset-ai.png';
+import guardianDevice from '@/assets/guardian-device.png';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -240,9 +242,25 @@ const HomePage = () => {
                 </div>
 
                 <div className={`${index % 2 === 1 ? 'lg:col-start-1 lg:row-start-1' : ''}`}>
-                  <Card className="p-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
-                    <div className="aspect-square bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center">
-                      <feature.icon className="h-24 w-24 text-primary" />
+                  <Card className="p-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20 shadow-[var(--shadow-neon)]">
+                    <div className="aspect-square bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center overflow-hidden">
+                      {feature.id === 'audio' && (
+                        <img 
+                          src={gamingHeadsetAI} 
+                          alt="Gaming headset with AI monitoring device" 
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      )}
+                      {feature.id === 'protection' && (
+                        <img 
+                          src={guardianDevice} 
+                          alt="Guardian AI device with neon lighting" 
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      )}
+                      {feature.id !== 'audio' && feature.id !== 'protection' && (
+                        <feature.icon className="h-24 w-24 text-primary drop-shadow-[0_0_10px_hsl(var(--primary))]" />
+                      )}
                     </div>
                   </Card>
                 </div>
@@ -302,43 +320,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-24 bg-card/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              Trusted by Parents & Experts
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              See what families and safety professionals are saying
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="p-6 hover:shadow-lg transition-shadow">
-                <CardContent className="space-y-4 p-0">
-                  <div className="flex items-center gap-1">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-warning text-warning" />
-                    ))}
-                  </div>
-                  <blockquote className="text-foreground leading-relaxed">
-                    "{testimonial.quote}"
-                  </blockquote>
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">{testimonial.avatar}</div>
-                    <div>
-                      <p className="font-semibold text-foreground">{testimonial.name}</p>
-                      <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-br from-primary/10 to-secondary/10">
