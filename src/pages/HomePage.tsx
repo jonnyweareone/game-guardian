@@ -448,70 +448,80 @@ const HomePage = () => {
 
       {/* Footer */}
       <footer className="bg-card border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div className="space-y-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center gap-3">
                 <Shield className="h-6 w-6 text-primary" />
                 <span className="font-semibold text-foreground">Game Guardian AI™</span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Protecting children in online gaming with AI-powered voice monitoring and real-time alerts.
               </p>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <h4 className="font-semibold text-foreground">Products</h4>
               <div className="space-y-2 text-sm">
-                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/products/device')}>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start text-muted-foreground hover:text-foreground" onClick={() => navigate('/products/device')}>
                   Game Guardian Device
                 </Button>
-                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/products/os')}>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start text-muted-foreground hover:text-foreground" onClick={() => navigate('/products/os-full')}>
                   OS Full
+                </Button>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start text-muted-foreground hover:text-foreground" onClick={() => navigate('/products/receiver')}>
+                  Receiver
                 </Button>
               </div>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <h4 className="font-semibold text-foreground">Resources</h4>
               <div className="space-y-2 text-sm">
-                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/how-to-guide')}>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start text-muted-foreground hover:text-foreground" onClick={() => navigate('/how-to-guide')}>
                   How-to Guide
                 </Button>
-                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/blog')}>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start text-muted-foreground hover:text-foreground" onClick={() => navigate('/blog')}>
                   Blog
                 </Button>
-                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/press-releases')}>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start text-muted-foreground hover:text-foreground" onClick={() => navigate('/press-releases')}>
                   Press Releases
                 </Button>
               </div>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <h4 className="font-semibold text-foreground">Company</h4>
               <div className="space-y-2 text-sm">
-                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/about')}>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start text-muted-foreground hover:text-foreground" onClick={() => navigate('/about')}>
                   About Us
                 </Button>
-                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/auth')}>
+                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start text-muted-foreground hover:text-foreground" onClick={() => navigate('/auth')}>
                   Sign In
                 </Button>
               </div>
             </div>
           </div>
           
-          <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
+          <div className="border-t border-border pt-6 sm:pt-8 space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground text-center sm:text-left">
               © 2024 Game Guardian AI. All rights reserved. UK Patent Pending.
             </p>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center sm:justify-end gap-4 sm:gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4" />
-                GDPR Compliant
+                <span className="hidden xs:inline">GDPR Compliant</span>
+                <span className="xs:hidden">GDPR</span>
               </div>
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
-                COPPA Certified
+                <span className="hidden xs:inline">COPPA Certified</span>
+                <span className="xs:hidden">COPPA</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                <span className="hidden xs:inline">Privacy First</span>
+                <span className="xs:hidden">Privacy</span>
               </div>
             </div>
           </div>
