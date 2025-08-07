@@ -9,6 +9,15 @@ import HomePage from "./pages/HomePage";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import DeviceActivation from "./pages/DeviceActivation";
+import Products from "./pages/Products";
+import ProductDevice from "./pages/ProductDevice";
+import ProductOSMini from "./pages/ProductOSMini";
+import ProductOSFull from "./pages/ProductOSFull";
+import ProductReceiver from "./pages/ProductReceiver";
+import Blog from "./pages/Blog";
+import PressReleases from "./pages/PressReleases";
+import HowToGuide from "./pages/HowToGuide";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +37,20 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
+            
+            {/* Product Pages */}
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/device" element={<ProductDevice />} />
+            <Route path="/products/os-mini" element={<ProductOSMini />} />
+            <Route path="/products/os-full" element={<ProductOSFull />} />
+            <Route path="/products/receiver" element={<ProductReceiver />} />
+            
+            {/* Content Pages */}
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/press-releases" element={<PressReleases />} />
+            <Route path="/how-to-guide" element={<HowToGuide />} />
+            <Route path="/about" element={<About />} />
+            
             <Route path="/" element={<HomePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
