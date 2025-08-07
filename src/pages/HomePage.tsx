@@ -366,7 +366,7 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => navigate('/products/device')}>
               <CardContent className="p-6 text-center space-y-4">
                 <div className="p-4 bg-primary/10 rounded-lg w-fit mx-auto">
@@ -375,17 +375,6 @@ const HomePage = () => {
                 <h3 className="font-bold text-lg">Game Guardian Device</h3>
                 <p className="text-muted-foreground text-sm">AI-powered device for any PC or console with Bluetooth, USB, and headset support</p>
                 <Button variant="outline" size="sm" className="w-full">Learn More</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-dashed border-2 border-primary/30">
-              <CardContent className="p-6 text-center space-y-4">
-                <div className="p-4 bg-muted/50 rounded-lg w-fit mx-auto">
-                  <Brain className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="font-bold text-lg text-muted-foreground">Game Guardian OS Mini</h3>
-                <Badge variant="outline" className="mb-2">Coming Soon</Badge>
-                <p className="text-muted-foreground text-sm">Lightweight Linux OS for Raspberry Pi, Orange Pi, and compact hardware</p>
               </CardContent>
             </Card>
 
@@ -476,9 +465,6 @@ const HomePage = () => {
               <div className="space-y-2 text-sm">
                 <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/products/device')}>
                   Game Guardian Device
-                </Button>
-                <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/products/os-mini')}>
-                  OS Mini
                 </Button>
                 <Button variant="ghost" size="sm" className="h-auto p-0 justify-start" onClick={() => navigate('/products/os')}>
                   OS Full
