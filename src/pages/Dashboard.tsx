@@ -8,6 +8,7 @@ import { Shield, Users, AlertTriangle, Settings, Plus, MessageSquare, TrendingUp
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import SEOHead from '@/components/SEOHead';
 import AlertCard from '@/components/AlertCard';
 import ChildSwitcher from '@/components/ChildSwitcher';
 import ConversationViewer from '@/components/ConversationViewer';
@@ -273,32 +274,49 @@ const Dashboard = () => {
     return acc;
   }, {} as Record<string, { total: number; critical: number }>);
 
+  const dashboardStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Game Guardian AI Dashboard",
+    "description": "Parent dashboard for monitoring children's gaming safety with AI-powered alerts and insights.",
+    "url": "https://gameguardianai.com/dashboard",
+    "applicationCategory": "ParentalControlSoftware"
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-primary" />
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Game Guardian AI™</h1>
-                <p className="text-sm text-muted-foreground">Parent Dashboard</p>
+    <>
+      <SEOHead
+        title={`Dashboard - Game Guardian AI™ ${selectedChildId ? `| ${children.find(c => c.id === selectedChildId)?.name || 'Child'} Monitoring` : '| Parent Control Center'}`}
+        description="Monitor your child's gaming safety with real-time AI alerts, conversation analysis, and comprehensive safety insights from Game Guardian AI."
+        keywords="gaming safety dashboard, parental controls, child monitoring, AI safety alerts, gaming conversation analysis"
+        canonicalUrl="https://gameguardianai.com/dashboard"
+        structuredData={dashboardStructuredData}
+      />
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="bg-card border-b border-border shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-3">
+                <Shield className="h-8 w-8 text-primary" aria-label="Game Guardian AI logo" />
+                <div>
+                  <h1 className="text-xl font-bold text-foreground">Game Guardian AI™</h1>
+                  <p className="text-sm text-muted-foreground">Parent Dashboard</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Welcome, {user?.email?.split('@')[0]}
-              </span>
-              <Button variant="ghost" size="sm" onClick={signOut}>
-                Sign Out
-              </Button>
+              <nav className="flex items-center gap-4" aria-label="User navigation">
+                <span className="text-sm text-muted-foreground">
+                  Welcome, {user?.email?.split('@')[0]}
+                </span>
+                <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sign out of dashboard">
+                  Sign Out
+                </Button>
+              </nav>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Child Switcher */}
         <ChildSwitcher
           children={children}
@@ -619,8 +637,9 @@ const Dashboard = () => {
             />
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   );
 };
 

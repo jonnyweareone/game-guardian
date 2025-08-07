@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import SEOHead from '@/components/SEOHead';
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState('signin');
@@ -65,16 +66,32 @@ const Auth = () => {
     }
   };
 
+  const authStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Sign In - Game Guardian AI",
+    "description": "Sign in to your Game Guardian AI parent dashboard to monitor your child's gaming safety.",
+    "url": "https://gameguardianai.com/auth"
+  };
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Shield className="h-12 w-12 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">Game Guardian AI™</h1>
-          <p className="text-muted-foreground mt-2">Keep your child safe in online gaming</p>
-        </div>
+    <>
+      <SEOHead
+        title="Sign In - Game Guardian AI™ Parent Dashboard"
+        description="Sign in to your Game Guardian AI parent dashboard to monitor your child's gaming safety with AI-powered voice chat analysis and real-time alerts."
+        keywords="gaming safety login, parent dashboard, child protection signin, online gaming monitoring"
+        canonicalUrl="https://gameguardianai.com/auth"
+        structuredData={authStructuredData}
+      />
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <header className="text-center mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <Shield className="h-12 w-12 text-primary" aria-label="Game Guardian AI logo" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">Game Guardian AI™</h1>
+            <p className="text-muted-foreground mt-2">Keep your child safe in online gaming</p>
+          </header>
 
         <Card>
           <CardHeader>
@@ -197,8 +214,9 @@ const Auth = () => {
             </Tabs>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

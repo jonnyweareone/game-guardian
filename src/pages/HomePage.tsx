@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import SEOHead from '@/components/SEOHead';
 import { 
   Shield, 
   Volume2, 
@@ -117,8 +118,35 @@ const HomePage = () => {
     { feature: 'Manual supervision', without: true, with: false }
   ];
 
+  const homePageStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Game Guardian AI - AI-Powered Gaming Safety",
+    "description": "Protect your child in online gaming with AI voice chat monitoring, real-time alerts, and smart safety controls.",
+    "url": "https://gameguardianai.com",
+    "mainEntity": {
+      "@type": "SoftwareApplication",
+      "name": "Game Guardian AI",
+      "applicationCategory": "ParentalControlSoftware",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free trial available"
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEOHead
+        title="Game Guardian AI™ - AI-Powered Gaming Safety for Kids"
+        description="Protect your child in online gaming with AI voice chat monitoring. Real-time alerts, conversation analysis, and smart safety controls for peace of mind."
+        keywords="gaming safety, child protection online, voice chat monitoring, AI safety, parental controls, online gaming, child safety technology, gaming parental controls"
+        canonicalUrl="https://gameguardianai.com/"
+        structuredData={homePageStructuredData}
+      />
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -268,7 +296,7 @@ const HomePage = () => {
             ))}
           </div>
         </div>
-      </section>
+        </section>
 
       {/* Comparison Section */}
       <section className="py-24 bg-background">
@@ -371,7 +399,8 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 };
 
