@@ -128,7 +128,11 @@ const Auth = () => {
                     onClick={() => {
                       // Set demo mode in localStorage and navigate
                       localStorage.setItem('demo-mode', 'true');
-                      window.location.href = '/';
+                      toast({
+                        title: "Demo Mode Activated",
+                        description: "Welcome to Game Guardian AI demo dashboard.",
+                      });
+                      navigate('/dashboard');
                     }}
                     disabled={isLoading}
                   >
