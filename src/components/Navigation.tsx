@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
-import guardianLogo from '@/assets/guardian-logo.png';
+import { ArrowRight, Shield } from 'lucide-react';
 
 interface NavigationProps {
   transparent?: boolean;
@@ -15,7 +14,7 @@ const Navigation = ({ transparent = false }: NavigationProps) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <img src={guardianLogo} alt="Guardian AI Logo" className="h-8 w-8" />
+            <Shield className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-xl font-bold text-foreground">Game Guardian AI™</h1>
               <p className="text-xs text-muted-foreground">Intelligent Gaming Protection</p>

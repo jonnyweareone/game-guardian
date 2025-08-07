@@ -23,7 +23,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import gamingHeadsetAI from '@/assets/gaming-headset-ai.png';
 import guardianDevice from '@/assets/guardian-device.png';
-import guardianLogo from '@/assets/guardian-logo.png';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -153,7 +152,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <img src={guardianLogo} alt="Guardian AI Logo" className="h-8 w-8" />
+              <Shield className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-xl font-bold text-foreground">Game Guardian AI™</h1>
                 <p className="text-xs text-muted-foreground">Intelligent Gaming Protection</p>
@@ -379,25 +378,25 @@ const HomePage = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => navigate('/products/os-mini')}>
+            <Card className="border-dashed border-2 border-primary/30">
               <CardContent className="p-6 text-center space-y-4">
-                <div className="p-4 bg-primary/10 rounded-lg w-fit mx-auto">
-                  <Brain className="h-8 w-8 text-primary" />
+                <div className="p-4 bg-muted/50 rounded-lg w-fit mx-auto">
+                  <Brain className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="font-bold text-lg">Game Guardian OS Mini</h3>
+                <h3 className="font-bold text-lg text-muted-foreground">Game Guardian OS Mini</h3>
+                <Badge variant="outline" className="mb-2">Coming Soon</Badge>
                 <p className="text-muted-foreground text-sm">Lightweight Linux OS for Raspberry Pi, Orange Pi, and compact hardware</p>
-                <Button variant="outline" size="sm" className="w-full">Learn More</Button>
               </CardContent>
             </Card>
 
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => navigate('/products/os')}>
+            <Card className="border-dashed border-2 border-primary/30">
               <CardContent className="p-6 text-center space-y-4">
-                <div className="p-4 bg-primary/10 rounded-lg w-fit mx-auto">
-                  <Lock className="h-8 w-8 text-primary" />
+                <div className="p-4 bg-muted/50 rounded-lg w-fit mx-auto">
+                  <Lock className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="font-bold text-lg">Game Guardian OS</h3>
+                <h3 className="font-bold text-lg text-muted-foreground">Game Guardian OS</h3>
+                <Badge variant="outline" className="mb-2">Coming Soon</Badge>
                 <p className="text-muted-foreground text-sm">Full-featured Linux OS transforming gaming PCs into AI-powered safe zones</p>
-                <Button variant="outline" size="sm" className="w-full">Learn More</Button>
               </CardContent>
             </Card>
 
@@ -464,7 +463,7 @@ const HomePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <img src={guardianLogo} alt="Guardian AI Logo" className="h-6 w-6" />
+                <Shield className="h-6 w-6 text-primary" />
                 <span className="font-semibold text-foreground">Game Guardian AI™</span>
               </div>
               <p className="text-sm text-muted-foreground">
