@@ -23,7 +23,7 @@ const Products = () => {
     {
       id: "os-mini",
       name: "Game Guardian OS Mini",
-      description: "Lightweight Linux OS for Raspberry Pi, Orange Pi, and compact hardware",
+      description: "Game Guardian OS Mini is available for free install on your own hardware while we're in beta",
       icon: Cpu,
       features: ["USB bootable image", "Pre-installed option", "VM/Container support", "Low power consumption"],
       status: "available",

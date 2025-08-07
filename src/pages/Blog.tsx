@@ -10,69 +10,69 @@ const Blog = () => {
   const navigate = useNavigate();
 
   const featuredPost = {
-    title: "Game Guardian AI Launches: Revolutionary Child Safety Technology",
-    excerpt: "Today marks a milestone in gaming safety as Game Guardian AI introduces the first AI-powered system specifically designed to protect children in online gaming environments.",
-    category: "Press Release",
-    date: "2024-12-15",
-    readTime: "5 min read",
-    author: "Game Guardian Team",
-    slug: "game-guardian-ai-launch"
+    title: "AI-Powered Gaming Safety: Protecting the Next Generation of Gamers",
+    excerpt: "As online gaming becomes increasingly social, Game Guardian AI introduces revolutionary technology to create safer digital playgrounds for children worldwide.",
+    category: "Technology",
+    date: "2025-08-07",
+    readTime: "6 min read",
+    author: "Guardian AI Research Team",
+    slug: "ai-powered-gaming-safety"
   };
 
   const blogPosts = [
     {
-      title: "Understanding Online Gaming Threats: A Parent's Guide",
-      excerpt: "Learn about the most common threats children face in online gaming and how to recognize warning signs.",
+      title: "The Hidden Dangers of Voice Chat in Popular Games",
+      excerpt: "From Fortnite to Minecraft, we explore how predators exploit voice chat features and what parents need to know to keep their children safe.",
       category: "Safety Guide",
-      date: "2024-12-10",
+      date: "2025-08-06",
       readTime: "8 min read",
-      author: "Dr. Sarah Mitchell",
-      slug: "understanding-gaming-threats"
+      author: "Guardian Safety Team",
+      slug: "voice-chat-dangers"
     },
     {
-      title: "Setting Up Your First Game Guardian Device",
-      excerpt: "Step-by-step instructions for installing and configuring your Game Guardian hardware for optimal protection.",
-      category: "Tutorial",
-      date: "2024-12-08",
-      readTime: "6 min read",
-      author: "Tech Support Team",
-      slug: "setup-guide"
-    },
-    {
-      title: "The Science Behind AI Voice Analysis",
-      excerpt: "How our artificial intelligence technology detects threats in real-time voice communications.",
+      title: "Machine Learning Meets Child Protection: How Our AI Works",
+      excerpt: "A deep dive into the neural networks and natural language processing that power Game Guardian's real-time threat detection system.",
       category: "Technology",
-      date: "2024-12-05",
-      readTime: "10 min read",
-      author: "Dr. James Rodriguez",
-      slug: "ai-voice-analysis"
+      date: "2025-08-05",
+      readTime: "12 min read",
+      author: "Guardian AI Engineering Team",
+      slug: "ai-technology-explained"
     },
     {
-      title: "Creating Healthy Gaming Habits for Children",
-      excerpt: "Expert advice on establishing balanced screen time and positive gaming experiences for kids.",
+      title: "Setting Healthy Gaming Boundaries: A Psychologist's Perspective",
+      excerpt: "Evidence-based strategies for creating positive gaming experiences while maintaining safety and balance in your child's digital life.",
       category: "Parenting",
-      date: "2024-12-01",
+      date: "2025-08-04",
       readTime: "7 min read",
-      author: "Child Psychologist Team",
-      slug: "healthy-gaming-habits"
+      author: "Guardian Child Psychology Team",
+      slug: "healthy-gaming-boundaries"
     },
     {
-      title: "Game Guardian OS Mini: Perfect for Raspberry Pi",
-      excerpt: "Deploy Game Guardian protection on affordable hardware with our lightweight operating system.",
-      category: "Product Guide",
-      date: "2024-11-28",
-      readTime: "5 min read",
-      author: "Engineering Team",
-      slug: "os-mini-raspberry-pi"
+      title: "Game Guardian OS Mini: Transform Your Raspberry Pi into a Safety Hub",
+      excerpt: "Step-by-step guide to installing our lightweight operating system on affordable hardware for comprehensive gaming protection.",
+      category: "Tutorial",
+      date: "2025-08-03",
+      readTime: "9 min read",
+      author: "Guardian Technical Support Team",
+      slug: "raspberry-pi-setup-guide"
     },
     {
-      title: "Real Parent Stories: How Game Guardian Helped Our Family",
-      excerpt: "Read testimonials from families who have successfully used Game Guardian to protect their children.",
+      title: "The Evolution of Online Gaming Threats: 2025 Report",
+      excerpt: "Our annual analysis of emerging threats in online gaming environments and how artificial intelligence is revolutionizing child protection.",
+      category: "Research",
+      date: "2025-08-02",
+      readTime: "15 min read",
+      author: "Guardian Research Team",
+      slug: "2025-gaming-threats-report"
+    },
+    {
+      title: "Real Families, Real Protection: Guardian Success Stories",
+      excerpt: "How families across the UK are using Game Guardian technology to create safer gaming experiences for their children.",
       category: "Testimonials",
-      date: "2024-11-25",
-      readTime: "4 min read",
-      author: "Community Team",
-      slug: "parent-stories"
+      date: "2025-08-01",
+      readTime: "5 min read",
+      author: "Guardian Community Team",
+      slug: "family-success-stories"
     }
   ];
 
