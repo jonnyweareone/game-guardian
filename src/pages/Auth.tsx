@@ -121,6 +121,22 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => {
+                      setEmail('demo.parent@gamegiuardian.com');
+                      setPassword('demopassword123');
+                      toast({
+                        title: "Demo credentials loaded",
+                        description: "Click Sign In to continue with demo account",
+                      });
+                    }}
+                    disabled={isLoading}
+                  >
+                    Use Demo Login
+                  </Button>
                   <div className="text-center text-sm text-muted-foreground mt-4">
                     <p>New to Game Guardian AI? <button type="button" onClick={() => setActiveTab('signup')} className="text-primary hover:underline">Create an account</button></p>
                   </div>
