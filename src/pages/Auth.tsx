@@ -125,7 +125,7 @@ const Auth = () => {
                     variant="outline" 
                     className="w-full" 
                     onClick={async () => {
-                      const demoEmail = 'demo@example.com';
+                      const demoEmail = 'demo@gmail.com';
                       const demoPassword = 'demopassword123';
                       
                       setIsLoading(true);
