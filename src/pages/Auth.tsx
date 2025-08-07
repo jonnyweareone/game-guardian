@@ -120,6 +120,17 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => {
+                      setEmail('demo@parent.com');
+                      setPassword('demopassword123');
+                    }}
+                  >
+                    Use Demo Login
+                  </Button>
                 </form>
               </TabsContent>
               
