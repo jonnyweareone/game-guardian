@@ -201,6 +201,39 @@ const Dashboard = () => {
     }
   };
 
+  const handleAddChild = () => {
+    toast({
+      title: "Add Child Profile",
+      description: "Child profile creation feature will be available soon.",
+    });
+  };
+
+  const handlePairDevice = () => {
+    toast({
+      title: "Pair New Device",
+      description: "Device pairing feature will be available soon.",
+    });
+  };
+
+  const handleSettings = () => {
+    toast({
+      title: "Settings",
+      description: "Settings panel will be available soon.",
+    });
+  };
+
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(notif => ({
+      ...notif,
+      is_read: true,
+      read_at: new Date().toISOString()
+    })));
+    toast({
+      title: "All notifications marked as read",
+      description: "Your notification history has been updated.",
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -363,15 +396,15 @@ const Dashboard = () => {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Button className="h-16 flex flex-col gap-2">
+              <Button className="h-16 flex flex-col gap-2" onClick={handleAddChild}>
                 <Plus className="h-5 w-5" />
                 Add Child Profile
               </Button>
-              <Button variant="outline" className="h-16 flex flex-col gap-2">
+              <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handlePairDevice}>
                 <Shield className="h-5 w-5" />
                 Pair New Device
               </Button>
-              <Button variant="outline" className="h-16 flex flex-col gap-2">
+              <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleSettings}>
                 <Settings className="h-5 w-5" />
                 Settings
               </Button>
@@ -571,6 +604,14 @@ const Dashboard = () => {
 
           {/* Notification History Tab */}
           <TabsContent value="notifications" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Notification History</h2>
+              {unreadNotifications > 0 && (
+                <Button variant="outline" onClick={handleMarkAllRead}>
+                  Mark All Read
+                </Button>
+              )}
+            </div>
             <NotificationHistory
               notifications={filteredNotifications}
               onMarkAsRead={handleMarkNotificationRead}
