@@ -20,13 +20,17 @@ export type Database = {
           alert_type: Database["public"]["Enums"]["alert_type"]
           child_id: string
           confidence_score: number | null
+          conversation_id: string | null
           created_at: string
           device_id: string
+          emotional_impact: string | null
           flagged_at: string
+          follow_up_required: boolean | null
           id: string
           is_reviewed: boolean | null
           reviewed_at: string | null
           risk_level: Database["public"]["Enums"]["risk_level"]
+          social_context: string | null
           transcript_snippet: string | null
         }
         Insert: {
@@ -34,13 +38,17 @@ export type Database = {
           alert_type: Database["public"]["Enums"]["alert_type"]
           child_id: string
           confidence_score?: number | null
+          conversation_id?: string | null
           created_at?: string
           device_id: string
+          emotional_impact?: string | null
           flagged_at?: string
+          follow_up_required?: boolean | null
           id?: string
           is_reviewed?: boolean | null
           reviewed_at?: string | null
           risk_level: Database["public"]["Enums"]["risk_level"]
+          social_context?: string | null
           transcript_snippet?: string | null
         }
         Update: {
@@ -48,13 +56,17 @@ export type Database = {
           alert_type?: Database["public"]["Enums"]["alert_type"]
           child_id?: string
           confidence_score?: number | null
+          conversation_id?: string | null
           created_at?: string
           device_id?: string
+          emotional_impact?: string | null
           flagged_at?: string
+          follow_up_required?: boolean | null
           id?: string
           is_reviewed?: boolean | null
           reviewed_at?: string | null
           risk_level?: Database["public"]["Enums"]["risk_level"]
+          social_context?: string | null
           transcript_snippet?: string | null
         }
         Relationships: [
@@ -112,6 +124,105 @@ export type Database = {
           },
         ]
       }
+      conversation_summaries: {
+        Row: {
+          ai_summary: string
+          child_id: string
+          concerns: string[] | null
+          confidence_score: number | null
+          conversation_id: string
+          created_at: string
+          emotional_tone: string | null
+          id: string
+          key_topics: string[] | null
+          positive_highlights: string[] | null
+          social_interactions: Json | null
+          summary_type: string
+          talking_points: string[] | null
+        }
+        Insert: {
+          ai_summary: string
+          child_id: string
+          concerns?: string[] | null
+          confidence_score?: number | null
+          conversation_id: string
+          created_at?: string
+          emotional_tone?: string | null
+          id?: string
+          key_topics?: string[] | null
+          positive_highlights?: string[] | null
+          social_interactions?: Json | null
+          summary_type: string
+          talking_points?: string[] | null
+        }
+        Update: {
+          ai_summary?: string
+          child_id?: string
+          concerns?: string[] | null
+          confidence_score?: number | null
+          conversation_id?: string
+          created_at?: string
+          emotional_tone?: string | null
+          id?: string
+          key_topics?: string[] | null
+          positive_highlights?: string[] | null
+          social_interactions?: Json | null
+          summary_type?: string
+          talking_points?: string[] | null
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          child_id: string
+          conversation_type: string
+          created_at: string
+          device_id: string
+          id: string
+          participants: string[] | null
+          platform: string
+          risk_assessment: string | null
+          sentiment_score: number | null
+          session_end: string | null
+          session_start: string
+          total_messages: number | null
+          transcript: Json | null
+          updated_at: string
+        }
+        Insert: {
+          child_id: string
+          conversation_type?: string
+          created_at?: string
+          device_id: string
+          id?: string
+          participants?: string[] | null
+          platform: string
+          risk_assessment?: string | null
+          sentiment_score?: number | null
+          session_end?: string | null
+          session_start?: string
+          total_messages?: number | null
+          transcript?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string
+          conversation_type?: string
+          created_at?: string
+          device_id?: string
+          id?: string
+          participants?: string[] | null
+          platform?: string
+          risk_assessment?: string | null
+          sentiment_score?: number | null
+          session_end?: string | null
+          session_start?: string
+          total_messages?: number | null
+          transcript?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       devices: {
         Row: {
           child_id: string | null
@@ -162,6 +273,57 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      parent_notifications: {
+        Row: {
+          action_required: boolean | null
+          child_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          metadata: Json | null
+          notification_type: string
+          parent_id: string
+          priority: string
+          read_at: string | null
+          related_alert_id: string | null
+          related_conversation_id: string | null
+          title: string
+        }
+        Insert: {
+          action_required?: boolean | null
+          child_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          parent_id: string
+          priority?: string
+          read_at?: string | null
+          related_alert_id?: string | null
+          related_conversation_id?: string | null
+          title: string
+        }
+        Update: {
+          action_required?: boolean | null
+          child_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          parent_id?: string
+          priority?: string
+          read_at?: string | null
+          related_alert_id?: string | null
+          related_conversation_id?: string | null
+          title?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
