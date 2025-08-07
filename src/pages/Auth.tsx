@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
+  const [activeTab, setActiveTab] = useState('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -83,7 +84,7 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -120,55 +121,9 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full" 
-                    onClick={async () => {
-                      const demoEmail = 'demo@gmail.com';
-                      const demoPassword = 'demopassword123';
-                      
-                      setIsLoading(true);
-                      try {
-                        // Try to sign in first
-                        const { error: signInError } = await signIn(demoEmail, demoPassword);
-                        
-                        if (signInError) {
-                          // If sign in fails, try to create the account
-                          const { error: signUpError } = await signUp(demoEmail, demoPassword, 'Demo Parent');
-                          
-                          if (signUpError && !signUpError.message.includes('already registered')) {
-                            toast({
-                              title: "Demo Setup Error",
-                              description: "Failed to create demo account. Please try again.",
-                              variant: "destructive",
-                            });
-                          } else {
-                            // If signup succeeded or user exists, try signing in again
-                            const { error: retrySignInError } = await signIn(demoEmail, demoPassword);
-                            if (retrySignInError) {
-                              toast({
-                                title: "Demo Login Error",
-                                description: "Demo account created but login failed. Please try the demo login again.",
-                                variant: "destructive",
-                              });
-                            }
-                          }
-                        }
-                      } catch (error) {
-                        toast({
-                          title: "Demo Login Error",
-                          description: "An unexpected error occurred.",
-                          variant: "destructive",
-                        });
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Setting up demo...' : 'Use Demo Login'}
-                  </Button>
+                  <div className="text-center text-sm text-muted-foreground mt-4">
+                    <p>New to Game Guardian AI? <button type="button" onClick={() => setActiveTab('signup')} className="text-primary hover:underline">Create an account</button></p>
+                  </div>
                 </form>
               </TabsContent>
               
