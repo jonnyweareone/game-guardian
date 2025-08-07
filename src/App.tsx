@@ -15,6 +15,7 @@ import ProductOSMini from "./pages/ProductOSMini";
 import ProductOSFull from "./pages/ProductOSFull";
 import ProductReceiver from "./pages/ProductReceiver";
 import Blog from "./pages/Blog";
+import BlogPost from "./components/BlogPost";
 import PressReleases from "./pages/PressReleases";
 import HowToGuide from "./pages/HowToGuide";
 import About from "./pages/About";
@@ -47,6 +48,7 @@ const App = () => (
             
             {/* Content Pages */}
             <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/press-releases" element={<PressReleases />} />
             <Route path="/how-to-guide" element={<HowToGuide />} />
             <Route path="/about" element={<About />} />

@@ -1,82 +1,26 @@
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Calendar, Clock, User, Search, Filter } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
-import { Calendar, Clock, User, ArrowRight } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import Navigation from "@/components/Navigation";
+import { blogPosts, categories, getFeaturedPost } from "@/data/blogData";
 
 const Blog = () => {
-  const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const featuredPost = {
-    title: "AI-Powered Gaming Safety: Protecting the Next Generation of Gamers",
-    excerpt: "As online gaming becomes increasingly social, Game Guardian AI introduces revolutionary technology to create safer digital playgrounds for children worldwide.",
-    category: "Technology",
-    date: "2025-08-07",
-    readTime: "6 min read",
-    author: "Guardian AI Research Team",
-    slug: "ai-powered-gaming-safety"
-  };
+  const featuredPost = getFeaturedPost();
 
-  const blogPosts = [
-    {
-      title: "The Hidden Dangers of Voice Chat in Popular Games",
-      excerpt: "From Fortnite to Minecraft, we explore how predators exploit voice chat features and what parents need to know to keep their children safe.",
-      category: "Safety Guide",
-      date: "2025-08-06",
-      readTime: "8 min read",
-      author: "Guardian Safety Team",
-      slug: "voice-chat-dangers"
-    },
-    {
-      title: "Machine Learning Meets Child Protection: How Our AI Works",
-      excerpt: "A deep dive into the neural networks and natural language processing that power Game Guardian's real-time threat detection system.",
-      category: "Technology",
-      date: "2025-08-05",
-      readTime: "12 min read",
-      author: "Guardian AI Engineering Team",
-      slug: "ai-technology-explained"
-    },
-    {
-      title: "Setting Healthy Gaming Boundaries: A Psychologist's Perspective",
-      excerpt: "Evidence-based strategies for creating positive gaming experiences while maintaining safety and balance in your child's digital life.",
-      category: "Parenting",
-      date: "2025-08-04",
-      readTime: "7 min read",
-      author: "Guardian Child Psychology Team",
-      slug: "healthy-gaming-boundaries"
-    },
-    {
-      title: "Game Guardian OS Mini: Transform Your Raspberry Pi into a Safety Hub",
-      excerpt: "Step-by-step guide to installing our lightweight operating system on affordable hardware for comprehensive gaming protection.",
-      category: "Tutorial",
-      date: "2025-08-03",
-      readTime: "9 min read",
-      author: "Guardian Technical Support Team",
-      slug: "raspberry-pi-setup-guide"
-    },
-    {
-      title: "The Evolution of Online Gaming Threats: 2025 Report",
-      excerpt: "Our annual analysis of emerging threats in online gaming environments and how artificial intelligence is revolutionizing child protection.",
-      category: "Research",
-      date: "2025-08-02",
-      readTime: "15 min read",
-      author: "Guardian Research Team",
-      slug: "2025-gaming-threats-report"
-    },
-    {
-      title: "Real Families, Real Protection: Guardian Success Stories",
-      excerpt: "How families across the UK are using Game Guardian technology to create safer gaming experiences for their children.",
-      category: "Testimonials",
-      date: "2025-08-01",
-      readTime: "5 min read",
-      author: "Guardian Community Team",
-      slug: "family-success-stories"
-    }
-  ];
-
-  const categories = ["All", "Safety Guide", "Tutorial", "Technology", "Parenting", "Product Guide", "Press Release", "Testimonials"];
+  const filteredPosts = blogPosts.filter(post => {
+    const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
+    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch && !post.featured;
+  });
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -110,40 +54,60 @@ const Blog = () => {
           </div>
 
           {/* Featured Post */}
-          <section className="mb-16">
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer border-primary/20" onClick={() => navigate(`/blog/${featuredPost.slug}`)}>
-              <CardHeader>
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <Badge variant="default">Featured</Badge>
-                  <Badge variant="outline">{featuredPost.category}</Badge>
-                </div>
-                <CardTitle className="text-2xl md:text-3xl">{featuredPost.title}</CardTitle>
-                <CardDescription className="text-lg mt-4">{featuredPost.excerpt}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>{new Date(featuredPost.date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{featuredPost.readTime}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    <span>{featuredPost.author}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+          {featuredPost && (
+            <section className="mb-16">
+              <Card className="hover:border-primary/50 transition-colors cursor-pointer border-primary/20">
+                <Link to={`/blog/${featuredPost.slug}`}>
+                  <CardHeader>
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <Badge variant="default">Featured</Badge>
+                      <Badge variant="outline">{featuredPost.category}</Badge>
+                    </div>
+                    <CardTitle className="text-2xl md:text-3xl">{featuredPost.title}</CardTitle>
+                    <CardDescription className="text-lg mt-4">{featuredPost.excerpt}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{new Date(featuredPost.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>{featuredPost.readTime}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <User className="h-4 w-4" />
+                        <span>{featuredPost.author}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Link>
+              </Card>
+            </section>
+          )}
 
-          {/* Category Filter */}
+          {/* Search and Filter */}
           <section className="mb-12">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search articles..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
             <div className="flex flex-wrap gap-2 justify-center">
               {categories.map((category) => (
-                <Button key={category} variant="outline" size="sm">
+                <Button 
+                  key={category} 
+                  variant={selectedCategory === category ? "default" : "outline"} 
+                  size="sm"
+                  onClick={() => setSelectedCategory(category)}
+                >
                   {category}
                 </Button>
               ))}
@@ -153,33 +117,31 @@ const Blog = () => {
           {/* Blog Posts Grid */}
           <section className="mb-16">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {blogPosts.map((post, index) => (
-                <Card key={index} className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => navigate(`/blog/${post.slug}`)}>
-                  <CardHeader>
-                    <Badge variant="outline" className="w-fit">{post.category}</Badge>
-                    <CardTitle className="text-xl">{post.title}</CardTitle>
-                    <CardDescription>{post.excerpt}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-4">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{new Date(post.date).toLocaleDateString()}</span>
+              {filteredPosts.map((post) => (
+                <Card key={post.id} className="hover:border-primary/50 transition-colors cursor-pointer">
+                  <Link to={`/blog/${post.slug}`}>
+                    <CardHeader>
+                      <Badge variant="outline" className="w-fit">{post.category}</Badge>
+                      <CardTitle className="text-xl">{post.title}</CardTitle>
+                      <CardDescription>{post.excerpt}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-4">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{new Date(post.date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{post.readTime}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          <span>{post.author}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>{post.readTime}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <span>{post.author}</span>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" className="p-0 h-auto">
-                      Read More
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </CardContent>
+                    </CardContent>
+                  </Link>
                 </Card>
               ))}
             </div>
@@ -197,9 +159,11 @@ const Blog = () => {
                 placeholder="Enter your email" 
                 className="flex-1 px-4 py-2 border border-border rounded-md bg-background text-foreground"
               />
-              <Button onClick={() => navigate("/auth")}>
-                Subscribe
-              </Button>
+              <Link to="/auth">
+                <Button>
+                  Subscribe
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
