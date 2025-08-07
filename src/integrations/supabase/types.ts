@@ -14,7 +14,182 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          ai_summary: string
+          alert_type: Database["public"]["Enums"]["alert_type"]
+          child_id: string
+          confidence_score: number | null
+          created_at: string
+          device_id: string
+          flagged_at: string
+          id: string
+          is_reviewed: boolean | null
+          reviewed_at: string | null
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          transcript_snippet: string | null
+        }
+        Insert: {
+          ai_summary: string
+          alert_type: Database["public"]["Enums"]["alert_type"]
+          child_id: string
+          confidence_score?: number | null
+          created_at?: string
+          device_id: string
+          flagged_at?: string
+          id?: string
+          is_reviewed?: boolean | null
+          reviewed_at?: string | null
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          transcript_snippet?: string | null
+        }
+        Update: {
+          ai_summary?: string
+          alert_type?: Database["public"]["Enums"]["alert_type"]
+          child_id?: string
+          confidence_score?: number | null
+          created_at?: string
+          device_id?: string
+          flagged_at?: string
+          id?: string
+          is_reviewed?: boolean | null
+          reviewed_at?: string | null
+          risk_level?: Database["public"]["Enums"]["risk_level"]
+          transcript_snippet?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      children: {
+        Row: {
+          age: number | null
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string
+          parent_id: string
+          updated_at: string
+        }
+        Insert: {
+          age?: number | null
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          parent_id: string
+          updated_at?: string
+        }
+        Update: {
+          age?: number | null
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "children_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      devices: {
+        Row: {
+          child_id: string | null
+          created_at: string
+          device_code: string
+          device_name: string | null
+          id: string
+          is_active: boolean | null
+          paired_at: string | null
+          parent_id: string
+          updated_at: string
+        }
+        Insert: {
+          child_id?: string | null
+          created_at?: string
+          device_code: string
+          device_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          paired_at?: string | null
+          parent_id: string
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string | null
+          created_at?: string
+          device_code?: string
+          device_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          paired_at?: string | null
+          parent_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devices_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +198,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      alert_type:
+        | "bullying"
+        | "grooming"
+        | "explicit_language"
+        | "violent_content"
+        | "inappropriate_sharing"
+        | "cyberbullying"
+      risk_level: "low" | "medium" | "high" | "critical"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +332,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      alert_type: [
+        "bullying",
+        "grooming",
+        "explicit_language",
+        "violent_content",
+        "inappropriate_sharing",
+        "cyberbullying",
+      ],
+      risk_level: ["low", "medium", "high", "critical"],
+    },
   },
 } as const
