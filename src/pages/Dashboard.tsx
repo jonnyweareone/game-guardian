@@ -14,6 +14,8 @@ import ChildSwitcher from '@/components/ChildSwitcher';
 import ConversationViewer from '@/components/ConversationViewer';
 import AIInsightCards from '@/components/AIInsightCards';
 import NotificationHistory from '@/components/NotificationHistory';
+import AddChildDialog from '@/components/AddChildDialog';
+import PairDeviceDialog from '@/components/PairDeviceDialog';
 import { demoChildren, demoDevices, demoAlerts, demoNotifications, demoConversations, demoInsights } from '@/data/demoData';
 
 interface DashboardAlert {
@@ -203,17 +205,13 @@ const Dashboard = () => {
   };
 
   const handleAddChild = () => {
-    toast({
-      title: "Add Child Profile",
-      description: "Child profile creation feature will be available soon.",
-    });
+    // This is now handled by AddChildDialog component
+    fetchDashboardData();
   };
 
   const handlePairDevice = () => {
-    toast({
-      title: "Pair New Device",
-      description: "Device pairing feature will be available soon.",
-    });
+    // This is now handled by PairDeviceDialog component
+    fetchDashboardData();
   };
 
   const handleSettings = () => {
@@ -414,14 +412,24 @@ const Dashboard = () => {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Button className="h-16 flex flex-col gap-2" onClick={handleAddChild}>
-                <Plus className="h-5 w-5" />
-                Add Child Profile
-              </Button>
-              <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handlePairDevice}>
-                <Shield className="h-5 w-5" />
-                Pair New Device
-              </Button>
+              {isDemoMode ? (
+                <Button className="h-16 flex flex-col gap-2" onClick={handleAddChild}>
+                  <Plus className="h-5 w-5" />
+                  Add Child Profile
+                </Button>
+              ) : (
+                <AddChildDialog onChildAdded={handleAddChild} />
+              )}
+              
+              {isDemoMode ? (
+                <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handlePairDevice}>
+                  <Shield className="h-5 w-5" />
+                  Pair New Device
+                </Button>
+              ) : (
+                <PairDeviceDialog children={children} onDevicePaired={handlePairDevice} />
+              )}
+              
               <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleSettings}>
                 <Settings className="h-5 w-5" />
                 Settings
