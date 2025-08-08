@@ -46,7 +46,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "5 min read",
     author: "AI Research Team",
     slug: "ai-powered-gaming-safety",
-    featured: true
+    featured: false
   },
   {
     id: "2",
@@ -512,6 +512,60 @@ export const blogPosts: BlogPost[] = [
     readTime: "12 min read",
     author: "Research & Intelligence Team",
     slug: "gaming-threats-2025-report"
+  },
+  {
+    id: "7",
+    title: "We’ve Completely FNAF’ed Online Safety — Only Disney Can Save Our Kids Now",
+    excerpt: "We block kids from watching horror games—but not from playing them. Here’s why moderation ignores where kids actually are—and how Guardian OS fixes it.",
+    content: `
+      <h2>We’re Scanning Faces To Block YouTube — But Not Games</h2>
+      <p>We’re scanning kids’ faces to block them from YouTube — but doing nothing to stop them from playing:</p>
+      <ul>
+        <li>👻 PEGI 16+ horror survival games</li>
+        <li>🎧 Unmoderated live voice chat with strangers</li>
+        <li>🧨 Games packed with jump scares, violence, and drug use</li>
+        <li>🎰 Community-made knockoffs like Piggy — darker, creepier, and child‑targeted</li>
+        <li>💬 Content that would be age‑restricted on social platforms — but is unrestricted in games</li>
+      </ul>
+      
+      <h2>Moderation Is Everywhere… Except Where Kids Actually Are</h2>
+      <p>The big platforms — YouTube, Facebook, Twitch — now enforce age checks, strict policies, and AI moderation. But if you’re nine years old, you can still play the game itself — with zero checks. No scan. No gate. No filter.</p>
+      <ul>
+        <li>Face scans and age estimation</li>
+        <li>13+ enforcement</li>
+        <li>Strict content policies and automated AI flagging</li>
+        <li>Creators demonetised or banned for covering games like Five Nights at Freddy’s</li>
+      </ul>
+      
+      <h2>Welcome To The Real Dark Web: In‑Game Chat</h2>
+      <p>In‑game chat is the digital wild west: real‑time voice, anonymous players, no age verification, no scanning, zero context filtering. A child can hear profanities and sexual threats through a headset while playing a PEGI 16 horror game.</p>
+      
+      <h2>The Age Trap</h2>
+      <p>Kids aged 8–13 can’t post, stream, or grow a YouTube channel — but they can play the horror game, chat with strangers, and get exposed to bullying, grooming, and adult content.</p>
+      
+      <h2>The PEGI Illusion</h2>
+      <p>PEGI ratings are labels, not security systems. They weren’t designed for cloud gaming, free‑to‑play knockoffs, user‑generated content, or one‑tap access. A 9‑year‑old can still launch PEGI 16+ on Xbox Cloud, Steam, or Roblox.</p>
+      
+      <h2>This Is Why We Built Guardian OS</h2>
+      <ul>
+        <li>🧠 Facial scan login — we know which child is at the screen</li>
+        <li>🎮 PEGI filtering + deep‑link control — only age‑appropriate games appear</li>
+        <li>🔐 Kiosk mode — for younger kids, with no access to risky apps</li>
+        <li>🧼 DNS‑level content filters — switchable per child, in real time</li>
+        <li>📊 Parental dashboard — no surveillance, no cloud data, total control</li>
+      </ul>
+      <p>Local‑first, secure, and private by design. If a 6‑year‑old replaces a 14‑year‑old, Guardian OS notices and locks down instantly.</p>
+      
+      <h2>Final Thought: The Safety Mismatch</h2>
+      <p>We’re blocking kids from watching horror games — but doing nothing to stop them from playing even more extreme games with live strangers and zero oversight. Online safety isn’t about blocking content — it’s about controlling the experience.</p>
+      <p><strong>Guardian OS</strong> is how we fix this — before the rabbit hole gets deeper. <a href="https://gameguardian.ai" target="_blank" rel="noopener noreferrer">gameguardian.ai</a></p>
+    `,
+    category: "Opinion",
+    date: "2025-08-13",
+    readTime: "9 min read",
+    author: "Jonny Robinson, Founder at GameGuardian.ai",
+    slug: "weve-completely-fnafed-online-safety-only-disney-can-save-our-kids-now",
+    featured: true
   }
 ];
 
@@ -521,7 +575,8 @@ export const categories = [
   "Safety Tips",
   "Technology",
   "Parenting",
-  "Research"
+  "Research",
+  "Opinion"
 ];
 
 export const getBlogPost = (slug: string): BlogPost | undefined => {
