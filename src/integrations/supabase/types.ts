@@ -107,6 +107,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_policies: {
+        Row: {
+          allowed: boolean | null
+          app_id: string
+          daily_limit_minutes: number | null
+          enforced_hours: unknown[] | null
+          id: string
+          subject_id: string
+          subject_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          allowed?: boolean | null
+          app_id: string
+          daily_limit_minutes?: number | null
+          enforced_hours?: unknown[] | null
+          id?: string
+          subject_id: string
+          subject_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          allowed?: boolean | null
+          app_id?: string
+          daily_limit_minutes?: number | null
+          enforced_hours?: unknown[] | null
+          id?: string
+          subject_id?: string
+          subject_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       child_app_groups: {
         Row: {
           action: Database["public"]["Enums"]["rule_action"]
@@ -366,6 +399,57 @@ export type Database = {
           total_messages?: number | null
           transcript?: Json | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      device_apps: {
+        Row: {
+          app_id: string
+          category: string | null
+          description: string | null
+          device_code: string
+          first_seen: string | null
+          icon_url: string | null
+          id: string
+          last_seen: string | null
+          name: string
+          pegi_descriptors: string[] | null
+          pegi_rating: number | null
+          platform: string | null
+          publisher: string | null
+          website: string | null
+        }
+        Insert: {
+          app_id: string
+          category?: string | null
+          description?: string | null
+          device_code: string
+          first_seen?: string | null
+          icon_url?: string | null
+          id?: string
+          last_seen?: string | null
+          name: string
+          pegi_descriptors?: string[] | null
+          pegi_rating?: number | null
+          platform?: string | null
+          publisher?: string | null
+          website?: string | null
+        }
+        Update: {
+          app_id?: string
+          category?: string | null
+          description?: string | null
+          device_code?: string
+          first_seen?: string | null
+          icon_url?: string | null
+          id?: string
+          last_seen?: string | null
+          name?: string
+          pegi_descriptors?: string[] | null
+          pegi_rating?: number | null
+          platform?: string | null
+          publisher?: string | null
+          website?: string | null
         }
         Relationships: []
       }
