@@ -17,6 +17,8 @@ import NotificationHistory from '@/components/NotificationHistory';
 import AddChildDialog from '@/components/AddChildDialog';
 import PairDeviceDialog from '@/components/PairDeviceDialog';
 import { demoChildren, demoDevices, demoAlerts, demoNotifications, demoConversations, demoInsights } from '@/data/demoData';
+import { AppRailItem, DeviceAppItem, AppPolicyPatch } from '@/components/AppRailItem';
+import { listDeviceApps, upsertPolicy, listPolicies } from '@/lib/api';
 
 interface DashboardAlert {
   id: string;
@@ -40,10 +42,13 @@ interface Child {
 
 interface Device {
   id: string;
+  device_code?: string;
   device_name?: string;
   is_active: boolean;
+  child_id?: string | null;
   child_name?: string;
 }
+
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -57,12 +62,56 @@ const Dashboard = () => {
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [apps, setApps] = useState<DeviceAppItem[]>([]);
+  const [devicePolicies, setDevicePolicies] = useState<Record<string, any>>({});
+  const [childPolicies, setChildPolicies] = useState<Record<string, any>>({});
   
   const isDemoMode = localStorage.getItem('demo-mode') === 'true';
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Load apps and policies when devices/child selection changes
+  useEffect(() => {
+    if (isDemoMode) return;
+    const currentDevice =
+      (selectedChildId
+        ? devices.find(d => d.child_id === selectedChildId && d.is_active) || devices.find(d => d.is_active)
+        : devices.find(d => d.is_active)) || null;
+
+    const deviceCode = currentDevice?.device_code;
+    const deviceId = currentDevice?.id;
+    const childId = selectedChildId || currentDevice?.child_id || null;
+
+    const load = async () => {
+      try {
+        if (deviceCode) {
+          const appList = await listDeviceApps(deviceCode);
+          setApps(appList || []);
+        } else {
+          setApps([]);
+        }
+        if (deviceId) {
+          const dp = await listPolicies('device', deviceId);
+          const map = Object.fromEntries((dp || []).map((p: any) => [p.app_id, p]));
+          setDevicePolicies(map);
+        } else {
+          setDevicePolicies({});
+        }
+        if (childId) {
+          const cp = await listPolicies('child', childId);
+          const map = Object.fromEntries((cp || []).map((p: any) => [p.app_id, p]));
+          setChildPolicies(map);
+        } else {
+          setChildPolicies({});
+        }
+      } catch (e: any) {
+        console.error('Error loading apps/policies', e);
+      }
+    };
+    load();
+  }, [devices, selectedChildId, isDemoMode]);
 
   const fetchDashboardData = async () => {
     try {
@@ -233,6 +282,47 @@ const Dashboard = () => {
     });
   };
 
+  const handlePolicyChange = async (scope: 'device' | 'child', appId: string, patch: AppPolicyPatch) => {
+    try {
+      if (isDemoMode) return;
+      const currentDevice =
+        (selectedChildId
+          ? devices.find(d => d.child_id === selectedChildId && d.is_active) || devices.find(d => d.is_active)
+          : devices.find(d => d.is_active)) || null;
+
+      const subject_id = scope === 'device' ? currentDevice?.id : (selectedChildId || currentDevice?.child_id || null);
+      if (!subject_id) return;
+
+      const updated = await upsertPolicy({
+        subject_type: scope,
+        subject_id,
+        app_id: appId,
+        allowed: patch.allowed ?? (scope === 'device'
+          ? (devicePolicies[appId]?.allowed ?? true)
+          : (childPolicies[appId]?.allowed ?? true)),
+        daily_limit_minutes: patch.daily_limit_minutes ?? (scope === 'device'
+          ? devicePolicies[appId]?.daily_limit_minutes ?? null
+          : childPolicies[appId]?.daily_limit_minutes ?? null),
+        enforced_hours: patch.enforced_hours ?? (scope === 'device'
+          ? devicePolicies[appId]?.enforced_hours ?? null
+          : childPolicies[appId]?.enforced_hours ?? null),
+      });
+
+      if (scope === 'device') {
+        setDevicePolicies(prev => ({ ...prev, [appId]: updated }));
+      } else {
+        setChildPolicies(prev => ({ ...prev, [appId]: updated }));
+      }
+    } catch (error: any) {
+      console.error('Failed to update policy', error);
+      toast({
+        title: 'Policy update failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -336,7 +426,7 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Overview
@@ -355,6 +445,10 @@ const Dashboard = () => {
             <TabsTrigger value="insights" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               AI Insights
+            </TabsTrigger>
+            <TabsTrigger value="apps" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Apps
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -620,6 +714,65 @@ const Dashboard = () => {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* Apps Tab */}
+          <TabsContent value="apps" className="space-y-6">
+            <h2 className="text-2xl font-bold text-foreground">App Controls</h2>
+
+            {!currentDevice ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No active device</h3>
+                  <p className="text-muted-foreground">Pair a device to manage app policies.</p>
+                </CardContent>
+              </Card>
+            ) : apps.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No apps reported yet</h3>
+                  <p className="text-muted-foreground">Once {currentDeviceName} reports installed apps, they'll appear here.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-8">
+                <div>
+                  <div className="mb-3">
+                    <h3 className="text-xl font-semibold">Device-level policies</h3>
+                    <p className="text-sm text-muted-foreground">Rules applied to {currentDeviceName}.</p>
+                  </div>
+                  <div className="space-y-3">
+                    {apps.map((app: any) => (
+                      <AppRailItem
+                        key={`dev-${app.app_id}`}
+                        app={app}
+                        policy={devicePolicies[app.app_id]}
+                        onChange={(patch) => handlePolicyChange('device', app.app_id, patch)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-3">
+                    <h3 className="text-xl font-semibold">Child-level policies</h3>
+                    <p className="text-sm text-muted-foreground">Rules applied to {selectedChildName} regardless of device.</p>
+                  </div>
+                  <div className="space-y-3">
+                    {apps.map((app: any) => (
+                      <AppRailItem
+                        key={`child-${app.app_id}`}
+                        app={app}
+                        policy={childPolicies[app.app_id]}
+                        onChange={(patch) => handlePolicyChange('child', app.app_id, patch)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           {/* AI Insights Tab */}

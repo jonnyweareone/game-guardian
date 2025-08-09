@@ -46,3 +46,15 @@ export async function upsertPolicy(input: {
   if (error) throw error;
   return data;
 }
+
+// New: List policies for a given subject
+export async function listPolicies(subject_type: 'device' | 'child', subject_id: string) {
+  const { data, error } = await supabase
+    .from('app_policies')
+    .select('*')
+    .eq('subject_type', subject_type)
+    .eq('subject_id', subject_id);
+  if (error) throw error;
+  return data;
+}
+
