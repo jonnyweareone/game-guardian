@@ -100,6 +100,75 @@ export type Database = {
           },
         ]
       }
+      app_activity: {
+        Row: {
+          app_id: string
+          child_id: string | null
+          created_at: string
+          device_id: string
+          duration_seconds: number | null
+          id: string
+          session_end: string | null
+          session_start: string
+        }
+        Insert: {
+          app_id: string
+          child_id?: string | null
+          created_at?: string
+          device_id: string
+          duration_seconds?: number | null
+          id?: string
+          session_end?: string | null
+          session_start?: string
+        }
+        Update: {
+          app_id?: string
+          child_id?: string | null
+          created_at?: string
+          device_id?: string
+          duration_seconds?: number | null
+          id?: string
+          session_end?: string | null
+          session_start?: string
+        }
+        Relationships: []
+      }
+      app_category_policies: {
+        Row: {
+          allowed: boolean
+          category: string
+          created_at: string
+          daily_limit_minutes: number | null
+          enforced_hours: string[] | null
+          id: string
+          subject_id: string
+          subject_type: string
+          updated_at: string
+        }
+        Insert: {
+          allowed?: boolean
+          category: string
+          created_at?: string
+          daily_limit_minutes?: number | null
+          enforced_hours?: string[] | null
+          id?: string
+          subject_id: string
+          subject_type: string
+          updated_at?: string
+        }
+        Update: {
+          allowed?: boolean
+          category?: string
+          created_at?: string
+          daily_limit_minutes?: number | null
+          enforced_hours?: string[] | null
+          id?: string
+          subject_id?: string
+          subject_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_groups: {
         Row: {
           created_at: string
@@ -318,6 +387,30 @@ export type Database = {
           },
         ]
       }
+      child_time_tokens: {
+        Row: {
+          child_id: string
+          created_at: string
+          delta_minutes: number
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          delta_minutes: number
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          delta_minutes?: number
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       children: {
         Row: {
           age: number | null
@@ -465,11 +558,14 @@ export type Database = {
           icon_url: string | null
           id: string
           last_seen: string | null
+          last_used_at: string | null
           name: string
           pegi_descriptors: string[] | null
           pegi_rating: number | null
           platform: string | null
           publisher: string | null
+          source: string | null
+          version: string | null
           website: string | null
         }
         Insert: {
@@ -481,11 +577,14 @@ export type Database = {
           icon_url?: string | null
           id?: string
           last_seen?: string | null
+          last_used_at?: string | null
           name: string
           pegi_descriptors?: string[] | null
           pegi_rating?: number | null
           platform?: string | null
           publisher?: string | null
+          source?: string | null
+          version?: string | null
           website?: string | null
         }
         Update: {
@@ -497,11 +596,14 @@ export type Database = {
           icon_url?: string | null
           id?: string
           last_seen?: string | null
+          last_used_at?: string | null
           name?: string
           pegi_descriptors?: string[] | null
           pegi_rating?: number | null
           platform?: string | null
           publisher?: string | null
+          source?: string | null
+          version?: string | null
           website?: string | null
         }
         Relationships: []
@@ -561,6 +663,66 @@ export type Database = {
             referencedColumns: ["device_id"]
           },
         ]
+      }
+      device_commands: {
+        Row: {
+          cmd: string
+          created_at: string
+          device_id: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          cmd: string
+          created_at?: string
+          device_id: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          cmd?: string
+          created_at?: string
+          device_id?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      device_heartbeats: {
+        Row: {
+          battery: number | null
+          child_id: string | null
+          created_at: string
+          device_id: string
+          id: string
+          ip_address: string | null
+          ssid: string | null
+        }
+        Insert: {
+          battery?: number | null
+          child_id?: string | null
+          created_at?: string
+          device_id: string
+          id?: string
+          ip_address?: string | null
+          ssid?: string | null
+        }
+        Update: {
+          battery?: number | null
+          child_id?: string | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          ip_address?: string | null
+          ssid?: string | null
+        }
+        Relationships: []
       }
       devices: {
         Row: {
@@ -822,7 +984,22 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      rpc_issue_command: {
+        Args: { _device: string; _cmd: string; _payload?: Json }
+        Returns: {
+          cmd: string
+          created_at: string
+          device_id: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          status: string
+        }
+      }
+      rpc_set_active_child: {
+        Args: { _device: string; _child: string }
+        Returns: boolean
+      }
     }
     Enums: {
       alert_type:

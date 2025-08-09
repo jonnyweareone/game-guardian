@@ -83,6 +83,9 @@ serve(async (req) => {
               pegi_descriptors: a.pegi?.descriptors ?? null,
               publisher: a.publisher ?? null,
               website: a.website ?? null,
+              source: a.source ?? null,
+              version: a.version ?? null,
+              last_used_at: a.last_used_at ?? null,
               last_seen: new Date().toISOString(),
             },
             { onConflict: 'device_code,app_id' }
@@ -136,15 +139,70 @@ serve(async (req) => {
 
     // Process different types of data
     if (data.heartbeat) {
-      // Update device status
+      // Update device status and store heartbeat
       await supabase
         .from('devices')
-        .update({ 
+        .update({
           updated_at: new Date().toISOString(),
         })
         .eq('id', device.id);
 
+      // Insert heartbeat details (if provided)
+      await supabase
+        .from('device_heartbeats')
+        .insert({
+          device_id: device.id,
+          child_id: device.child_id ?? null,
+          battery: (data as any).heartbeat?.battery ?? null,
+          ip_address: (data as any).heartbeat?.ip ?? null,
+          ssid: (data as any).heartbeat?.ssid ?? null,
+        });
+
       console.log('Processed heartbeat for device:', deviceId);
+    }
+
+    // App activity events
+    if ((data as any).type === 'app_activity') {
+      const ev = (data as any);
+      const appId = ev.app_id as string;
+      const timestamp = ev.timestamp ? new Date(ev.timestamp).toISOString() : new Date().toISOString();
+
+      if (ev.action === 'start') {
+        const { error } = await supabase
+          .from('app_activity')
+          .insert({
+            device_id: device.id,
+            child_id: device.child_id ?? null,
+            app_id: appId,
+            session_start: timestamp,
+          });
+        if (error) throw error;
+      } else if (ev.action === 'stop') {
+        const { data: sessions, error: qErr } = await supabase
+          .from('app_activity')
+          .select('id, session_start')
+          .eq('device_id', device.id)
+          .eq('app_id', appId)
+          .is('session_end', null)
+          .order('session_start', { ascending: false })
+          .limit(1);
+        if (qErr) throw qErr;
+        if (sessions && sessions.length > 0) {
+          const sess = sessions[0] as any;
+          const endIso = timestamp;
+          const durationSec = Math.max(0, Math.floor((new Date(endIso).getTime() - new Date(sess.session_start).getTime()) / 1000));
+          const { error: upErr } = await supabase
+            .from('app_activity')
+            .update({ session_end: endIso, duration_seconds: durationSec })
+            .eq('id', sess.id);
+          if (upErr) throw upErr;
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, device_id: deviceId, type: 'app_activity', processed_at: new Date().toISOString() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
     }
 
     if (data.conversation_data) {
