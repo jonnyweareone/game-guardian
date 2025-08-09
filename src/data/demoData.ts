@@ -238,7 +238,11 @@ export const demoInsights = {
 export const demoChildAppsByChildId: Record<string, Array<{ app_id: string; name: string; icon_url?: string; category?: string }>> = {
   'demo-child-1': [
     { app_id: 'minecraft', name: 'Minecraft', category: 'Game', icon_url: 'https://assets.ggai.dev/icons/minecraft.png' },
+    { app_id: 'fortnite', name: 'Fortnite', category: 'Game', icon_url: 'https://assets.ggai.dev/icons/fortnite.png' },
+    { app_id: 'roblox', name: 'Roblox', category: 'Game', icon_url: 'https://assets.ggai.dev/icons/roblox.png' },
     { app_id: 'youtube', name: 'YouTube', category: 'Streaming', icon_url: 'https://assets.ggai.dev/icons/youtube.png' },
+    { app_id: 'word', name: 'Microsoft Word', category: 'Education', icon_url: '/placeholder.svg' },
+    { app_id: 'excel', name: 'Microsoft Excel', category: 'Education', icon_url: '/placeholder.svg' },
     { app_id: 'discord', name: 'Discord', category: 'Messaging', icon_url: 'https://assets.ggai.dev/icons/discord.png' },
   ],
   'demo-child-2': [
