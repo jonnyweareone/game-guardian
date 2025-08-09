@@ -18,8 +18,9 @@ import AddChildDialog from '@/components/AddChildDialog';
 import PairDeviceDialog from '@/components/PairDeviceDialog';
 import { demoChildren, demoDevices, demoAlerts, demoNotifications, demoConversations, demoInsights } from '@/data/demoData';
 import { AppRailItem, DeviceAppItem, AppPolicyPatch } from '@/components/AppRailItem';
-import { listDeviceApps, upsertPolicy, listPolicies } from '@/lib/api';
+import { listDeviceApps, upsertPolicy, listPolicies, assignChildToDevice, setActiveChild, issueCommand } from '@/lib/api';
 import ChildControls from '@/components/ChildControls';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DashboardAlert {
   id: string;
@@ -323,6 +324,64 @@ const Dashboard = () => {
     }
   };
 
+  // Device management handlers
+  const handleAssignChildToDevice = async (deviceId: string, childId: string | 'none') => {
+    try {
+      if (isDemoMode) {
+        setDevices(prev => prev.map(d => d.id === deviceId ? {
+          ...d,
+          child_id: childId === 'none' ? null : (childId as string),
+          child_name: childId === 'none' ? undefined : (children.find(c => c.id === childId)?.name)
+        } : d));
+        toast({ title: 'Assigned', description: 'Device assignment updated (demo).' });
+        return;
+      }
+
+      if (childId === 'none') {
+        const { error } = await supabase.from('devices').update({ child_id: null }).eq('id', deviceId);
+        if (error) throw error;
+      } else {
+        await assignChildToDevice(deviceId, childId as string, false);
+      }
+
+      await fetchDashboardData();
+      toast({ title: 'Assigned', description: 'Device assignment updated.' });
+    } catch (error: any) {
+      toast({ title: 'Assignment failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleSetActiveChild = async (deviceId: string, childId: string | null) => {
+    try {
+      if (isDemoMode) {
+        toast({ title: 'Demo mode', description: 'Active child change simulated.' });
+        return;
+      }
+      if (!childId) {
+        toast({ title: 'Select a child', description: 'Assign a child first.', variant: 'destructive' });
+        return;
+      }
+      await setActiveChild(deviceId, childId);
+      await fetchDashboardData();
+      toast({ title: 'Active child set', description: 'Device active profile updated.' });
+    } catch (error: any) {
+      toast({ title: 'Failed to set active', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleLockdown = async (deviceId: string) => {
+    try {
+      if (isDemoMode) {
+        toast({ title: 'Lockdown (demo)', description: 'Simulated lockdown command sent.' });
+        return;
+      }
+      await issueCommand(deviceId, 'lockdown', { enabled: true });
+      toast({ title: 'Lockdown issued', description: 'The device was locked down.' });
+    } catch (error: any) {
+      toast({ title: 'Lockdown failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -441,7 +500,7 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Overview
@@ -468,6 +527,10 @@ const Dashboard = () => {
             <TabsTrigger value="apps" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Apps
+            </TabsTrigger>
+            <TabsTrigger value="devices" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Devices
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -754,6 +817,56 @@ const Dashboard = () => {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* Devices Tab */}
+          <TabsContent value="devices" className="space-y-6">
+            <h2 className="text-2xl font-bold text-foreground">Devices</h2>
+
+            {devices.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No devices paired</h3>
+                  <p className="text-muted-foreground">Pair a device to manage assignments and controls.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {devices.map((d) => (
+                  <Card key={d.id}>
+                    <CardContent className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <div className="font-medium">{d.device_name || d.device_code}</div>
+                        {d.device_code && (
+                          <div className="text-sm text-muted-foreground">Code: {d.device_code}</div>
+                        )}
+                        {d.child_name && (
+                          <div className="text-sm text-muted-foreground">Assigned to: {d.child_name}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="min-w-[220px]">
+                          <Select value={d.child_id || 'none'} onValueChange={(v) => handleAssignChildToDevice(d.id, v as any)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Assign to child" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Unassigned</SelectItem>
+                              {children.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button variant="outline" disabled={!d.child_id} onClick={() => handleSetActiveChild(d.id, d.child_id || null)}>Set Active</Button>
+                        <Button variant="destructive" onClick={() => handleLockdown(d.id)}>Lockdown</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Apps Tab */}

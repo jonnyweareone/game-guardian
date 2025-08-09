@@ -139,12 +139,12 @@ const PairDeviceDialog = ({ children, onDevicePaired }: PairDeviceDialogProps) =
           </div>
           <div className="space-y-2">
             <Label htmlFor="child-assignment">Assign to Child (optional)</Label>
-            <Select value={selectedChildId} onValueChange={setSelectedChildId}>
+            <Select value={selectedChildId || 'none'} onValueChange={(v) => setSelectedChildId(v === 'none' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a child" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No specific child</SelectItem>
+                <SelectItem value="none">No specific child</SelectItem>
                 {children.map((child) => (
                   <SelectItem key={child.id} value={child.id}>
                     {child.name}

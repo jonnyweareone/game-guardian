@@ -137,6 +137,104 @@ serve(async (req) => {
       );
     }
 
+    // Additional event types handled explicitly before generic processors
+    if ((data as any).type === 'profile_active') {
+      const newChildId = (data as any).child_id ?? null;
+      // Set active child on device and maintain assignments
+      await supabase
+        .from('devices')
+        .update({ child_id: newChildId, updated_at: new Date().toISOString() })
+        .eq('id', device.id);
+
+      if (newChildId) {
+        // Ensure assignment exists and is active
+        await supabase
+          .from('device_child_assignments')
+          .upsert({ device_id: device.id, child_id: newChildId, is_active: true, updated_at: new Date().toISOString() }, { onConflict: 'device_id,child_id' });
+        // Deactivate other assignments for this device
+        await supabase
+          .from('device_child_assignments')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('device_id', device.id)
+          .neq('child_id', newChildId);
+      } else {
+        // If unsetting child, mark all assignments inactive
+        await supabase
+          .from('device_child_assignments')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('device_id', device.id);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, device_id: deviceId, type: 'profile_active', processed_at: new Date().toISOString() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    if ((data as any).type === 'network_status') {
+      const ns = (data as any).network ?? (data as any);
+      await supabase
+        .from('devices')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', device.id);
+
+      await supabase
+        .from('device_heartbeats')
+        .insert({
+          device_id: device.id,
+          child_id: device.child_id ?? null,
+          battery: ns?.battery ?? (ns?.heartbeat?.battery ?? null),
+          ip_address: ns?.ip ?? (ns?.heartbeat?.ip ?? null),
+          ssid: ns?.ssid ?? (ns?.heartbeat?.ssid ?? null),
+        });
+
+      return new Response(
+        JSON.stringify({ success: true, device_id: deviceId, type: 'network_status', processed_at: new Date().toISOString() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    if ((data as any).type === 'content_alert') {
+      const alertPayload = (data as any).alert ?? (data as any).alert_data ?? {};
+      const level = alertPayload.risk_level ?? 'high';
+      const { data: alertRow, error: alertErr } = await supabase
+        .from('alerts')
+        .insert({
+          device_id: device.id,
+          child_id: device.child_id ?? null,
+          alert_type: alertPayload.alert_type ?? 'content_alert',
+          risk_level: level,
+          ai_summary: alertPayload.ai_summary ?? 'Content policy violation detected',
+          transcript_snippet: alertPayload.transcript_snippet ?? null,
+          confidence_score: alertPayload.confidence_score ?? null,
+          emotional_impact: alertPayload.emotional_impact ?? null,
+          social_context: alertPayload.social_context ?? null,
+        })
+        .select()
+        .single();
+      if (alertErr) throw alertErr;
+
+      if (['high', 'critical'].includes(level)) {
+        await supabase
+          .from('parent_notifications')
+          .insert({
+            parent_id: (device as any).parent_id,
+            child_id: device.child_id ?? null,
+            notification_type: 'alert',
+            title: level === 'critical' ? '🚨 URGENT: Critical content alert' : '⚠️ High priority content alert',
+            message: alertPayload.ai_summary ?? 'Review recent activity for potential risks.',
+            priority: level,
+            action_required: true,
+            related_alert_id: alertRow.id,
+          });
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, device_id: deviceId, type: 'content_alert', processed_at: new Date().toISOString() }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
     // Process different types of data
     if (data.heartbeat) {
       // Update device status and store heartbeat
