@@ -68,7 +68,7 @@ export default function ChildControls({
         if (policy) {
           setDailyMinutes(policy.daily_total_minutes ?? '');
           // Bedtime stored as int4range (text), keep as-is for now
-          setBedtime(policy.bedtime ?? '');
+          setBedtime(typeof policy.bedtime === 'string' ? policy.bedtime : '');
         } else {
           setDailyMinutes('');
           setBedtime('');
