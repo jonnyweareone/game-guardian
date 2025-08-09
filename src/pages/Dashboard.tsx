@@ -371,6 +371,15 @@ const Dashboard = () => {
     "applicationCategory": "ParentalControlSoftware"
   };
 
+  // Resolve current device and names for the Apps tab
+  const currentDevice = (selectedChildId
+    ? devices.find(d => d.child_id === selectedChildId && d.is_active) || devices.find(d => d.is_active)
+    : devices.find(d => d.is_active)) || null;
+  const currentDeviceName = currentDevice?.device_name || currentDevice?.device_code || 'Device';
+  const selectedChildName = selectedChildId
+    ? (children.find(c => c.id === selectedChildId)?.name || 'Child')
+    : (currentDevice?.child_name || 'Child');
+
   return (
     <>
       <SEOHead
