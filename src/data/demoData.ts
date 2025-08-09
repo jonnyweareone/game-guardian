@@ -233,3 +233,65 @@ export const demoInsights = {
     'Jake': ['CoolPlayer123', 'FriendlyGamer456']
   }
 };
+
+// --- Demo data for new controls ---
+export const demoChildAppsByChildId: Record<string, Array<{ app_id: string; name: string; icon_url?: string; category?: string }>> = {
+  'demo-child-1': [
+    { app_id: 'minecraft', name: 'Minecraft', category: 'Game', icon_url: 'https://assets.ggai.dev/icons/minecraft.png' },
+    { app_id: 'youtube', name: 'YouTube', category: 'Streaming', icon_url: 'https://assets.ggai.dev/icons/youtube.png' },
+    { app_id: 'discord', name: 'Discord', category: 'Messaging', icon_url: 'https://assets.ggai.dev/icons/discord.png' },
+  ],
+  'demo-child-2': [
+    { app_id: 'mario-kart', name: 'Mario Kart 8', category: 'Game', icon_url: 'https://assets.ggai.dev/icons/mario-kart.png' },
+    { app_id: 'nintendo-online', name: 'Nintendo Online', category: 'Social', icon_url: 'https://assets.ggai.dev/icons/nintendo.png' },
+  ],
+  'demo-child-3': [
+    { app_id: 'fortnite', name: 'Fortnite', category: 'Game', icon_url: 'https://assets.ggai.dev/icons/fortnite.png' },
+    { app_id: 'xbox-live', name: 'Xbox Live', category: 'Social', icon_url: 'https://assets.ggai.dev/icons/xbox.png' },
+  ],
+};
+
+export const demoChildTimePolicyByChildId: Record<string, { daily_total_minutes: number | null; bedtime: string | null }> = {
+  'demo-child-1': { daily_total_minutes: 90, bedtime: '[21,7)' },
+  'demo-child-2': { daily_total_minutes: 60, bedtime: '[20,7)' },
+  'demo-child-3': { daily_total_minutes: 120, bedtime: '[22,6)' },
+};
+
+export const demoCategoryPoliciesByChildId: Record<string, Record<string, { allowed: boolean; daily_limit_minutes: number | null }>> = {
+  'demo-child-1': {
+    Game: { allowed: true, daily_limit_minutes: 60 },
+    Streaming: { allowed: true, daily_limit_minutes: 30 },
+    Messaging: { allowed: true, daily_limit_minutes: null },
+    Social: { allowed: false, daily_limit_minutes: null },
+    App: { allowed: true, daily_limit_minutes: null },
+    Education: { allowed: true, daily_limit_minutes: null },
+    Browser: { allowed: true, daily_limit_minutes: 20 },
+    Other: { allowed: true, daily_limit_minutes: null },
+  },
+  'demo-child-2': {
+    Game: { allowed: true, daily_limit_minutes: 45 },
+    Streaming: { allowed: true, daily_limit_minutes: 20 },
+    Messaging: { allowed: true, daily_limit_minutes: null },
+    Social: { allowed: true, daily_limit_minutes: 15 },
+    App: { allowed: true, daily_limit_minutes: null },
+    Education: { allowed: true, daily_limit_minutes: null },
+    Browser: { allowed: true, daily_limit_minutes: 15 },
+    Other: { allowed: true, daily_limit_minutes: null },
+  },
+  'demo-child-3': {
+    Game: { allowed: true, daily_limit_minutes: 90 },
+    Streaming: { allowed: false, daily_limit_minutes: null },
+    Messaging: { allowed: true, daily_limit_minutes: null },
+    Social: { allowed: false, daily_limit_minutes: null },
+    App: { allowed: true, daily_limit_minutes: null },
+    Education: { allowed: true, daily_limit_minutes: null },
+    Browser: { allowed: true, daily_limit_minutes: 10 },
+    Other: { allowed: true, daily_limit_minutes: null },
+  },
+};
+
+export const demoCurrentActivityByChildId: Record<string, { app_id: string; session_start: string } | null> = {
+  'demo-child-1': { app_id: 'minecraft', session_start: new Date(Date.now() - 15 * 60 * 1000).toISOString() },
+  'demo-child-2': null,
+  'demo-child-3': { app_id: 'fortnite', session_start: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
+};

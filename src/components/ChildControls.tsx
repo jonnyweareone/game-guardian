@@ -50,9 +50,33 @@ export default function ChildControls({
 
   useEffect(() => {
     if (!childId || isDemoMode) {
-      setApps([]);
-      setLoadingApps(false);
-      setLoadingTime(false);
+      // Load demo data when in demo mode
+      if (isDemoMode) {
+        import('@/data/demoData').then((mod) => {
+          const apps = (mod as any).demoChildAppsByChildId?.[childId] ?? [];
+          setApps(apps);
+          const tp = (mod as any).demoChildTimePolicyByChildId?.[childId] ?? null;
+          if (tp) {
+            setDailyMinutes(tp.daily_total_minutes ?? '');
+            setBedtime(tp.bedtime ?? '');
+          } else {
+            setDailyMinutes('');
+            setBedtime('');
+          }
+          // Category policies + current activity demo
+          const cats = (mod as any).demoCategoryPoliciesByChildId?.[childId] ?? {};
+          setCategoryPolicies(cats);
+          const cur = (mod as any).demoCurrentActivityByChildId?.[childId] ?? null;
+          setCurrentActivity(cur);
+
+          setLoadingApps(false);
+          setLoadingTime(false);
+        });
+      } else {
+        setApps([]);
+        setLoadingApps(false);
+        setLoadingTime(false);
+      }
       return;
     }
 
