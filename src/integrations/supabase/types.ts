@@ -78,11 +78,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
             foreignKeyName: "alerts_device_id_fkey"
             columns: ["device_id"]
             isOneToOne: false
             referencedRelation: "devices"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["device_id"]
           },
         ]
       }
@@ -264,6 +278,45 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      child_time_policies: {
+        Row: {
+          bedtime: unknown | null
+          child_id: string
+          created_at: string | null
+          daily_total_minutes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bedtime?: unknown | null
+          child_id: string
+          created_at?: string | null
+          daily_total_minutes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bedtime?: unknown | null
+          child_id?: string
+          created_at?: string | null
+          daily_total_minutes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_time_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_time_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
       }
       children: {
         Row: {
@@ -453,6 +506,62 @@ export type Database = {
         }
         Relationships: []
       }
+      device_child_assignments: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          device_id: string
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          device_id: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          device_id?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_child_assignments_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_child_assignments_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "device_child_assignments_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_child_assignments_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["device_id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           child_id: string | null
@@ -494,6 +603,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "devices_parent_id_fkey"
@@ -689,7 +805,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_effective_app_policy: {
+        Row: {
+          allowed: boolean | null
+          app_id: string | null
+          category: string | null
+          child_id: string | null
+          daily_limit_minutes: number | null
+          device_id: string | null
+          enforced_hours: string[] | null
+          icon_url: string | null
+          is_active: boolean | null
+          name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

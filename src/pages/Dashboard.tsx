@@ -19,6 +19,7 @@ import PairDeviceDialog from '@/components/PairDeviceDialog';
 import { demoChildren, demoDevices, demoAlerts, demoNotifications, demoConversations, demoInsights } from '@/data/demoData';
 import { AppRailItem, DeviceAppItem, AppPolicyPatch } from '@/components/AppRailItem';
 import { listDeviceApps, upsertPolicy, listPolicies } from '@/lib/api';
+import ChildControls from '@/components/ChildControls';
 
 interface DashboardAlert {
   id: string;
@@ -48,7 +49,6 @@ interface Device {
   child_id?: string | null;
   child_name?: string;
 }
-
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -380,6 +380,12 @@ const Dashboard = () => {
     ? (children.find(c => c.id === selectedChildId)?.name || 'Child')
     : (currentDevice?.child_name || 'Child');
 
+  // When the user selects a child in the switcher, land on Child Controls by default
+  const handleChildSelect = (childId: string | null) => {
+    setSelectedChildId(childId);
+    if (childId) setActiveTab('child-controls');
+  };
+
   return (
     <>
       <SEOHead
@@ -418,7 +424,7 @@ const Dashboard = () => {
         <ChildSwitcher
           children={children}
           selectedChildId={selectedChildId}
-          onChildSelect={setSelectedChildId}
+          onChildSelect={handleChildSelect}
           alertCounts={alertCounts}
         />
 
@@ -435,10 +441,14 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="child-controls" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Child Controls
             </TabsTrigger>
             <TabsTrigger value="alerts" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
@@ -639,6 +649,27 @@ const Dashboard = () => {
                   <strong>Get started:</strong> Add your first child profile and pair a Game Guardian device to begin monitoring.
                 </AlertDescription>
               </Alert>
+            )}
+          </TabsContent>
+
+          {/* Child Controls Tab */}
+          <TabsContent value="child-controls" className="space-y-6">
+            {!selectedChildId ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Select a child</h3>
+                  <p className="text-muted-foreground">Choose a child to manage time, games, and apps.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <ChildControls
+                childId={selectedChildId}
+                childName={selectedChildName}
+                isDemoMode={isDemoMode}
+                childPolicies={childPolicies}
+                onPolicyChange={(appId, patch) => handlePolicyChange('child', appId, patch)}
+              />
             )}
           </TabsContent>
 
