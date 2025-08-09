@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import SEOHead from '@/components/SEOHead';
+import { usePasskeys } from '@/hooks/usePasskeys';
 
 const Security = () => {
   const { user } = useAuth();
@@ -30,6 +31,28 @@ const Security = () => {
     };
     fetchStatus();
   }, [user]);
+
+  // Passkeys (WebAuthn)
+  const { registerPasskey, authenticatePasskey, listPasskeys } = usePasskeys();
+  const [passkeys, setPasskeys] = useState<any[]>([]);
+  const [pkLoading, setPkLoading] = useState(false);
+  const [pkError, setPkError] = useState<string | null>(null);
+
+  const loadPasskeys = async () => {
+    if (!user) return;
+    try {
+      const data = await listPasskeys();
+      setPasskeys(data);
+    } catch (e) {
+      // noop
+    }
+  };
+
+  useEffect(() => {
+    loadPasskeys();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
 
   const handleSetup = async () => {
     try {
@@ -151,6 +174,45 @@ const Security = () => {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Passkeys (WebAuthn)</CardTitle>
+              <CardDescription>Register a device-based passkey and verify it on this device.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pkError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription>{pkError}</AlertDescription>
+                </Alert>
+              )}
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-3">
+                  <Button onClick={async () => { setPkLoading(true); setPkError(null); try { await registerPasskey(); await loadPasskeys(); } catch (e:any) { setPkError(e?.message || 'Passkey setup failed'); } finally { setPkLoading(false); } }} disabled={pkLoading}>
+                    Register new Passkey
+                  </Button>
+                  <Button variant="outline" onClick={async () => { setPkLoading(true); setPkError(null); try { await authenticatePasskey(); } catch (e:any) { setPkError(e?.message || 'Passkey authentication failed'); } finally { setPkLoading(false); } }} disabled={pkLoading || passkeys.length===0}>
+                    Test Passkey
+                  </Button>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Your registered passkeys:</p>
+                  {passkeys.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No passkeys yet.</p>
+                  ) : (
+                    <ul className="divide-y rounded border">
+                      {passkeys.map((p:any) => (
+                        <li key={p.id} className="flex items-center justify-between p-3 text-sm">
+                          <span className="text-foreground">{p.device_type || 'passkey'} • {new Date(p.created_at).toLocaleString()}</span>
+                          <span className="text-muted-foreground">{p.backed_up ? 'Backed up' : 'Not backed up'}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </section>

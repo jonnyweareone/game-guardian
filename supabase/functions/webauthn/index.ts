@@ -184,9 +184,8 @@ Deno.serve(async (req) => {
         credential_id,
         public_key,
         counter,
-        device_name: friendlyName || credentialDeviceType || 'Passkey',
+        device_type: credentialDeviceType || 'platform',
         backed_up: credentialBackedUp,
-        attestation_fmt: attestationObject ? 'none' : 'none',
       });
 
       if (insertErr) {
