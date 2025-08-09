@@ -86,6 +86,152 @@ export type Database = {
           },
         ]
       }
+      app_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      child_app_groups: {
+        Row: {
+          action: Database["public"]["Enums"]["rule_action"]
+          child_id: string
+          created_at: string
+          group_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["rule_action"]
+          child_id: string
+          created_at?: string
+          group_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["rule_action"]
+          child_id?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_app_groups_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "app_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      child_app_rules: {
+        Row: {
+          action: Database["public"]["Enums"]["rule_action"]
+          app_id: string
+          child_id: string
+          created_at: string
+          id: string
+          minutes_per_day: number
+          updated_at: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["rule_action"]
+          app_id: string
+          child_id: string
+          created_at?: string
+          id?: string
+          minutes_per_day?: number
+          updated_at?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["rule_action"]
+          app_id?: string
+          child_id?: string
+          created_at?: string
+          id?: string
+          minutes_per_day?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      child_dns_profiles: {
+        Row: {
+          bypass_reason: string | null
+          bypass_until: string | null
+          child_id: string
+          created_at: string
+          nextdns_config: string
+          school_hours_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          bypass_reason?: string | null
+          bypass_until?: string | null
+          child_id: string
+          created_at?: string
+          nextdns_config: string
+          school_hours_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          bypass_reason?: string | null
+          bypass_until?: string | null
+          child_id?: string
+          created_at?: string
+          nextdns_config?: string
+          school_hours_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      child_game_rules: {
+        Row: {
+          action: Database["public"]["Enums"]["rule_action"]
+          child_id: string
+          created_at: string
+          game_id: string
+          id: string
+          minutes_per_day: number
+          updated_at: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["rule_action"]
+          child_id: string
+          created_at?: string
+          game_id: string
+          id?: string
+          minutes_per_day?: number
+          updated_at?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["rule_action"]
+          child_id?: string
+          created_at?: string
+          game_id?: string
+          id?: string
+          minutes_per_day?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       children: {
         Row: {
           age: number | null
@@ -352,6 +498,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_security: {
+        Row: {
+          created_at: string
+          has_2fa: boolean
+          id: string
+          passkeys: Json
+          recovery_codes: string[]
+          totp_enabled: boolean
+          totp_secret: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          has_2fa?: boolean
+          id?: string
+          passkeys?: Json
+          recovery_codes?: string[]
+          totp_enabled?: boolean
+          totp_secret?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          has_2fa?: boolean
+          id?: string
+          passkeys?: Json
+          recovery_codes?: string[]
+          totp_enabled?: boolean
+          totp_secret?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -368,6 +550,7 @@ export type Database = {
         | "inappropriate_sharing"
         | "cyberbullying"
       risk_level: "low" | "medium" | "high" | "critical"
+      rule_action: "allow" | "block" | "timebox"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -504,6 +687,7 @@ export const Constants = {
         "cyberbullying",
       ],
       risk_level: ["low", "medium", "high", "critical"],
+      rule_action: ["allow", "block", "timebox"],
     },
   },
 } as const
