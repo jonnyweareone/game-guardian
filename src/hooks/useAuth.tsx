@@ -9,6 +9,9 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  getTotpSetup: () => Promise<any>;
+  verifyTotp: (code: string) => Promise<any>;
+  rotateRecoveryCodes: () => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,6 +69,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
   };
 
+  const getTotpSetup = async () => {
+    return supabase.functions.invoke('auth-2fa', { body: { action: 'totp_setup' } });
+  };
+
+  const verifyTotp = async (code: string) => {
+    return supabase.functions.invoke('auth-2fa', { body: { action: 'totp_verify', code } });
+  };
+
+  const rotateRecoveryCodes = async () => {
+    return supabase.functions.invoke('auth-2fa', { body: { action: 'recovery_rotate' } });
+  };
+
   const value = {
     user,
     session,
@@ -73,6 +88,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signUp,
     signOut,
+    // 2FA helpers
+    getTotpSetup,
+    verifyTotp,
+    rotateRecoveryCodes,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

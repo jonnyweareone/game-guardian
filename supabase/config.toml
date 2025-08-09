@@ -1,1 +1,7 @@
 project_id = "xzxjwuzwltoapifcyzww"
+
+[functions.auth-2fa]
+verify_jwt = true
+
+[functions.device-activate]
+verify_jwt = true

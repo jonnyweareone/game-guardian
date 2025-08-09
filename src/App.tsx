@@ -20,6 +20,7 @@ import PressReleases from "./pages/PressReleases";
 import HowToGuide from "./pages/HowToGuide";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
+import Security from "./pages/Security";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,11 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/security" element={
+              <ProtectedRoute>
+                <Security />
               </ProtectedRoute>
             } />
             

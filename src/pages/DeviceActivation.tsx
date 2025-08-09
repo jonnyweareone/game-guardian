@@ -76,6 +76,9 @@ const DeviceActivation = () => {
 
       if (error) throw error;
 
+      // Finalize activation via Edge Function (idempotent)
+      await supabase.functions.invoke('device-activate', { body: { device_code: deviceId } });
+
       setIsActivated(true);
       toast({
         title: "Device activated successfully!",
