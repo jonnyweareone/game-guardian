@@ -182,3 +182,30 @@ export async function issueCommand(deviceId: string, cmd: string, payload?: any)
   if (error) throw error;
   return data;
 }
+
+// List category policies for a subject
+export async function listAppCategoryPolicies(subject_type: 'device' | 'child', subject_id: string) {
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
+    .from('app_category_policies')
+    .select('*')
+    .eq('subject_type', subject_type)
+    .eq('subject_id', subject_id);
+  if (error) throw error;
+  return data as Array<{ category: string; allowed: boolean; daily_limit_minutes: number | null; enforced_hours: string[] | null }>;
+}
+
+// Get current activity for a child (open session)
+export async function getCurrentActivity(childId: string) {
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
+    .from('app_activity')
+    .select('app_id, session_start, device_id')
+    .eq('child_id', childId)
+    .is('session_end', null)
+    .order('session_start', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data as { app_id: string; session_start: string; device_id: string } | null;
+}

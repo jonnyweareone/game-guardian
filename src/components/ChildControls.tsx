@@ -10,9 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { AppRailItem, AppPolicyPatch, DeviceAppItem } from '@/components/AppRailItem';
-import { getChildTimePolicy, listChildApps, upsertChildTimePolicy } from '@/lib/api';
+import { getChildTimePolicy, listChildApps, upsertChildTimePolicy, upsertAppCategoryPolicy, listAppCategoryPolicies, addTimeTokens, getCurrentActivity } from '@/lib/api';
 
 type ChildControlsProps = {
   childId: string;
@@ -40,6 +41,12 @@ export default function ChildControls({
   const [bedtime, setBedtime] = useState<string>(''); // int4range encoded e.g. "[21,7)"
   const [savingTime, setSavingTime] = useState(false);
   const [loadingTime, setLoadingTime] = useState(true);
+
+  // Category policies and activity
+  const CATEGORIES = ['Game','App','Social','Education','Streaming','Messaging','Browser','Other'] as const;
+  type Cat = typeof CATEGORIES[number];
+  const [categoryPolicies, setCategoryPolicies] = useState<Record<string, { allowed: boolean; daily_limit_minutes: number | null }>>({});
+  const [currentActivity, setCurrentActivity] = useState<{ app_id: string; session_start: string } | null>(null);
 
   useEffect(() => {
     if (!childId || isDemoMode) {
@@ -85,6 +92,25 @@ export default function ChildControls({
       .finally(() => setLoadingTime(false));
   }, [childId, isDemoMode, toast]);
 
+  // Load category policies and current activity
+  useEffect(() => {
+    if (!childId || isDemoMode) return;
+
+    listAppCategoryPolicies('child', childId)
+      .then((rows) => {
+        const map: Record<string, { allowed: boolean; daily_limit_minutes: number | null }> = {};
+        (rows || []).forEach((r: any) => {
+          map[r.category] = { allowed: !!r.allowed, daily_limit_minutes: r.daily_limit_minutes ?? null };
+        });
+        setCategoryPolicies(map);
+      })
+      .catch((e) => console.error('Load category policies failed', e));
+
+    getCurrentActivity(childId)
+      .then((act) => setCurrentActivity(act))
+      .catch((e) => console.error('Load current activity failed', e));
+  }, [childId, isDemoMode]);
+
   const games = useMemo(() => apps.filter(a => (a.category ?? 'App') === 'Game'), [apps]);
   const otherApps = useMemo(() => apps.filter(a => (a.category ?? 'App') !== 'Game'), [apps]);
 
@@ -114,6 +140,59 @@ export default function ChildControls({
       toast({ title: 'Save failed', description: e.message, variant: 'destructive' });
     } finally {
       setSavingTime(false);
+    }
+  };
+
+  // Helpers
+  const getAppName = (id: string) => {
+    const found = apps.find((a) => a.app_id === id);
+    return found?.name || id;
+  };
+
+  const handleCategoryToggle = async (category: Cat, allowed: boolean) => {
+    if (isDemoMode) {
+      toast({ title: 'Demo mode', description: 'Category changes are disabled in demo mode.' });
+      return;
+    }
+    try {
+      await upsertAppCategoryPolicy({ subject_type: 'child', subject_id: childId, category, allowed });
+      setCategoryPolicies((prev) => ({
+        ...prev,
+        [category]: { allowed, daily_limit_minutes: prev[category]?.daily_limit_minutes ?? null },
+      }));
+      toast({ title: 'Saved', description: `${category} ${allowed ? 'allowed' : 'blocked'}` });
+    } catch (e: any) {
+      toast({ title: 'Save failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleCategoryMinutes = async (category: Cat, minutes: number | null) => {
+    if (isDemoMode) {
+      toast({ title: 'Demo mode', description: 'Category changes are disabled in demo mode.' });
+      return;
+    }
+    try {
+      await upsertAppCategoryPolicy({ subject_type: 'child', subject_id: childId, category, daily_limit_minutes: minutes });
+      setCategoryPolicies((prev) => ({
+        ...prev,
+        [category]: { allowed: prev[category]?.allowed ?? true, daily_limit_minutes: minutes },
+      }));
+      toast({ title: 'Saved', description: `${category} limit updated` });
+    } catch (e: any) {
+      toast({ title: 'Save failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleTokenDelta = async (delta: number) => {
+    if (isDemoMode) {
+      toast({ title: 'Demo mode', description: 'Tokens are disabled in demo mode.' });
+      return;
+    }
+    try {
+      await addTimeTokens(childId, delta, delta > 0 ? 'Bonus time' : 'Deducted');
+      toast({ title: 'Updated', description: `${delta > 0 ? '+' : ''}${delta} minutes` });
+    } catch (e: any) {
+      toast({ title: 'Token update failed', description: e.message, variant: 'destructive' });
     }
   };
 
@@ -164,6 +243,64 @@ export default function ChildControls({
               {savingTime ? 'Saving...' : 'Save'}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+      {/* Now + quick tokens */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Now</CardTitle>
+          <CardDescription>Live activity and quick actions</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            {currentActivity ? (
+              <div>
+                <div className="text-sm text-muted-foreground">Currently playing</div>
+                <div className="text-base font-medium">{getAppName(currentActivity.app_id)}</div>
+                <div className="text-xs text-muted-foreground">since {new Date(currentActivity.session_start).toLocaleTimeString()}</div>
+              </div>
+            ) : (
+              <div className="text-muted-foreground">No active session</div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => handleTokenDelta(15)} disabled={isDemoMode}>+15 min</Button>
+            <Button variant="outline" onClick={() => handleTokenDelta(-15)} disabled={isDemoMode}>-15 min</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Category policies */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Categories</CardTitle>
+          <CardDescription>Allow or limit by category</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {CATEGORIES.map((cat) => {
+            const cp = categoryPolicies[cat] || { allowed: true, daily_limit_minutes: null };
+            return (
+              <div key={cat} className="flex items-center gap-4">
+                <div className="min-w-[140px] font-medium">{cat}</div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">{cp.allowed ? 'Allowed' : 'Blocked'}</Label>
+                  <Switch checked={cp.allowed} onCheckedChange={(v) => handleCategoryToggle(cat as Cat, !!v)} />
+                </div>
+                <div className="ml-auto flex items-center gap-2">
+                  <Label htmlFor={`cat-${cat}-mins`} className="text-sm">Daily (min)</Label>
+                  <Input
+                    id={`cat-${cat}-mins`}
+                    type="number"
+                    inputMode="numeric"
+                    className="w-24"
+                    placeholder="mins"
+                    value={cp.daily_limit_minutes ?? ''}
+                    onChange={(e) => handleCategoryMinutes(cat as Cat, e.target.value ? Number(e.target.value) : null)}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 
