@@ -21,6 +21,7 @@ import HowToGuide from "./pages/HowToGuide";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import Security from "./pages/Security";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset" element={<ResetPassword />} />
             <Route path="/activate" element={<DeviceActivation />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>

@@ -42,6 +42,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    // Clean up any existing auth state to prevent limbo
+    try {
+      // Attempt global sign out (ignore errors)
+      // @ts-ignore - scope is available in supabase-js v2
+      await supabase.auth.signOut({ scope: 'global' } as any);
+    } catch {}
+    try {
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      Object.keys(sessionStorage || {}).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    } catch {}
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -66,7 +85,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Clean up auth state
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      Object.keys(sessionStorage || {}).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      try {
+        // @ts-ignore - scope is available in supabase-js v2
+        await supabase.auth.signOut({ scope: 'global' } as any);
+      } catch {}
+    } finally {
+      // Force full reload to clear state
+      window.location.href = '/auth';
+    }
   };
 
   const getTotpSetup = async () => {

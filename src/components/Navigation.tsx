@@ -1,6 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface NavigationProps {
   transparent?: boolean;
@@ -8,6 +11,7 @@ interface NavigationProps {
 
 const Navigation = ({ transparent = false }: NavigationProps) => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   return (
     <header className={`${transparent ? 'bg-transparent' : 'bg-card/50 backdrop-blur-sm border-b border-border'} sticky top-0 z-50`}>
@@ -28,13 +32,36 @@ const Navigation = ({ transparent = false }: NavigationProps) => {
             <Button variant="ghost" onClick={() => navigate('/security')}>Security</Button>
           </nav>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/auth')}>
-              Sign In
-            </Button>
-            <Button onClick={() => navigate('/auth')}>
-              Get Started
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
+            {!user ? (
+              <>
+                <Button variant="ghost" onClick={() => navigate('/auth')}>
+                  Sign In
+                </Button>
+                <Button onClick={() => navigate('/auth')}>
+                  Get Started
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 focus:outline-none">
+                    <Avatar>
+                      <AvatarFallback>{(user.email?.[0] || 'U').toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="hidden sm:inline text-sm text-foreground">{user.email}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>Dashboard</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/security')}>Security</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>

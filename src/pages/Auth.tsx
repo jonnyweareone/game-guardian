@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { usePasskeys } from '@/hooks/usePasskeys';
 import SEOHead from '@/components/SEOHead';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState('signin');
@@ -140,26 +141,27 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full"
-                    onClick={async () => {
-                      try {
-                        setIsLoading(true);
-                        await authenticatePasskey();
-                        toast({ title: 'Authenticated with passkey', description: 'Welcome back!' });
-                        navigate('/dashboard');
-                      } catch (e: any) {
-                        setError(e?.message || 'Passkey sign-in failed');
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
-                  >
-                    Use Passkey
-                  </Button>
+<div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="px-0"
+                      onClick={async () => {
+                        try {
+                          setIsLoading(true);
+                          await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset` });
+                          toast({ title: 'Password reset email sent', description: 'Check your inbox for further instructions.' });
+                        } catch (e: any) {
+                          setError(e?.message || 'Failed to send reset email');
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                      disabled={isLoading || !email}
+                    >
+                      Forgot password?
+                    </Button>
+                  </div>
                   <Button 
                     type="button" 
                     variant="outline" 
