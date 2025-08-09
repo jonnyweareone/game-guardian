@@ -21,8 +21,8 @@ const Security = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       if (!user) return;
-      const { data, error } = await supabase
-        .from<any>('user_security')
+      const { data, error } = await (supabase as any)
+        .from('user_security')
         .select('totp_enabled')
         .eq('user_id', user.id)
         .maybeSingle();
