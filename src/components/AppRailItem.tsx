@@ -89,13 +89,13 @@ export function AppRailItem({
           <Label className="text-sm">Hours</Label>
           <Select
             value={hours}
-            onValueChange={(v) => onChange({ enforced_hours: v ? [v] : null })}
+            onValueChange={(v) => onChange({ enforced_hours: v === 'any' ? null : [v] })}
           >
             <SelectTrigger className="w-56">
               <SelectValue placeholder="Any time" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any time</SelectItem>
+              <SelectItem value="any">Any time</SelectItem>
               <SelectItem value="[17,20)">After school (17–20)</SelectItem>
               <SelectItem value="[0,6)">Night block (00–06)</SelectItem>
             </SelectContent>

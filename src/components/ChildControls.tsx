@@ -246,13 +246,13 @@ export default function ChildControls({
             <Select
               disabled={isDemoMode || loadingTime}
               value={bedtime ?? ''}
-              onValueChange={(v) => setBedtime(v)}
+              onValueChange={(v) => setBedtime(v === 'none' ? '' : v)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="None" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 <SelectItem value="[21,7)">School night (21–07)</SelectItem>
                 <SelectItem value="[22,6)">Late night (22–06)</SelectItem>
                 <SelectItem value="[0,6)">Night block (00–06)</SelectItem>
