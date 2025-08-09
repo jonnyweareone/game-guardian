@@ -60,8 +60,79 @@ serve(async (req) => {
       throw new Error('Device not found or inactive');
     }
 
-    const data: GuardianData = await req.json();
-    console.log('Received data from device:', deviceId, data);
+    const raw = await req.json();
+    console.log('Received data from device:', deviceId, raw);
+
+    // Helper to handle app catalog ingestion
+    async function handleAppCatalog(item: any) {
+      const apps = Array.isArray(item.apps) ? item.apps : [];
+      let count = 0;
+      for (const a of apps) {
+        const { error } = await supabase
+          .from('device_apps')
+          .upsert(
+            {
+              device_code: device.device_code ?? deviceId,
+              app_id: a.app_id,
+              name: a.name,
+              description: a.description ?? null,
+              platform: a.platform ?? null,
+              icon_url: a.icon_url ?? null,
+              category: a.category ?? 'App',
+              pegi_rating: a.pegi?.rating ?? null,
+              pegi_descriptors: a.pegi?.descriptors ?? null,
+              publisher: a.publisher ?? null,
+              website: a.website ?? null,
+              last_seen: new Date().toISOString(),
+            },
+            { onConflict: 'device_code,app_id' }
+          );
+        if (error) throw error;
+        count++;
+      }
+      return count;
+    }
+
+    // If batch payload: process known event types we support in batches
+    if (Array.isArray(raw)) {
+      let processed = 0;
+      for (const item of raw) {
+        if (item?.type === 'app_catalog') {
+          processed += await handleAppCatalog(item);
+        }
+      }
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          device_id: deviceId,
+          processed,
+          processed_at: new Date().toISOString()
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
+
+    const data: GuardianData & { type?: string; device_code?: string; apps?: any[] } = raw;
+
+    // New event type: app_catalog
+    if ((data as any).type === 'app_catalog') {
+      const processed = await handleAppCatalog(data);
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          device_id: deviceId,
+          processed,
+          processed_at: new Date().toISOString()
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
 
     // Process different types of data
     if (data.heartbeat) {
