@@ -1,7 +1,7 @@
 
-// Minimal API stubs wired to Supabase
 import { supabase } from '@/integrations/supabase/client';
 
+// Minimal API stubs wired to Supabase
 export async function getChildren() {
   const { data, error } = await supabase.from('children').select('*');
   if (error) throw error;
@@ -84,22 +84,31 @@ export async function getChildTimePolicy(childId: string) {
   return data;
 }
 
-// Child time policy: upsert settings (backward-compatible + new fields)
+// Child time policy patch type (includes future fields, but we'll only send known columns to match current types)
 type ChildTimePolicyPatch = Partial<{
   daily_total_minutes: number | null;
   bedtime: string | null; // legacy support
-  bedtime_weekday: string | null; // '[21,7)'
-  bedtime_weekend: string | null; // '[22,8)'
-  focus_mode: boolean;
-  focus_allowed_categories: string[];
-  homework_window: string | null; // '[16,19)'
+  bedtime_weekday: string | null; // '[21,7)' (future)
+  bedtime_weekend: string | null; // '[22,8)' (future)
+  focus_mode: boolean; // (future)
+  focus_allowed_categories: string[]; // (future)
+  homework_window: string | null; // (future) '[16,19)'
 }>;
 
+// Child time policy: upsert settings (send only columns known to current Database types)
 export async function upsertChildTimePolicy(childId: string, patch: ChildTimePolicyPatch) {
-  const payload: Record<string, unknown> = { child_id: childId };
-  Object.entries(patch ?? {}).forEach(([k, v]) => {
-    if (v !== undefined) payload[k] = v;
-  });
+  const payload: {
+    child_id: string;
+    daily_total_minutes?: number | null;
+    bedtime?: unknown | null;
+  } = { child_id: childId };
+
+  if (patch.daily_total_minutes !== undefined) {
+    payload.daily_total_minutes = patch.daily_total_minutes;
+  }
+  if (patch.bedtime !== undefined) {
+    payload.bedtime = patch.bedtime as unknown as string | null;
+  }
 
   const { data, error } = await supabase
     .from('child_time_policies')
@@ -120,7 +129,9 @@ export async function upsertAppCategoryPolicy(input: {
   daily_limit_minutes?: number | null;
   enforced_hours?: string[] | null; // int4range[] represented as text[]
 }) {
-  const { data, error } = await supabase
+  // app_category_policies might not be present in generated types yet; cast to any to avoid TS errors
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
     .from('app_category_policies')
     .upsert(input)
     .select()
@@ -131,7 +142,9 @@ export async function upsertAppCategoryPolicy(input: {
 
 // Time tokens (earn/spend)
 export async function addTimeTokens(childId: string, delta: number, reason?: string) {
-  const { data, error } = await supabase
+  // child_time_tokens might not be present in generated types yet; cast to any
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
     .from('child_time_tokens')
     .insert({ child_id: childId, delta_minutes: delta, reason })
     .select()
@@ -152,7 +165,9 @@ export async function assignChildToDevice(deviceId: string, childId: string, isA
 }
 
 export async function setActiveChild(deviceId: string, childId: string) {
-  const { data, error } = await supabase
+  // rpc_set_active_child might not be present in generated types yet; cast to any
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
     .rpc('rpc_set_active_child', { _device: deviceId, _child: childId });
   if (error) throw error;
   return data;
@@ -160,9 +175,10 @@ export async function setActiveChild(deviceId: string, childId: string) {
 
 // Device command queue
 export async function issueCommand(deviceId: string, cmd: string, payload?: any) {
-  const { data, error } = await supabase
+  // rpc_issue_command might not be present in generated types yet; cast to any
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
     .rpc('rpc_issue_command', { _device: deviceId, _cmd: cmd, _payload: payload ?? {} });
   if (error) throw error;
   return data;
 }
-
