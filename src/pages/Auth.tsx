@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { usePasskeys } from '@/hooks/usePasskeys';
 import SEOHead from '@/components/SEOHead';
 
 const Auth = () => {
@@ -20,6 +21,7 @@ const Auth = () => {
   const [error, setError] = useState('');
   
   const { signIn, signUp } = useAuth();
+  const { authenticatePasskey } = usePasskeys();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -137,6 +139,26 @@ const Auth = () => {
                   )}
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={async () => {
+                      try {
+                        setIsLoading(true);
+                        await authenticatePasskey();
+                        toast({ title: 'Authenticated with passkey', description: 'Welcome back!' });
+                        navigate('/dashboard');
+                      } catch (e: any) {
+                        setError(e?.message || 'Passkey sign-in failed');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                  >
+                    Use Passkey
                   </Button>
                   <Button 
                     type="button" 

@@ -37,6 +37,7 @@ const Security = () => {
   const [passkeys, setPasskeys] = useState<any[]>([]);
   const [pkLoading, setPkLoading] = useState(false);
   const [pkError, setPkError] = useState<string | null>(null);
+  const [pkName, setPkName] = useState('');
 
   const loadPasskeys = async () => {
     if (!user) return;
@@ -189,8 +190,12 @@ const Security = () => {
                 </Alert>
               )}
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pkname">Device name (optional)</Label>
+                  <Input id="pkname" value={pkName} onChange={(e) => setPkName(e.target.value)} placeholder="e.g., iPhone, YubiKey" />
+                </div>
                 <div className="flex flex-wrap gap-3">
-                  <Button onClick={async () => { setPkLoading(true); setPkError(null); try { await registerPasskey(); await loadPasskeys(); } catch (e:any) { setPkError(e?.message || 'Passkey setup failed'); } finally { setPkLoading(false); } }} disabled={pkLoading}>
+                  <Button onClick={async () => { setPkLoading(true); setPkError(null); try { await registerPasskey(pkName || undefined); await loadPasskeys(); } catch (e:any) { setPkError(e?.message || 'Passkey setup failed'); } finally { setPkLoading(false); } }} disabled={pkLoading}>
                     Register new Passkey
                   </Button>
                   <Button variant="outline" onClick={async () => { setPkLoading(true); setPkError(null); try { await authenticatePasskey(); } catch (e:any) { setPkError(e?.message || 'Passkey authentication failed'); } finally { setPkLoading(false); } }} disabled={pkLoading || passkeys.length===0}>
