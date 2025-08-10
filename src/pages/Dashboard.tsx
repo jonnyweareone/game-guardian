@@ -286,7 +286,21 @@ const Dashboard = () => {
 
   const handlePolicyChange = async (scope: 'device' | 'child', appId: string, patch: AppPolicyPatch) => {
     try {
-      if (isDemoMode) return;
+      if (isDemoMode) {
+        if (scope === 'device') {
+          setDevicePolicies(prev => ({
+            ...prev,
+            [appId]: { ...prev[appId], ...patch }
+          }));
+        } else {
+          setChildPolicies(prev => ({
+            ...prev,
+            [appId]: { ...prev[appId], ...patch }
+          }));
+        }
+        toast({ title: 'Demo mode', description: 'Policy updated (not saved).' });
+        return;
+      }
       const currentDevice =
         (selectedChildId
           ? devices.find(d => d.child_id === selectedChildId && d.is_active) || devices.find(d => d.is_active)
@@ -500,7 +514,7 @@ const Dashboard = () => {
         )}
 
         {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6" aria-label="Dashboard sections">
           <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />

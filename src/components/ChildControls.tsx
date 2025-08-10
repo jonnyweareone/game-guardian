@@ -175,7 +175,14 @@ export default function ChildControls({
 
   const handleCategoryToggle = async (category: Cat, allowed: boolean) => {
     if (isDemoMode) {
-      toast({ title: 'Demo mode', description: 'Category changes are disabled in demo mode.' });
+      setCategoryPolicies((prev) => ({
+        ...prev,
+        [category]: {
+          allowed,
+          daily_limit_minutes: prev[category]?.daily_limit_minutes ?? null,
+        },
+      }));
+      toast({ title: 'Demo mode', description: `${category} ${allowed ? 'allowed' : 'blocked'} (not saved).` });
       return;
     }
     try {
@@ -236,15 +243,15 @@ export default function ChildControls({
               inputMode="numeric"
               placeholder="No cap"
               min={0}
-              disabled={isDemoMode || loadingTime}
+              disabled={loadingTime}
               value={dailyMinutes}
               onChange={(e) => setDailyMinutes(e.target.value ? Number(e.target.value) : '')}
             />
           </div>
           <div className="flex flex-col gap-2">
             <Label>Bedtime (quiet hours)</Label>
-            <Select
-              disabled={isDemoMode || loadingTime}
+             <Select
+               disabled={loadingTime}
               value={bedtime ?? ''}
               onValueChange={(v) => setBedtime(v === 'none' ? '' : v)}
             >
@@ -263,7 +270,7 @@ export default function ChildControls({
             </p>
           </div>
           <div className="flex items-end">
-            <Button className="w-full md:w-auto" onClick={handleSaveTime} disabled={isDemoMode || savingTime || loadingTime}>
+            <Button className="w-full md:w-auto" onClick={handleSaveTime} disabled={savingTime || loadingTime}>
               {savingTime ? 'Saving...' : 'Save'}
             </Button>
           </div>
@@ -288,8 +295,8 @@ export default function ChildControls({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => handleTokenDelta(15)} disabled={isDemoMode}>+15 min</Button>
-            <Button variant="outline" onClick={() => handleTokenDelta(-15)} disabled={isDemoMode}>-15 min</Button>
+            <Button variant="outline" onClick={() => handleTokenDelta(15)}>+15 min</Button>
+            <Button variant="outline" onClick={() => handleTokenDelta(-15)}>-15 min</Button>
           </div>
         </CardContent>
       </Card>
