@@ -251,6 +251,17 @@ const HomePage = () => {
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
+            <div className="mt-6">
+              <div className="aspect-[16/9] overflow-hidden rounded-lg border border-border bg-muted/30">
+                <img 
+                  src="/lovable-uploads/051dfeca-e81d-474a-b208-fc2c25dfcb93.png"
+                  alt="Guardian OS dashboard showing child controls, scheduling, and app safety"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </div>
           </article>
 
           <article id="product-device" className="rounded-xl border border-border bg-card/40 p-6">
@@ -267,6 +278,17 @@ const HomePage = () => {
                 Join the beta
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
+            </div>
+            <div className="mt-6">
+              <div className="aspect-[16/9] overflow-hidden rounded-lg border border-border bg-muted/30">
+                <img 
+                  src="/lovable-uploads/58833672-9824-49ce-9254-cf50498ec68a.png"
+                  alt="Guardian device hardware with RGB safety glow"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
             </div>
           </article>
 
