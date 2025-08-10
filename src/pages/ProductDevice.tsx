@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Shield, Bluetooth, Usb, Headphones, Wifi, Zap, ArrowRight } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
-import guardianDevice from "@/assets/guardian-device.png";
+
 
 const ProductDevice = () => {
   const navigate = useNavigate();
@@ -62,7 +62,7 @@ const ProductDevice = () => {
     },
     "offers": {
       "@type": "Offer",
-      "price": "299",
+      "price": "59.99",
       "priceCurrency": "GBP",
       "availability": "https://schema.org/InStock"
     }
@@ -93,7 +93,7 @@ const ProductDevice = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" onClick={() => navigate("/auth")}>
-                  Order Now - £299
+                  Order Now - £59.99
                 </Button>
                 <Button variant="outline" size="lg" onClick={() => navigate("/how-to-guide")}>
                   How It Works
@@ -103,9 +103,9 @@ const ProductDevice = () => {
             </div>
             <div className="relative">
               <img 
-                src={guardianDevice} 
-                alt="Game Guardian Device - AI-powered gaming safety hardware"
-                className="w-full max-w-md mx-auto rounded-lg shadow-2xl"
+                src="/lovable-uploads/02ae15e6-11a9-4246-b700-391693ab29f3.png" 
+                alt="Game Guardian Device hardware unit with RGB edge lighting - AI gaming safety"
+                className="w-full max-w-md mx-auto rounded-lg shadow-2xl" loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent rounded-lg"></div>
             </div>
@@ -207,7 +207,7 @@ const ProductDevice = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" onClick={() => navigate("/auth")}>
-                Order Now - £299
+                Order Now - £59.99
               </Button>
               <Button variant="outline" size="lg" onClick={() => navigate("/products")}>
                 Compare Products
