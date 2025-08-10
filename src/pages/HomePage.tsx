@@ -228,10 +228,6 @@ const HomePage = () => {
                 Start Free Trial
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                <Play className="h-5 w-5 mr-2" />
-                Watch Demo
-              </Button>
             </div>
           </div>
         </div>
