@@ -141,7 +141,7 @@ const HomePage = () => {
     <>
       <SEOHead
         title="Game Guardian AI™ - AI-Powered Gaming Safety for Kids"
-        description="Protect your child in online gaming with AI voice chat monitoring. Real-time alerts, conversation analysis, and smart safety controls for peace of mind."
+        description="Introducing the Guardian Ecosystem: a connected safety network delivering 360° protection across gaming and digital life. AI voice monitoring with real-time alerts."
         keywords="gaming safety, child protection online, voice chat monitoring, AI safety, parental controls, online gaming, child safety technology, gaming parental controls"
         canonicalUrl="https://gameguardianai.com/"
         structuredData={homePageStructuredData}
@@ -203,6 +203,74 @@ const HomePage = () => {
                 Watch Demo
               </Button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Ecosystem Intro Section */}
+      <section className="py-16 bg-card/40 border-t border-b border-border" aria-label="Guardian Ecosystem introduction">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground">Introducing the Guardian Ecosystem</h2>
+          <p className="text-lg md:text-xl text-muted-foreground">
+            The Guardian Ecosystem is a world-first, fully connected safety network that protects children across every aspect of their digital and gaming life. More than just an app — it’s a complete suite of products working together for 360° safety.
+          </p>
+          <div className="flex justify-center">
+            <div className="rounded-xl border border-border bg-background p-6 w-full">
+              <svg viewBox="0 0 400 200" role="img" aria-labelledby="ecosystemTitle ecosystemDesc" className="mx-auto w-full max-w-3xl h-48">
+                <title id="ecosystemTitle">Guardian Ecosystem Diagram</title>
+                <desc id="ecosystemDesc">Guardian OS and the Game Guardian Device connect to deliver 360° safety</desc>
+                <defs>
+                  <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" className="fill-current text-primary"></path>
+                  </marker>
+                </defs>
+                <circle cx="120" cy="100" r="48" className="stroke-current text-primary fill-transparent" strokeWidth="2"></circle>
+                <text x="120" y="100" textAnchor="middle" dominantBaseline="middle" className="fill-current text-foreground text-sm">Guardian OS</text>
+                <circle cx="280" cy="100" r="48" className="stroke-current text-secondary fill-transparent" strokeWidth="2"></circle>
+                <text x="280" y="100" textAnchor="middle" dominantBaseline="middle" className="fill-current text-foreground text-sm">Device</text>
+                <path d="M168,100 L232,100" className="stroke-current text-primary" strokeWidth="2" markerEnd="url(#arrow)"></path>
+                <circle cx="200" cy="100" r="80" className="stroke-current text-muted-foreground/50 fill-transparent" strokeDasharray="6 6" strokeWidth="1.5"></circle>
+                <text x="200" y="24" textAnchor="middle" className="fill-current text-muted-foreground text-xs">360° Safety</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Our Products - CTAs */}
+      <section className="py-20 bg-background" aria-label="Our Products">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-2xl font-semibold text-foreground">Guardian OS™</h3>
+                  <p className="text-muted-foreground mt-2">Launches September 1st. Free for all users.</p>
+                </div>
+                <Badge variant="outline">Waitlist</Badge>
+              </div>
+              <div className="mt-6">
+                <Button size="lg" className="w-full" onClick={() => navigate('/auth?intent=waitlist&product=os')}>
+                  Join the waitlist
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+            <Card className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-2xl font-semibold text-foreground">Game Guardian™ Device</h3>
+                  <p className="text-muted-foreground mt-2">In beta testing.</p>
+                </div>
+                <Badge variant="outline">Beta</Badge>
+              </div>
+              <div className="mt-6">
+                <Button size="lg" className="w-full" onClick={() => navigate('/auth?intent=beta&product=device')}>
+                  Join the beta
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
           </div>
         </div>
       </section>

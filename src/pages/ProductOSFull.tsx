@@ -125,7 +125,7 @@ const ProductOSFull = () => {
     <>
       <SEOHead
         title="Game Guardian OS - Complete PC Protection for Gaming Families"
-        description="Full-featured Linux OS that transforms gaming PCs into AI-powered safe zones. Includes voice monitoring, content controls, kiosk mode, and comprehensive parental management."
+        description="Part of the Guardian Ecosystem — a full-featured Linux OS delivering 360° safety for gaming PCs. Launches September 1. Free for all users."
         keywords="game guardian os, gaming pc protection, parental control os, linux gaming safety, pc monitoring software"
         canonicalUrl="https://guardianai.co.uk/products/os-full"
         structuredData={structuredData}
@@ -135,7 +135,7 @@ const ProductOSFull = () => {
         <div className="container mx-auto px-4 py-16">
           {/* Hero Section */}
           <div className="text-center mb-16">
-            <Badge className="mb-4">Complete OS Solution</Badge>
+            <Badge className="mb-4">Launches September 1 • Free for all users</Badge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Game Guardian OS
             </h1>
@@ -144,8 +144,8 @@ const ProductOSFull = () => {
               Complete protection with voice monitoring, content controls, learning modes, and comprehensive parental management.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate("/auth")}>
-                Download Free for Families
+              <Button size="lg" onClick={() => navigate("/auth?intent=waitlist&product=os")}>
+                Join Waitlist
               </Button>
               <Button variant="outline" size="lg" onClick={() => navigate("/how-to-guide")}>
                 Installation Guide
@@ -153,6 +153,32 @@ const ProductOSFull = () => {
               </Button>
             </div>
           </div>
+
+          {/* Ecosystem Intro */}
+          <section className="mb-20 bg-card/40 border border-border rounded-lg p-8" aria-label="Guardian Ecosystem introduction">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">The Guardian Ecosystem</h2>
+            <p className="text-center text-muted-foreground max-w-3xl mx-auto">
+              The Guardian Ecosystem is a world-first, fully connected safety network that protects children across every aspect of their digital and gaming life. More than just an app — it’s a complete suite of products working together for 360° safety.
+            </p>
+            <div className="mt-6">
+              <svg viewBox="0 0 400 200" role="img" aria-labelledby="osEcoTitle osEcoDesc" className="mx-auto w-full max-w-3xl h-48">
+                <title id="osEcoTitle">Guardian Ecosystem Diagram</title>
+                <desc id="osEcoDesc">Guardian OS and the Game Guardian Device connect to deliver 360° safety</desc>
+                <defs>
+                  <marker id="arrow-os" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" className="fill-current text-primary"></path>
+                  </marker>
+                </defs>
+                <circle cx="120" cy="100" r="48" className="stroke-current text-primary fill-transparent" strokeWidth="2"></circle>
+                <text x="120" y="100" textAnchor="middle" dominantBaseline="middle" className="fill-current text-foreground text-sm">Guardian OS</text>
+                <circle cx="280" cy="100" r="48" className="stroke-current text-secondary fill-transparent" strokeWidth="2"></circle>
+                <text x="280" y="100" textAnchor="middle" dominantBaseline="middle" className="fill-current text-foreground text-sm">Device</text>
+                <path d="M168,100 L232,100" className="stroke-current text-primary" strokeWidth="2" markerEnd="url(#arrow-os)"></path>
+                <circle cx="200" cy="100" r="80" className="stroke-current text-muted-foreground/50 fill-transparent" strokeDasharray="6 6" strokeWidth="1.5"></circle>
+                <text x="200" y="24" textAnchor="middle" className="fill-current text-muted-foreground text-xs">360° Safety</text>
+              </svg>
+            </div>
+          </section>
 
           {/* Key Features */}
           <section className="mb-20">
@@ -342,8 +368,8 @@ const ProductOSFull = () => {
               Free for families, professional licensing available.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate("/auth")}>
-                Download Free
+              <Button size="lg" onClick={() => navigate("/auth?intent=waitlist&product=os")}>
+                Join Waitlist
               </Button>
               <Button variant="outline" size="lg" onClick={() => navigate("/products")}>
                 Compare All Products
