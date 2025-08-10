@@ -156,6 +156,19 @@ const ProductOSFull = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
+
+            {/* Product mockup image (reference UI) */}
+            <figure className="mt-10 max-w-4xl mx-auto">
+              <img
+                src="/lovable-uploads/0ffa1e7f-623a-454b-8253-a26ef3fdbcd0.png"
+                alt="Guardian OS parent dashboard showing controls, scheduling, game and app safety settings"
+                className="w-full rounded-xl border shadow-lg"
+                loading="lazy"
+                decoding="async"
+                sizes="(max-width: 768px) 100vw, 800px"
+              />
+              <figcaption className="sr-only">Guardian OS on-device controls interface</figcaption>
+            </figure>
           </div>
 
           {/* Why Protect at the Source? */}
