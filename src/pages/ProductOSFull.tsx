@@ -43,6 +43,11 @@ const ProductOSFull = () => {
       icon: Lock,
       title: "Tamper Protection",
       description: "Built-in security prevents uninstallation or bypass attempts"
+    },
+    {
+      icon: Shield,
+      title: "Protect at the Source (OS-level)",
+      description: "OS‑level enforcement works across apps, browsers, and networks. No router or extension bypasses; tamper‑resistant."
     }
   ];
 
@@ -342,7 +347,37 @@ const ProductOSFull = () => {
             </div>
           </section>
 
-          {/* How It Works */}
+           {/* Creator Mode — Safe by Design */}
+           <section id="creator-mode" className="mb-20" aria-labelledby="creator-mode-title">
+             <h2 id="creator-mode-title" className="text-3xl font-bold text-center mb-6">Creator Mode — Safe by Design</h2>
+             <p className="text-muted-foreground text-center max-w-3xl mx-auto mb-8">
+               Guardian OS builds safe creation into the system, so kids can make and share confidently.
+             </p>
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+               <div>
+                 <ul className="space-y-3">
+                   <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>Full editing of captured gameplay/content</span></li>
+                   <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>AI detection of in‑game moments → auto highlight reels</span></li>
+                   <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>YouTube & Twitch integration with pre‑publish safety checks</span></li>
+                   <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>Parent approval gate before publishing</span></li>
+                   <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>AI auto‑bleep + personal‑info removal (PII scrub)</span></li>
+                 </ul>
+               </div>
+               <div className="flex flex-col items-start justify-center gap-4">
+                 <Card className="w-full bg-card/40">
+                   <CardContent className="p-6">
+                     <p className="text-foreground">Creator Mode integrates with your family's rules and device profiles for consistent protection across apps and networks.</p>
+                   </CardContent>
+                 </Card>
+                 <Button variant="secondary" onClick={() => navigate('/how-to-guide')} aria-label="Turn on Creator Mode">
+                   Turn on Creator Mode
+                   <ArrowRight className="ml-2 h-4 w-4" />
+                 </Button>
+               </div>
+             </div>
+           </section>
+
+           {/* How It Works */}
           <section className="mb-20">
             <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

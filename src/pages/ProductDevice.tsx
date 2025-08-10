@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Shield, Bluetooth, Usb, Headphones, Wifi, Zap, ArrowRight } from "lucide-react";
+import { Shield, Bluetooth, Usb, Headphones, Wifi, Zap, ArrowRight, CheckCircle } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 
 
@@ -102,6 +102,9 @@ const ProductDevice = () => {
               </div>
             </div>
             <div className="relative">
+              <Badge variant="outline" className="absolute top-3 left-3 z-10 bg-background/80 backdrop-blur-sm border-border" aria-label="Dolby Enabled">
+                Dolby
+              </Badge>
               <img 
                 src="/lovable-uploads/02ae15e6-11a9-4246-b700-391693ab29f3.png" 
                 alt="Game Guardian Device hardware unit with RGB edge lighting - AI gaming safety"
@@ -131,6 +134,44 @@ const ProductDevice = () => {
                   </Card>
                 );
               })}
+            </div>
+          </section>
+
+          {/* Why Protect at the Source? */}
+          <section className="mb-12">
+            <Card className="max-w-4xl mx-auto bg-primary/5 border-primary/20">
+              <CardContent className="p-6 text-center">
+                <p className="text-foreground">
+                  Guardian sits on the audio path between console/PC and headset, detecting bullying and grooming in real time — blocking risk before kids ever hear it.
+                </p>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Creator Features for Kids */}
+          <section className="mb-20" aria-labelledby="creator-kids-device-title">
+            <h2 id="creator-kids-device-title" className="text-3xl font-bold text-center mb-8">Creator Features for Kids</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              <div>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>Full editing of captured gameplay and clips</span></li>
+                  <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>AI auto‑clips key moments (wins, boss fights, funny fails)</span></li>
+                  <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>YouTube & Twitch integration with safety checks</span></li>
+                  <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>Parent approval required before publishing</span></li>
+                  <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>AI auto‑bleep + personal‑info removal</span></li>
+                </ul>
+                <div className="mt-6">
+                  <Button variant="secondary" onClick={() => navigate('/products/os-full#creator-mode')}>
+                    Enable Creator Mode
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <Card className="bg-card/40 border-border">
+                <CardContent className="p-6">
+                  <p className="text-muted-foreground">Creator tools are designed with safety-first defaults and parent oversight, so kids can share confidently.</p>
+                </CardContent>
+              </Card>
             </div>
           </section>
 

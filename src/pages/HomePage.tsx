@@ -321,10 +321,33 @@ const HomePage = () => {
               <Badge variant="outline">In Development</Badge>
             </div>
           </article>
-        </div>
-      </section>
+         </div>
+       </section>
 
-      {/* Features Section */}
+       {/* Creator Features for Kids */}
+       <section className="py-20 bg-card/30" aria-labelledby="creator-kids-title">
+         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+           <div className="space-y-4">
+             <h2 id="creator-kids-title" className="text-3xl md:text-4xl font-bold text-foreground">Create without the risk.</h2>
+             <p className="text-lg text-muted-foreground">Guardian helps kids stream and share safely. With on-device tools and parent approvals, they can express themselves while staying protected.</p>
+             <Button variant="secondary" onClick={() => navigate('/products/os-full#creator-mode')} aria-label="See Creator Features">
+               See Creator Features
+               <ArrowRight className="h-4 w-4 ml-2" />
+             </Button>
+           </div>
+           <div>
+             <ul className="space-y-3">
+               <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>Full editing of captured content (trim, merge, captions)</span></li>
+               <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>AI detection of in‑game moments (auto highlight clips)</span></li>
+               <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>YouTube & Twitch integration (pre‑publish safety checks)</span></li>
+               <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>Parent approval workflow (uploads wait for a quick ‘yes’)</span></li>
+               <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>AI auto‑bleep + personal‑info removal (names, locations, IDs)</span></li>
+             </ul>
+           </div>
+         </div>
+       </section>
+
+       {/* Features Section */}
       <section className="py-24 bg-card/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-24">
@@ -559,7 +582,19 @@ const HomePage = () => {
               <Eye className="h-4 w-4" />
               Privacy First
             </div>
+            <div className="flex items-center gap-2" aria-label="Dolby Enabled">
+              <Volume2 className="h-4 w-4" />
+              Dolby Enabled
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section className="py-4 bg-primary/5 border-t border-b border-border" aria-label="Protect at the Source">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-sm sm:text-base text-foreground">
+            On‑device protection blocks harm before it reaches the screen — in apps, games, and private chats. Works on any network, with tamper protection.
+          </p>
         </div>
       </section>
 
