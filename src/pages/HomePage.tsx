@@ -177,36 +177,6 @@ const HomePage = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center space-y-8">
-            <Badge variant="outline" className="text-primary border-primary/20">
-              <Zap className="h-3 w-3 mr-1" />
-              The Future of Safe Gaming Starts Here
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight">
-              Protect Your Child's
-              <span className="text-primary block">Gaming Experience</span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Advanced AI voice monitoring that detects risks in real-time while preserving 
-              the immersive gaming experience your kids love.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" onClick={() => navigate('/auth')} className="text-lg px-8 py-6">
-                Start Free Trial
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                <Play className="h-5 w-5 mr-2" />
-                Watch Demo
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Ecosystem Intro Section */}
       <section className="py-16 bg-card/40 border-t border-b border-border" aria-label="Guardian Ecosystem introduction">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
@@ -237,41 +207,85 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Our Products - CTAs */}
-      <section className="py-20 bg-background" aria-label="Our Products">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-2xl font-semibold text-foreground">Guardian OS™</h3>
-                  <p className="text-muted-foreground mt-2">Launches September 1st. Free for all users.</p>
-                </div>
-                <Badge variant="outline">Waitlist</Badge>
-              </div>
-              <div className="mt-6">
-                <Button size="lg" className="w-full" onClick={() => navigate('/auth?intent=waitlist&product=os')}>
-                  Join the waitlist
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            </Card>
-            <Card className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-2xl font-semibold text-foreground">Game Guardian™ Device</h3>
-                  <p className="text-muted-foreground mt-2">In beta testing.</p>
-                </div>
-                <Badge variant="outline">Beta</Badge>
-              </div>
-              <div className="mt-6">
-                <Button size="lg" className="w-full" onClick={() => navigate('/auth?intent=beta&product=device')}>
-                  Join the beta
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            </Card>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center space-y-8">
+            <Badge variant="outline" className="text-primary border-primary/20">
+              <Zap className="h-3 w-3 mr-1" />
+              The Future of Safe Gaming Starts Here
+            </Badge>
+            <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight">
+              Protect Your Child's
+              <span className="text-primary block">Gaming Experience</span>
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Advanced AI voice monitoring that detects risks in real-time while preserving 
+              the immersive gaming experience your kids love.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button size="lg" onClick={() => navigate('/auth')} className="text-lg px-8 py-6">
+                Start Free Trial
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+                <Play className="h-5 w-5 mr-2" />
+                Watch Demo
+              </Button>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* Product Sections */}
+      <section className="py-20 bg-background" aria-label="Products overview">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <article id="product-os" className="rounded-xl border border-border bg-card/40 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground">Guardian OS™</h2>
+                <p className="text-muted-foreground mt-2">Launches September 1st. Free for all users.</p>
+              </div>
+              <Badge variant="outline">Waitlist</Badge>
+            </div>
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Button size="lg" variant="outline" onClick={() => navigate('/products/os-full')}>Learn More</Button>
+              <Button size="lg" onClick={() => navigate('/auth?intent=waitlist&product=os')}>
+                Join the waitlist
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </article>
+
+          <article id="product-device" className="rounded-xl border border-border bg-card/40 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground">Game Guardian™ Device</h2>
+                <p className="text-muted-foreground mt-2">AI-powered inline monitoring. In beta testing.</p>
+              </div>
+              <Badge variant="outline">Beta</Badge>
+            </div>
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Button size="lg" variant="outline" onClick={() => navigate('/products/device')}>Learn More</Button>
+              <Button size="lg" onClick={() => navigate('/auth?intent=beta&product=device')}>
+                Join the beta
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </article>
+
+          <article id="product-receiver" className="rounded-xl border border-border bg-card/40 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground">Game Guardian™ Receiver</h2>
+                <p className="text-muted-foreground mt-2">Wireless controller headset jack plugin for seamless console integration.</p>
+              </div>
+              <Badge variant="outline">Coming Soon</Badge>
+            </div>
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Button size="lg" variant="outline" onClick={() => navigate('/products/receiver')}>Learn More</Button>
+            </div>
+          </article>
         </div>
       </section>
 
