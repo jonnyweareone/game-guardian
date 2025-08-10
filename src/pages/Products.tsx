@@ -17,7 +17,7 @@ const Products = () => {
       icon: Shield,
       features: ["Real-time voice monitoring", "Bluetooth & USB connectivity", "3.5mm headset output", "Instant parent alerts"],
       status: "available",
-      price: "Starting at £299",
+      price: "Starting at £59.99",
       link: "/products/device"
     },
     {
