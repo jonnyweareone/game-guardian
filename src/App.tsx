@@ -23,7 +23,7 @@ import NotFound from "./pages/NotFound";
 import Security from "./pages/Security";
 import ResetPassword from "./pages/ResetPassword";
 import AdminWaitlist from "./pages/AdminWaitlist";
-
+import CreatorMode from "./pages/CreatorMode";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -68,7 +68,7 @@ const App = () => (
             <Route path="/press-releases" element={<PressReleases />} />
             <Route path="/how-to-guide" element={<HowToGuide />} />
             <Route path="/about" element={<About />} />
-            
+            <Route path="/creator-mode" element={<CreatorMode />} />
             <Route path="/" element={<HomePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

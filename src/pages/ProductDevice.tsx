@@ -161,10 +161,15 @@ const ProductDevice = () => {
                   <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-safe mt-1" /><span>AI auto‑bleep + personal‑info removal</span></li>
                 </ul>
                 <div className="mt-6">
-                  <Button variant="secondary" onClick={() => navigate('/products/os-full#creator-mode')}>
-                    Enable Creator Mode
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button variant="secondary" onClick={() => navigate('/products/os-full#creator-mode')}>
+                      Enable Creator Mode
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate('/creator-mode')} aria-label="Creator Mode details">
+                      Learn about Creator Mode
+                    </Button>
+                  </div>
                 </div>
               </div>
               <Card className="bg-card/40 border-border">

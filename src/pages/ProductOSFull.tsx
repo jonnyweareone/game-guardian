@@ -369,10 +369,15 @@ const ProductOSFull = () => {
                      <p className="text-foreground">Creator Mode integrates with your family's rules and device profiles for consistent protection across apps and networks.</p>
                    </CardContent>
                  </Card>
-                 <Button variant="secondary" onClick={() => navigate('/how-to-guide')} aria-label="Turn on Creator Mode">
-                   Turn on Creator Mode
-                   <ArrowRight className="ml-2 h-4 w-4" />
-                 </Button>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button variant="secondary" onClick={() => navigate('/how-to-guide')} aria-label="Turn on Creator Mode">
+                      Turn on Creator Mode
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate('/creator-mode')} aria-label="Creator Mode details">
+                      Learn about Creator Mode
+                    </Button>
+                  </div>
                </div>
              </div>
            </section>
