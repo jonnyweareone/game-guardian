@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,37 @@ const Auth = () => {
   const { authenticatePasskey } = usePasskeys();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const wlIntentParam = params.get('intent');
+  const wlProduct = params.get('product') ?? '';
+  const wlIntent: 'waitlist' | 'beta' | null = wlIntentParam === 'beta' ? 'beta' : (wlIntentParam === 'waitlist' ? 'waitlist' : null);
+
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      setError('');
+      const payload = {
+        email,
+        full_name: fullName || null,
+        product: wlProduct || 'os',
+        intent: wlIntent ?? 'waitlist',
+        source: 'auth',
+        utm: {}
+      };
+      const { error } = await supabase.from('waitlist_signups').insert([payload]);
+      if (error) throw error;
+      toast({ title: 'You’re on the list!', description: 'We’ll notify you as soon as we launch.' });
+      // Clear fields
+      setEmail('');
+      setFullName('');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to join waitlist');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +126,39 @@ const Auth = () => {
             <h1 className="text-2xl font-bold text-foreground">Game Guardian AI™</h1>
             <p className="text-muted-foreground mt-2">Keep your child safe in online gaming</p>
           </header>
+
+        {wlIntent && (
+          <Card className="mb-6 border-primary/40">
+            <CardHeader>
+              <CardTitle>{wlIntent === 'beta' ? 'Join the Game Guardian™ Device Beta' : 'Join the Guardian OS™ Waitlist'}</CardTitle>
+              <CardDescription>
+                {wlIntent === 'beta'
+                  ? 'Be first to test the Game Guardian device.'
+                  : 'Get notified when Guardian OS launches on September 1st.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleWaitlistSubmit} className="space-y-4" aria-label="Waitlist sign-up form">
+                <div className="space-y-2">
+                  <Label htmlFor="wl-name">Full Name</Label>
+                  <Input id="wl-name" type="text" placeholder="Your full name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="wl-email">Email</Label>
+                  <Input id="wl-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                </div>
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Submitting...' : (wlIntent === 'beta' ? 'Join the beta' : 'Join the waitlist')}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

@@ -22,6 +22,7 @@ import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import Security from "./pages/Security";
 import ResetPassword from "./pages/ResetPassword";
+import AdminWaitlist from "./pages/AdminWaitlist";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,13 @@ const App = () => (
             <Route path="/security" element={
               <ProtectedRoute>
                 <Security />
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin */}
+            <Route path="/admin/waitlist" element={
+              <ProtectedRoute>
+                <AdminWaitlist />
               </ProtectedRoute>
             } />
             
