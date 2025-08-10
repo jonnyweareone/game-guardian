@@ -244,7 +244,7 @@ const HomePage = () => {
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">Guardian OS™</h2>
-                <p className="text-muted-foreground mt-2">Launches September 1st. Free for all users.</p>
+                <p className="text-muted-foreground mt-2">Free — launches September.</p>
               </div>
               <Badge variant="outline">Waitlist</Badge>
             </div>
@@ -274,16 +274,33 @@ const HomePage = () => {
             </div>
           </article>
 
+          <article id="product-headset" className="rounded-xl border border-border bg-card/40 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground">Guardian Headset</h2>
+                <p className="text-muted-foreground mt-2">Immersive gaming headset — coming soon.</p>
+              </div>
+              <Badge variant="outline">Coming Soon</Badge>
+            </div>
+            <div className="mt-6">
+              <div className="aspect-[16/9] overflow-hidden rounded-lg border border-border bg-muted/30">
+                <img 
+                  src={gamingHeadsetAI}
+                  alt="Guardian gaming headset coming soon"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </article>
+
           <article id="product-receiver" className="rounded-xl border border-border bg-card/40 p-6">
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">Game Guardian™ Receiver</h2>
-                <p className="text-muted-foreground mt-2">Wireless controller headset jack plugin for seamless console integration.</p>
+                <p className="text-muted-foreground mt-2">Wireless controller headset jack plugin — in development.</p>
               </div>
-              <Badge variant="outline">Coming Soon</Badge>
-            </div>
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Button size="lg" variant="outline" onClick={() => navigate('/products/receiver')}>Learn More</Button>
+              <Badge variant="outline">In Development</Badge>
             </div>
           </article>
         </div>
