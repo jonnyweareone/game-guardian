@@ -5,3 +5,9 @@ verify_jwt = true
 
 [functions.device-activate]
 verify_jwt = true
+
+[functions.identity-verify]
+verify_jwt = true
+
+[functions.location-verify]
+verify_jwt = true

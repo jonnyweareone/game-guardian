@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, AlertTriangle, Settings, Plus, MessageSquare, TrendingUp, Bell, Eye } from 'lucide-react';
+import { Shield, Users, AlertTriangle, Settings, Plus, MessageSquare, TrendingUp, Bell, Eye, BadgeCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,7 @@ import { AppRailItem, DeviceAppItem, AppPolicyPatch } from '@/components/AppRail
 import { listDeviceApps, upsertPolicy, listPolicies, assignChildToDevice, setActiveChild, issueCommand } from '@/lib/api';
 import ChildControls from '@/components/ChildControls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import VerificationSection from '@/components/VerificationSection';
 
 interface DashboardAlert {
   id: string;
@@ -500,7 +501,7 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Overview
@@ -531,6 +532,10 @@ const Dashboard = () => {
             <TabsTrigger value="devices" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Devices
+            </TabsTrigger>
+            <TabsTrigger value="verification" className="flex items-center gap-2">
+              <BadgeCheck className="h-4 w-4" />
+              Verification
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -932,6 +937,11 @@ const Dashboard = () => {
           <TabsContent value="insights" className="space-y-6">
             <h2 className="text-2xl font-bold text-foreground">AI Insights & Recommendations</h2>
             <AIInsightCards insights={demoInsights} />
+          </TabsContent>
+
+          {/* Verification Tab */}
+          <TabsContent value="verification" className="space-y-6">
+            <VerificationSection />
           </TabsContent>
 
           {/* Notification History Tab */}

@@ -782,6 +782,99 @@ export type Database = {
           },
         ]
       }
+      identity_verifications: {
+        Row: {
+          address_lat: number | null
+          address_lng: number | null
+          created_at: string
+          id: string
+          id_check_completed: boolean
+          likeness_check_completed: boolean
+          provider: string | null
+          provider_reference: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          verified_address_line1: string | null
+          verified_address_line2: string | null
+          verified_at: string | null
+          verified_city: string | null
+          verified_country: string | null
+          verified_postal_code: string | null
+          verified_state: string | null
+        }
+        Insert: {
+          address_lat?: number | null
+          address_lng?: number | null
+          created_at?: string
+          id?: string
+          id_check_completed?: boolean
+          likeness_check_completed?: boolean
+          provider?: string | null
+          provider_reference?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          verified_address_line1?: string | null
+          verified_address_line2?: string | null
+          verified_at?: string | null
+          verified_city?: string | null
+          verified_country?: string | null
+          verified_postal_code?: string | null
+          verified_state?: string | null
+        }
+        Update: {
+          address_lat?: number | null
+          address_lng?: number | null
+          created_at?: string
+          id?: string
+          id_check_completed?: boolean
+          likeness_check_completed?: boolean
+          provider?: string | null
+          provider_reference?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verified_address_line1?: string | null
+          verified_address_line2?: string | null
+          verified_at?: string | null
+          verified_city?: string | null
+          verified_country?: string | null
+          verified_postal_code?: string | null
+          verified_state?: string | null
+        }
+        Relationships: []
+      }
+      location_match_results: {
+        Row: {
+          created_at: string
+          details: Json | null
+          device_id: string
+          distance_meters: number | null
+          id: string
+          matched: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          device_id: string
+          distance_meters?: number | null
+          id?: string
+          matched: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          device_id?: string
+          distance_meters?: number | null
+          id?: string
+          matched?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       parent_notifications: {
         Row: {
           action_required: boolean | null
