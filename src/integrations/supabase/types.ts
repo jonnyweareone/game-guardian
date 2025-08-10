@@ -953,6 +953,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_security: {
         Row: {
           created_at: string
@@ -986,6 +1007,51 @@ export type Database = {
           totp_secret?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      waitlist_signups: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          intent: string
+          notes: string | null
+          product: string
+          source: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          utm: Json
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          intent?: string
+          notes?: string | null
+          product: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          utm?: Json
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          intent?: string
+          notes?: string | null
+          product?: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          utm?: Json
         }
         Relationships: []
       }
@@ -1077,6 +1143,13 @@ export type Database = {
       }
     }
     Functions: {
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       rpc_issue_command: {
         Args: { _device: string; _cmd: string; _payload?: Json }
         Returns: {
@@ -1102,6 +1175,7 @@ export type Database = {
         | "violent_content"
         | "inappropriate_sharing"
         | "cyberbullying"
+      app_role: "admin" | "moderator" | "user"
       risk_level: "low" | "medium" | "high" | "critical"
       rule_action: "allow" | "block" | "timebox"
     }
@@ -1239,6 +1313,7 @@ export const Constants = {
         "inappropriate_sharing",
         "cyberbullying",
       ],
+      app_role: ["admin", "moderator", "user"],
       risk_level: ["low", "medium", "high", "critical"],
       rule_action: ["allow", "block", "timebox"],
     },
