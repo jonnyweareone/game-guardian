@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Monitor, Shield, Clock, Lock, BookOpen, Settings, ArrowRight, CheckCircle } from "lucide-react";
+import { Monitor, Shield, Clock, Lock, BookOpen, Settings, ArrowRight, CheckCircle, Mic, Bell, Power, RefreshCcw, Filter } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 
 const ProductOSFull = () => {
@@ -10,34 +10,39 @@ const ProductOSFull = () => {
 
   const features = [
     {
-      icon: Shield,
-      title: "Live Voice Monitoring",
-      description: "Real-time analysis of all gaming voice communications with instant threat detection"
-    },
-    {
-      icon: Lock,
-      title: "Content Controls",
-      description: "Advanced filtering and blocking for gaming content, websites, and applications"
-    },
-    {
-      icon: BookOpen,
-      title: "Kiosk Mode",
-      description: "Dedicated homework and learning environment with restricted access"
-    },
-    {
-      icon: Clock,
-      title: "Screen Time Limits",
-      description: "Per-application time limits with automatic enforcement and scheduling"
+      icon: Filter,
+      title: "NextDNS Content Filtering",
+      description: "Age-rated profiles, custom allow/deny lists, and instant toggles from the parent dashboard"
     },
     {
       icon: Settings,
-      title: "Remote Management",
-      description: "Complete parental control dashboard with real-time monitoring and alerts"
+      title: "App & Game Controls",
+      description: "Disable specific apps, set time limits, or block entire categories like gambling, adult, or social media"
     },
     {
-      icon: Monitor,
-      title: "Full PC Protection",
-      description: "Transforms any gaming PC into a comprehensive AI-powered safe zone"
+      icon: Mic,
+      title: "Real-Time Voice Monitoring",
+      description: "Guardian AI listens for harmful language or suspicious contact in game and voice chats"
+    },
+    {
+      icon: Bell,
+      title: "Parental Alerts & Reports",
+      description: "Instant alerts when risky activity is detected, plus weekly activity summaries"
+    },
+    {
+      icon: Power,
+      title: "Sleep & Lock Mode",
+      description: "Shut down or lock the device remotely from anywhere"
+    },
+    {
+      icon: RefreshCcw,
+      title: "Cross-Device Profile Switching",
+      description: "Your child's safety profile follows them automatically when they log into another device"
+    },
+    {
+      icon: Lock,
+      title: "Tamper Protection",
+      description: "Built-in security prevents uninstallation or bypass attempts"
     }
   ];
 
@@ -110,8 +115,8 @@ const ProductOSFull = () => {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Game Guardian OS",
-    "description": "Full-featured Linux OS that transforms gaming PCs into AI-powered safe zones with comprehensive parental controls",
+    "name": "Guardian OS",
+    "description": "On-device child safety that stops harmful content and risky interactions at the source across apps, games, and chats",
     "operatingSystem": "Linux",
     "applicationCategory": "SecurityApplication",
     "offers": {
@@ -124,9 +129,9 @@ const ProductOSFull = () => {
   return (
     <>
       <SEOHead
-        title="Game Guardian OS - Complete PC Protection for Gaming Families"
-        description="Part of the Guardian Ecosystem — a full-featured Linux OS delivering 360° safety for gaming PCs. Launches September 1. Free for all users."
-        keywords="game guardian os, gaming pc protection, parental control os, linux gaming safety, pc monitoring software"
+        title="Guardian OS — Child Safety Built Into Your Device"
+        description="On-device protection blocks harmful content and risky interactions at the source, across apps, games, and chats."
+        keywords="guardian os, on-device child safety, parental controls, voice monitoring, app blocking"
         canonicalUrl="https://guardianai.co.uk/products/os-full"
         structuredData={structuredData}
       />
@@ -137,11 +142,10 @@ const ProductOSFull = () => {
           <div className="text-center mb-16">
             <Badge className="mb-4">Launches September 1 • Free for all users</Badge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Game Guardian OS
+              Guardian OS™ — Child Safety Built Into the Heart of Your Device
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              A full-featured Linux OS for high-end gaming PCs that transforms your child's computer into an AI-powered safe zone. 
-              Complete protection with voice monitoring, content controls, learning modes, and comprehensive parental management.
+              On-device protection means your child is safe before harmful content or risky interactions ever reach them. Guardian OS works at the source, stopping dangers before they appear on screen.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" onClick={() => navigate("/auth?intent=waitlist&product=os")}>
@@ -153,6 +157,33 @@ const ProductOSFull = () => {
               </Button>
             </div>
           </div>
+
+          {/* Why Protect at the Source? */}
+          <section className="mb-20" aria-labelledby="why-source">
+            <h2 id="why-source" className="text-3xl font-bold text-center mb-6">Why Protect at the Source?</h2>
+            <p className="text-muted-foreground max-w-3xl mx-auto text-center mb-6">
+              Most parental controls work after the fact, filtering only what's already reached your home network or browser. Guardian OS works directly inside the device's operating system, so it can:
+            </p>
+            <div className="max-w-3xl mx-auto">
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-safe mt-1" />
+                  <span>Block harmful content instantly — even in apps, games, and private chats</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-safe mt-1" />
+                  <span>Detect dangerous behaviour in real-time, from grooming to bullying</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-safe mt-1" />
+                  <span>Enforce age-appropriate rules anywhere — home, school, or public Wi‑Fi</span>
+                </li>
+              </ul>
+              <p className="text-muted-foreground mt-6 text-center">
+                By working on the device itself, Guardian OS is tamper-resistant and always active, without relying on cloud delays or router settings that kids can bypass.
+              </p>
+            </div>
+          </section>
 
           {/* Ecosystem Intro */}
           <section className="mb-20 bg-card/40 border border-border rounded-lg p-8" aria-label="Guardian Ecosystem introduction">
@@ -182,7 +213,7 @@ const ProductOSFull = () => {
 
           {/* Key Features */}
           <section className="mb-20">
-            <h2 className="text-3xl font-bold text-center mb-12">Complete Protection Features</h2>
+            <h2 className="text-3xl font-bold text-center mb-12">Core Features</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {features.map((feature, index) => {
                 const IconComponent = feature.icon;
