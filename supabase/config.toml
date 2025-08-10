@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.location-verify]
 verify_jwt = true
+
+[functions.youtube-upload]
+verify_jwt = true

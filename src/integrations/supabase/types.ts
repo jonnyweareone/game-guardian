@@ -449,6 +449,54 @@ export type Database = {
           },
         ]
       }
+      clips: {
+        Row: {
+          child_id: string | null
+          created_at: string
+          description: string | null
+          device_id: string | null
+          id: string
+          parent_id: string
+          source_url: string | null
+          status: Database["public"]["Enums"]["clip_status"]
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+          youtube_url: string | null
+          youtube_video_id: string | null
+        }
+        Insert: {
+          child_id?: string | null
+          created_at?: string
+          description?: string | null
+          device_id?: string | null
+          id?: string
+          parent_id: string
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["clip_status"]
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          youtube_url?: string | null
+          youtube_video_id?: string | null
+        }
+        Update: {
+          child_id?: string | null
+          created_at?: string
+          description?: string | null
+          device_id?: string | null
+          id?: string
+          parent_id?: string
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["clip_status"]
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          youtube_url?: string | null
+          youtube_video_id?: string | null
+        }
+        Relationships: []
+      }
       conversation_summaries: {
         Row: {
           ai_summary: string
@@ -1176,6 +1224,13 @@ export type Database = {
         | "inappropriate_sharing"
         | "cyberbullying"
       app_role: "admin" | "moderator" | "user"
+      clip_status:
+        | "pending"
+        | "approved"
+        | "declined"
+        | "uploading"
+        | "uploaded"
+        | "failed"
       risk_level: "low" | "medium" | "high" | "critical"
       rule_action: "allow" | "block" | "timebox"
     }
@@ -1314,6 +1369,14 @@ export const Constants = {
         "cyberbullying",
       ],
       app_role: ["admin", "moderator", "user"],
+      clip_status: [
+        "pending",
+        "approved",
+        "declined",
+        "uploading",
+        "uploaded",
+        "failed",
+      ],
       risk_level: ["low", "medium", "high", "critical"],
       rule_action: ["allow", "block", "timebox"],
     },
