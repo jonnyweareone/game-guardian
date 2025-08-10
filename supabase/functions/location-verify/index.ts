@@ -1,7 +1,7 @@
 // Supabase Edge Function: location-verify
 // Validates whether a device's last known IP geolocation matches the user's verified address
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
