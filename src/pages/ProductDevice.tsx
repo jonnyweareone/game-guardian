@@ -162,7 +162,7 @@ const ProductDevice = () => {
                 </ul>
                 <div className="mt-6">
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Button variant="secondary" onClick={() => navigate('/products/os-full#creator-mode')}>
+                    <Button variant="secondary" onClick={() => navigate('/creator-mode')}>
                       Enable Creator Mode
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>

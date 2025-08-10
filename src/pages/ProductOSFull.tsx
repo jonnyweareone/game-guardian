@@ -370,7 +370,7 @@ const ProductOSFull = () => {
                    </CardContent>
                  </Card>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Button variant="secondary" onClick={() => navigate('/how-to-guide')} aria-label="Turn on Creator Mode">
+                    <Button variant="secondary" onClick={() => navigate('/creator-mode')} aria-label="Turn on Creator Mode">
                       Turn on Creator Mode
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>

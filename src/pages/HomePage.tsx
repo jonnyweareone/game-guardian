@@ -331,7 +331,7 @@ const HomePage = () => {
              <h2 id="creator-kids-title" className="text-3xl md:text-4xl font-bold text-foreground">Create without the risk.</h2>
              <p className="text-lg text-muted-foreground">Guardian helps kids stream and share safely. With on-device tools and parent approvals, they can express themselves while staying protected.</p>
              <div className="flex flex-col sm:flex-row gap-3">
-               <Button variant="secondary" onClick={() => navigate('/products/os-full#creator-mode')} aria-label="See Creator Features">
+               <Button variant="secondary" onClick={() => navigate('/creator-mode')} aria-label="See Creator Features">
                  See Creator Features
                  <ArrowRight className="h-4 w-4 ml-2" />
                </Button>
