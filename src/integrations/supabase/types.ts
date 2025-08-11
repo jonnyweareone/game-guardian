@@ -828,6 +828,7 @@ export type Database = {
           child_id: string | null
           created_at: string
           device_code: string
+          device_jwt: string | null
           device_name: string | null
           id: string
           is_active: boolean | null
@@ -839,6 +840,7 @@ export type Database = {
           child_id?: string | null
           created_at?: string
           device_code: string
+          device_jwt?: string | null
           device_name?: string | null
           id?: string
           is_active?: boolean | null
@@ -850,6 +852,7 @@ export type Database = {
           child_id?: string | null
           created_at?: string
           device_code?: string
+          device_jwt?: string | null
           device_name?: string | null
           id?: string
           is_active?: boolean | null
