@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      activation_codes: {
+        Row: {
+          activation_token: string
+          code: string
+          created_at: string
+          device_id: string
+          device_jwt: string | null
+          expires_at: string
+          id: string
+          profile_id: string | null
+          status: string
+        }
+        Insert: {
+          activation_token: string
+          code: string
+          created_at?: string
+          device_id: string
+          device_jwt?: string | null
+          expires_at?: string
+          id?: string
+          profile_id?: string | null
+          status?: string
+        }
+        Update: {
+          activation_token?: string
+          code?: string
+          created_at?: string
+          device_id?: string
+          device_jwt?: string | null
+          expires_at?: string
+          id?: string
+          profile_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_codes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activation_codes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       alerts: {
         Row: {
           ai_summary: string
@@ -1000,6 +1051,42 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ui_manifests: {
+        Row: {
+          created_at: string
+          manifest: Json
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          manifest?: Json
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          manifest?: Json
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ui_manifests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ui_manifests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
