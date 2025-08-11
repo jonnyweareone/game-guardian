@@ -41,43 +41,18 @@ const DeviceActivation = () => {
     
     try {
       setIsLoading(true);
-      
-      // Check if device exists
-      const { data: existingDevice, error: checkError } = await supabase
-        .from('devices')
-        .select('*')
-        .eq('device_code', deviceId)
-        .single();
 
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
+      // New: delegate bind + token minting to Edge Function
+      const { data, error } = await supabase.functions.invoke('bind-device', {
+        body: {
+          device_id: deviceId,
+          device_name: deviceName || undefined,
+        },
+      });
 
-      if (existingDevice && existingDevice.is_active) {
-        throw new Error('This device is already paired to another account.');
+      if (error) {
+        throw new Error(error.message || 'Failed to bind device');
       }
-
-      // Create or update device record
-      const deviceData = {
-        device_code: deviceId,
-        device_name: deviceName || `Guardian AI Device ${deviceId.slice(-4)}`,
-        child_id: null,
-        parent_id: user.id,
-        is_active: true,
-        paired_at: new Date().toISOString()
-      };
-
-      const { error } = existingDevice
-        ? await supabase
-            .from('devices')
-            .update(deviceData)
-            .eq('id', existingDevice.id)
-        : await supabase
-            .from('devices')
-            .insert(deviceData);
-
-      if (error) throw error;
-
-      // Finalize activation via Edge Function (idempotent)
-      await supabase.functions.invoke('device-activate', { body: { device_code: deviceId } });
 
       setIsActivated(true);
       toast({

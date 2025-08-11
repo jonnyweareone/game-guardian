@@ -1,3 +1,4 @@
+
 project_id = "xzxjwuzwltoapifcyzww"
 
 [functions.auth-2fa]
@@ -14,3 +15,12 @@ verify_jwt = true
 
 [functions.youtube-upload]
 verify_jwt = true
+
+# New: bind-device requires parent JWT
+[functions.bind-device]
+verify_jwt = true
+
+# New: device-status is public (device polls without auth)
+[functions.device-status]
+verify_jwt = false
+
