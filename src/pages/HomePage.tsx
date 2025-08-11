@@ -240,16 +240,16 @@ const HomePage = () => {
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">Guardian OS™</h2>
-                <p className="text-muted-foreground mt-2">Free — launches September.</p>
+                <p className="text-muted-foreground mt-2">Launching Sept 2025</p>
               </div>
               <Badge variant="outline">Waitlist</Badge>
             </div>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Button size="lg" variant="outline" onClick={() => navigate('/products/os-full')}>Learn More</Button>
-              <Button size="lg" onClick={() => navigate('/auth?intent=waitlist&product=os')}>
-                Join the waitlist
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+               <Button size="lg" onClick={() => navigate('/auth?intent=waitlist&product=os')}>
+                 Join waitlist
+                 <ArrowRight className="h-4 w-4 ml-2" />
+               </Button>
             </div>
             <div className="mt-6">
               <div className="aspect-[16/9] overflow-hidden rounded-lg border border-border bg-muted/30">
