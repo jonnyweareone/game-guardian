@@ -1,34 +1,32 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import SEOHead from "@/components/SEOHead";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import deviceImg from "@/assets/guardian-device.png";
 import logoImg from "@/assets/guardian-logo.png";
 import osImg from "@/assets/gaming-headset-ai.png";
 
 const PitchDeck = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const canonical = `${window.location.origin}${pathname}`;
-  const title = "Guardian Pitch Deck – Zero-Trust Gaming Safety";
-  const description = "Guardian protects kids in gaming with zero-trust devices, OS, and AI dashboards.";
+  const title = "Guardian Pitch – Zero‑Trust, Compliance‑First Safety";
+  const description = "Guardian: device, OS, and dashboard for child‑safe gaming. Zero‑trust, compliance‑first.";
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "Guardian",
+    "@type": "WebPage",
+    name: "Guardian Pitch",
     url: canonical,
-    logo: logoImg,
-    sameAs: [
-      `${window.location.origin}/products/device`,
-      `${window.location.origin}/products/os-full`,
-      `${window.location.origin}/dashboard`,
-    ],
+    description,
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: `${window.location.origin}/` },
+        { "@type": "ListItem", position: 2, name: "Pitch" }
+      ],
+    },
   };
 
   return (
@@ -36,7 +34,7 @@ const PitchDeck = () => {
       <SEOHead
         title={title}
         description={description}
-        keywords="guardian, kids gaming safety, zero-trust, parental controls, esports, COPPA"
+        keywords="guardian, kids gaming safety, zero-trust, parental controls, esports, COPPA, DSA, Online Safety Act"
         canonicalUrl={canonical}
         ogImage={deviceImg}
         structuredData={jsonLd}
@@ -44,289 +42,236 @@ const PitchDeck = () => {
 
       <Navigation />
 
-      <header className="relative">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-safe to-warning" aria-hidden="true" />
-        <div className="sr-only">
-          <h1>Guardian – Zero-Trust Gaming & Online Safety for Kids</h1>
+      <header className="border-b border-border bg-card/50">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex items-center gap-3">
+            <img src={logoImg} alt="Guardian shield logo" className="h-8 w-8" />
+            <span className="text-sm text-muted-foreground">Company Pitch</span>
+          </div>
+          <h1 className="mt-4 text-3xl md:text-5xl font-bold">Guardian – Zero‑Trust, Compliance‑First Gaming Safety for Kids</h1>
+          <p className="mt-3 text-muted-foreground max-w-3xl">
+            We’re building the first zero‑trust, compliance‑first gaming and online safety ecosystem designed for children.
+            Our mission is to protect kids everywhere they play online, starting with gaming — the largest unregulated
+            playground on earth.
+          </p>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <section aria-label="Guardian Pitch Deck" className="relative">
-          <div className="absolute left-0 top-0 z-10 flex items-center gap-2">
-            <img src={logoImg} alt="Guardian shield logo" className="h-8 w-8" />
-            <span className="text-sm text-muted-foreground">Pitch Deck</span>
+      <main className="max-w-6xl mx-auto px-4 py-10 space-y-16">
+        {/* Problem */}
+        <section aria-labelledby="problem-title">
+          <h2 id="problem-title" className="text-2xl md:text-3xl font-semibold">The Problem</h2>
+          <p className="mt-3 text-muted-foreground">
+            The problem is growing fast. Millions of children face grooming, cyberbullying, and exposure to harmful content in online
+            games every day. Existing parental controls are fragmented, reactive, and easy to bypass. There is no unified, global platform
+            that keeps kids safe while allowing them to enjoy the social and educational benefits of gaming. The gap between regulatory
+            pressure and available solutions is widening, creating a perfect moment for a compliant, scalable platform.
+          </p>
+        </section>
+
+        {/* Solution */}
+        <section aria-labelledby="solution-title">
+          <h2 id="solution-title" className="text-2xl md:text-3xl font-semibold">Our Solution: The Guardian Ecosystem</h2>
+          <p className="mt-3 text-muted-foreground">
+            Three core components, built for global compliance, minimal deployment friction, and scale.
+          </p>
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
+            <Card className="hover:border-primary/40 transition-colors">
+              <CardHeader>
+                <CardTitle>Guardian Device</CardTitle>
+                <CardDescription>Inline AI monitoring between console/PC and headset.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <figure className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted/30">
+                  <img src={deviceImg} alt="Guardian Device inline hardware" className="w-full h-full object-contain" loading="lazy" />
+                </figure>
+                <Button variant="outline" className="mt-4 w-full" onClick={() => navigate('/products/device')}>Learn more</Button>
+              </CardContent>
+            </Card>
+            <Card className="hover:border-primary/40 transition-colors">
+              <CardHeader>
+                <CardTitle>Guardian OS</CardTitle>
+                <CardDescription>Freeware OS launching Q3 2025 for rapid adoption.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <figure className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted/30">
+                  <img src={osImg} alt="Guardian OS mockup" className="w-full h-full object-cover" loading="lazy" />
+                </figure>
+                <Button variant="outline" className="mt-4 w-full" onClick={() => navigate('/products/os-full')}>Learn more</Button>
+              </CardContent>
+            </Card>
+            <Card className="hover:border-primary/40 transition-colors">
+              <CardHeader>
+                <CardTitle>Guardian Dashboard</CardTitle>
+                <CardDescription>Real‑time alerts, sentiment, grooming detection, and trends.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <figure className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted/30">
+                  <img src={osImg} alt="Guardian Dashboard UI preview" className="w-full h-full object-cover" loading="lazy" />
+                </figure>
+                <Button className="mt-4 w-full" onClick={() => navigate('/auth')}>See the dashboard</Button>
+              </CardContent>
+            </Card>
           </div>
+        </section>
 
-          <Carousel className="mt-10">
-            <CarouselContent>
-              {/* Slide 1 – Cover */}
-              <CarouselItem>
-                <article className="grid md:grid-cols-2 gap-8 items-center">
-                  <div className="space-y-4">
-                    <h2 className="text-3xl md:text-4xl font-bold">Guardian</h2>
-                    <p className="text-lg text-muted-foreground">Zero-Trust Gaming & Online Safety for Kids</p>
-                    <Link to="/" className="inline-flex items-center gap-2 text-primary story-link">
-                      Visit homepage
-                    </Link>
-                  </div>
-                  <Link to="/" className="justify-self-center">
-                    <img src={deviceImg} alt="Guardian device mockup with LED glow" className="w-full max-w-md rounded-lg shadow-xl hover-scale" />
-                  </Link>
-                </article>
-              </CarouselItem>
+        {/* Creator Mode */}
+        <section aria-labelledby="creator-title">
+          <h2 id="creator-title" className="text-2xl md:text-3xl font-semibold">Creator Mode — Safe Creation for Kids</h2>
+          <p className="mt-3 text-muted-foreground">
+            A safe, moderated environment to record, edit, and share gameplay clips. Includes parental approval workflows and automatic
+            redaction of unsafe audio or visuals. Empower creative play while keeping everything age‑appropriate.
+          </p>
+          <div className="mt-5">
+            <Button variant="secondary" onClick={() => navigate('/creator-mode')}>Explore Creator Mode</Button>
+          </div>
+        </section>
 
-              {/* Slide 2 – Problem */}
-              <CarouselItem>
-                <article className="grid md:grid-cols-2 gap-8 items-center">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">The Growing Threat to Kids in Gaming</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                      <li>Grooming, cyberbullying, and harmful content</li>
-                      <li>Parental controls are fragmented and reactive</li>
-                      <li>No compliance-first global safety platform</li>
-                    </ul>
-                  </div>
-                  <div className="justify-self-center">
-                    <img src={osImg} loading="lazy" alt="Child gaming scene with AI danger alert overlay" className="w-full max-w-md rounded-lg shadow-xl" />
-                  </div>
-                </article>
-              </CarouselItem>
+        {/* Go-To-Market & Partners */}
+        <section aria-labelledby="gtm-title">
+          <h2 id="gtm-title" className="text-2xl md:text-3xl font-semibold">Go‑To‑Market and Partners</h2>
+          <div className="mt-4 grid gap-6 md:grid-cols-2">
+            <Card className="bg-card/40">
+              <CardHeader>
+                <CardTitle>Manufacturing & IP</CardTitle>
+                <CardDescription>Scalable production with trusted partners.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                  <li>Patent pending on core technology</li>
+                  <li>Build partner: SEI Robotics (trusted by Google & T‑Mobile)</li>
+                  <li>Specs in hand; low deployment cost, global addressable market</li>
+                </ul>
+              </CardContent>
+            </Card>
+            <Card className="bg-card/40">
+              <CardHeader>
+                <CardTitle>Compliance & Verification</CardTitle>
+                <CardDescription>Aligned with global standards from day one.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                  <li>Age/ID verification partner: Yoti</li>
+                  <li>MVP in beta with working hardware</li>
+                  <li>School and edtech integrations underway</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
 
-              {/* Slide 3 – Solution Overview */}
-              <CarouselItem>
-                <article className="grid md:grid-cols-3 gap-6 items-start">
-                  <Link to="/products/device" className="group">
-                    <img src={deviceImg} loading="lazy" alt="Guardian Device – inline AI monitor" className="rounded-lg shadow-xl group-hover:opacity-90 transition" />
-                    <p className="mt-2 text-sm text-muted-foreground">Guardian Device</p>
-                  </Link>
-                  <Link to="/products/os-full" className="group">
-                    <img src={osImg} loading="lazy" alt="Guardian OS – freeware for instant adoption" className="rounded-lg shadow-xl group-hover:opacity-90 transition" />
-                    <p className="mt-2 text-sm text-muted-foreground">Guardian OS</p>
-                  </Link>
-                  <Link to="/dashboard" className="group">
-                    <img src={osImg} loading="lazy" alt="Guardian Dashboard – parental insights and alerts" className="rounded-lg shadow-xl group-hover:opacity-90 transition" />
-                    <p className="mt-2 text-sm text-muted-foreground">Guardian Dashboard</p>
-                  </Link>
-                </article>
-              </CarouselItem>
+        {/* Roadmap */}
+        <section aria-labelledby="roadmap-title">
+          <h2 id="roadmap-title" className="text-2xl md:text-3xl font-semibold">Roadmap</h2>
+          <ol className="mt-4 grid gap-4 md:grid-cols-2">
+            <li className="rounded-lg border border-border p-4 bg-card/50">
+              <p className="text-sm text-muted-foreground">Q3 2025</p>
+              <p>Global launch of Guardian OS freeware with PR to accelerate adoption.</p>
+            </li>
+            <li className="rounded-lg border border-border p-4 bg-card/50">
+              <p className="text-sm text-muted-foreground">Q4 2025</p>
+              <p>First hardware production run; pilot programs in the UK and Australia with schools, Quaria, and Google Education.</p>
+            </li>
+            <li className="rounded-lg border border-border p-4 bg-card/50">
+              <p className="text-sm text-muted-foreground">Q1–Q2 2026</p>
+              <p>Launch verified child‑only gaming servers and the Safe Esports League.</p>
+            </li>
+            <li className="rounded-lg border border-border p-4 bg-card/50">
+              <p className="text-sm text-muted-foreground">Q3 2026</p>
+              <p>Bundled offerings with major game subscription services.</p>
+            </li>
+            <li className="rounded-lg border border-border p-4 bg-card/50 md:col-span-2">
+              <p className="text-sm text-muted-foreground">2027</p>
+              <p>Brand‑sponsored global Safe Esports tournaments, expanded education programs, and deeper publisher integrations.</p>
+            </li>
+          </ol>
+        </section>
 
-              {/* Slide 4 – Creator Mode */}
-              <CarouselItem>
-                <article className="grid md:grid-cols-2 gap-8 items-center">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">Creator Mode</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                      <li>Safe, moderated content creation for kids</li>
-                      <li>Parental approval workflows</li>
-                      <li>Auto-redaction of unsafe material</li>
-                    </ul>
-                  </div>
-                  <div className="justify-self-center">
-                    <img src={osImg} loading="lazy" alt="Creator Mode UI mockup" className="w-full max-w-md rounded-lg shadow-xl" />
-                  </div>
-                </article>
-              </CarouselItem>
+        {/* Regulations */}
+        <section aria-labelledby="reg-title">
+          <h2 id="reg-title" className="text-2xl md:text-3xl font-semibold">Regulatory Alignment</h2>
+          <p className="mt-3 text-muted-foreground">
+            Legislation is tightening worldwide. Guardian is aligned from day one and deployable in any jurisdiction without legal risk.
+          </p>
+          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            {['UK Online Safety Act','EU Digital Services Act','Australia Online Safety Bill','US COPPA'].map((label) => (
+              <div key={label} className="p-4 rounded-md bg-muted border border-border text-sm">{label}</div>
+            ))}
+          </div>
+        </section>
 
-              {/* Slide 5 – Traction & Readiness */}
-              <CarouselItem>
-                <article className="grid md:grid-cols-2 gap-8 items-start">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">Traction & Readiness</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                      <li>MVP in beta with hardware working</li>
-                      <li>Manufacturing partner: SEI Robotics</li>
-                      <li>Patent pending</li>
-                      <li>Yoti integration for age/ID verification</li>
-                      <li>Active partner talks with UK & AU edtech + Google Education</li>
-                    </ul>
-                  </div>
-                </article>
-              </CarouselItem>
+        {/* Market Opportunity */}
+        <section aria-labelledby="market-title">
+          <h2 id="market-title" className="text-2xl md:text-3xl font-semibold">Market Opportunity</h2>
+          <div className="mt-4 grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Growth</CardTitle>
+                <CardDescription>Expanding TAM, SAM, and SOM</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li><strong className="text-foreground">TAM:</strong> $282B (2023) → $666B (2030)</li>
+                  <li><strong className="text-foreground">SAM:</strong> $16B → $64B (child‑safe gaming & edutainment)</li>
+                  <li><strong className="text-foreground">SOM:</strong> $12–$21B by 2031 (children’s safe gaming)</li>
+                </ul>
+              </CardContent>
+            </Card>
+            <div className="relative p-6 flex items-center justify-center">
+              <div
+                aria-hidden
+                className="relative h-56 w-56 rounded-full"
+                style={{ background: `conic-gradient(hsl(var(--primary)) 0 35%, hsl(var(--safe)) 35% 65%, hsl(var(--warning)) 65% 85%, hsl(var(--secondary)) 85% 100%)` }}
+              >
+                <div className="absolute inset-6 bg-background rounded-full border border-border" />
+                <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+                  TAM / SAM / SOM
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-              {/* Slide 6 – Roadmap */}
-              <CarouselItem>
-                <article>
-                  <h3 className="text-2xl font-semibold mb-6">Roadmap</h3>
-                  <ol className="grid gap-4 md:grid-cols-2">
-                    <li className="rounded-lg border border-border p-4 bg-card/50">
-                      <p className="text-sm text-muted-foreground">Q3 2025</p>
-                      <p>OS freeware release & global PR launch</p>
-                    </li>
-                    <li className="rounded-lg border border-border p-4 bg-card/50">
-                      <p className="text-sm text-muted-foreground">Q4 2025</p>
-                      <p>First hardware production run, UK & AU pilot deployments</p>
-                    </li>
-                    <li className="rounded-lg border border-border p-4 bg-card/50">
-                      <p className="text-sm text-muted-foreground">Q1–Q2 2026</p>
-                      <p>Child-only gaming servers & verified Safe Esports league</p>
-                    </li>
-                    <li className="rounded-lg border border-border p-4 bg-card/50">
-                      <p className="text-sm text-muted-foreground">Q3 2026</p>
-                      <p>Bundling with major game subscriptions</p>
-                    </li>
-                    <li className="rounded-lg border border-border p-4 bg-card/50 md:col-span-2">
-                      <p className="text-sm text-muted-foreground">2027</p>
-                      <p>Global Safe Esports tournaments, expanded school programs, deeper publisher integrations</p>
-                    </li>
-                  </ol>
-                </article>
-              </CarouselItem>
+        {/* Commercial Strategy */}
+        <section aria-labelledby="strategy-title">
+          <h2 id="strategy-title" className="text-2xl md:text-3xl font-semibold">Commercial Strategy</h2>
+          <ul className="mt-3 list-disc pl-5 space-y-2 text-muted-foreground">
+            <li>Bundled distribution with game publishers</li>
+            <li>Integrations with edtech platforms and schools</li>
+            <li>Branded Safe Esports competitions for community growth</li>
+            <li>Aligned sponsorships with child safety and education brands</li>
+          </ul>
+        </section>
 
-              {/* Slide 7 – Regulations & Compliance */}
-              <CarouselItem>
-                <article className="grid md:grid-cols-2 gap-8 items-start">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">Riding the Regulatory Tailwind</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                      <li>UK Online Safety Act</li>
-                      <li>EU Digital Services Act</li>
-                      <li>Australia Online Safety Bill</li>
-                      <li>COPPA (US) & global child protection laws</li>
-                    </ul>
-                    <p className="mt-3 text-muted-foreground">Positioned as the first global, compliant, zero-trust kids’ gaming solution.</p>
-                  </div>
-                  <div className="rounded-lg border border-border p-6 bg-card/50">
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="p-4 rounded-md bg-muted">UK</div>
-                      <div className="p-4 rounded-md bg-muted">EU</div>
-                      <div className="p-4 rounded-md bg-muted">AU</div>
-                      <div className="p-4 rounded-md bg-muted">US</div>
-                    </div>
-                  </div>
-                </article>
-              </CarouselItem>
+        {/* Funding Ask */}
+        <section aria-labelledby="funding-title">
+          <h2 id="funding-title" className="text-2xl md:text-3xl font-semibold">Funding</h2>
+          <p className="mt-3 text-muted-foreground">
+            We are seeking capital to scale marketing, device production, and partner integration. Minimal funds are required for R&D — the
+            MVP is complete and patent pending. Funds will amplify awareness, produce hardware at scale, launch the OS globally, and establish
+            Safe Esports infrastructure.
+          </p>
+        </section>
 
-              {/* Slide 8 – Market Opportunity (TAM/SAM/SOM) */}
-              <CarouselItem>
-                <article>
-                  <h3 className="text-2xl font-semibold mb-6">Market Opportunity</h3>
-                  <div className="relative mx-auto aspect-square max-w-md">
-                    <div className="absolute inset-0 m-auto h-full w-full rounded-full border-4" style={{ borderColor: "hsl(var(--primary))" }} />
-                    <div className="absolute inset-6 m-auto h-[85%] w-[85%] rounded-full border-4" style={{ borderColor: "hsl(var(--safe))" }} />
-                    <div className="absolute inset-12 m-auto h-[70%] w-[70%] rounded-full border-4" style={{ borderColor: "hsl(var(--warning))" }} />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <ul className="text-center text-sm text-muted-foreground space-y-1">
-                        <li><strong className="text-foreground">TAM</strong>: $282B → $666B by 2030</li>
-                        <li><strong className="text-foreground">SAM</strong>: $16B → $64B child-safe gaming</li>
-                        <li><strong className="text-foreground">SOM</strong>: $12B–$21B by 2031</li>
-                      </ul>
-                    </div>
-                  </div>
-                </article>
-              </CarouselItem>
+        {/* Vision */}
+        <section aria-labelledby="vision-title">
+          <h2 id="vision-title" className="text-2xl md:text-3xl font-semibold">Vision</h2>
+          <p className="mt-3 text-muted-foreground">
+            Guardian will change how children experience gaming and online life — globally, safely, and compliantly. With a strong regulatory
+            position, proven build plan, and massive addressable market, we’re leading a new category: zero‑trust, compliance‑first gaming for kids.
+          </p>
+        </section>
 
-              {/* Slide 9 – Competitive Advantage */}
-              <CarouselItem>
-                <article>
-                  <h3 className="text-2xl font-semibold mb-6">Competitive Advantage</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-muted text-left">
-                          <th className="p-3">Capability</th>
-                          <th className="p-3">Guardian</th>
-                          <th className="p-3">Traditional Controls</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          ["Zero-trust verified players", "Yes", "No"],
-                          ["Compliance baked-in globally", "Yes", "Partial"],
-                          ["Low deployment cost", "Yes", "Mixed"],
-                          ["Freeware OS growth", "Yes", "No"],
-                          ["Deep edu/game partnerships", "Yes", "Limited"],
-                        ].map((row, i) => (
-                          <tr key={i} className="border-b border-border">
-                            <td className="p-3">{row[0]}</td>
-                            <td className="p-3">{row[1]}</td>
-                            <td className="p-3">{row[2]}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
-              </CarouselItem>
-
-              {/* Slide 10 – Partnerships */}
-              <CarouselItem>
-                <article className="grid md:grid-cols-2 gap-6 items-start">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">Partnerships</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                      <li>EdTech: Quaria, Google Education, UK school networks</li>
-                      <li>Game Publishers: Bundles with subscriptions</li>
-                      <li>Safe Esports: Branded kids-only tournaments</li>
-                      <li>Brand Sponsorships: Safe competitive gaming</li>
-                    </ul>
-                  </div>
-                  <div className="rounded-lg border border-border p-6 bg-card/50 grid grid-cols-2 gap-4 text-center">
-                    <div className="p-3 rounded-md bg-muted">Logo</div>
-                    <div className="p-3 rounded-md bg-muted">Logo</div>
-                    <div className="p-3 rounded-md bg-muted">Logo</div>
-                    <div className="p-3 rounded-md bg-muted">Logo</div>
-                  </div>
-                </article>
-              </CarouselItem>
-
-              {/* Slide 11 – Dashboard & Monitoring */}
-              <CarouselItem>
-                <article className="grid md:grid-cols-2 gap-8 items-center">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-4">Dashboard & Monitoring</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                      <li>Grooming detection & redaction</li>
-                      <li>Cyberbullying alerts</li>
-                      <li>Emotional trend analysis</li>
-                      <li>Positive behavior recognition</li>
-                    </ul>
-                  </div>
-                  <div className="justify-self-center">
-                    <img src={osImg} loading="lazy" alt="Guardian dashboard preview" className="w-full max-w-md rounded-lg shadow-xl" />
-                  </div>
-                </article>
-              </CarouselItem>
-
-              {/* Slide 12 – Funding & Use of Proceeds */}
-              <CarouselItem>
-                <article>
-                  <h3 className="text-2xl font-semibold mb-6">Funding & Use of Proceeds</h3>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="rounded-lg border border-border p-6 bg-card/50">
-                      <p className="text-muted-foreground">Capital Needed: [insert amount]</p>
-                      <ul className="list-disc pl-5 space-y-2 mt-2 text-muted-foreground">
-                        <li>Marketing to parents, schools, platforms</li>
-                        <li>Scaling production</li>
-                        <li>Minimal R&D (MVP complete)</li>
-                        <li>Gaming server & esports league launch</li>
-                      </ul>
-                    </div>
-                    <div className="relative p-6 flex items-center justify-center">
-                      {/* Simple donut using borders and conics to avoid extra deps */}
-                      <div className="relative h-48 w-48 rounded-full" style={{ background: `conic-gradient(hsl(var(--primary)) 0 35%, hsl(var(--safe)) 35% 65%, hsl(var(--warning)) 65% 85%, hsl(var(--secondary)) 85% 100%)` }}>
-                        <div className="absolute inset-6 bg-background rounded-full border border-border" />
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              </CarouselItem>
-
-              {/* Slide 13 – Vision */}
-              <CarouselItem>
-                <article className="grid md:grid-cols-2 gap-8 items-center">
-                  <blockquote className="text-xl md:text-2xl font-semibold leading-relaxed">
-                    “Guardian will change how children experience gaming and online life — globally, safely, and compliantly.”
-                  </blockquote>
-                  <div className="justify-self-center">
-                    <img src={deviceImg} loading="lazy" alt="Hero device glowing in dark" className="w-full max-w-md rounded-lg shadow-xl" />
-                  </div>
-                </article>
-              </CarouselItem>
-            </CarouselContent>
-            <CarouselPrevious className="-left-4 md:-left-12" />
-            <CarouselNext className="-right-4 md:-right-12" />
-          </Carousel>
+        {/* Demo Login CTA */}
+        <section aria-labelledby="demo-title" className="border-t border-border pt-10">
+          <h2 id="demo-title" className="text-2xl md:text-3xl font-semibold">Try It — Demo Login</h2>
+          <p className="mt-3 text-muted-foreground max-w-3xl">
+            Jump into a demo account to explore the parent dashboard and alerts. On the next screen, use the “Demo Login” option.
+          </p>
+          <div className="mt-5 flex flex-col sm:flex-row gap-3">
+            <Button size="lg" onClick={() => navigate('/auth')}>Go to Sign In</Button>
+            <Button size="lg" variant="outline" onClick={() => navigate('/products')}>Explore Products</Button>
+          </div>
         </section>
       </main>
     </div>
