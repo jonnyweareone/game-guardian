@@ -188,7 +188,7 @@ const PitchDeck = () => {
                 </p>
               </div>
             </div>
-            <figure className="aspect-video overflow-hidden rounded-lg border border-border bg-muted/30">
+            <figure className="aspect-[3/2] overflow-hidden rounded-lg border border-border bg-muted/30">
               <img
                 src="/lovable-uploads/dd7adcf2-1480-4676-9d93-db75824ccb5a.png"
                 alt="Zero‑Trust and end‑to‑end encryption diagram: identity verification, session trust, encryption, tamper‑resistant hardware, safe play matching"
