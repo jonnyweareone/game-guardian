@@ -1,11 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import SEOHead from "@/components/SEOHead";
+import EcosystemHero from "@/components/EcosystemHero";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import deviceImg from "@/assets/guardian-device.png";
 import logoImg from "@/assets/guardian-logo.png";
-import osImg from "@/assets/gaming-headset-ai.png";
 
 const PitchDeck = () => {
   const { pathname } = useLocation();
@@ -57,6 +57,8 @@ const PitchDeck = () => {
         </div>
       </header>
 
+      <EcosystemHero />
+
       <main className="max-w-6xl mx-auto px-4 py-10 space-y-16">
         {/* Problem */}
         <section aria-labelledby="problem-title">
@@ -83,7 +85,7 @@ const PitchDeck = () => {
               </CardHeader>
               <CardContent>
                 <figure className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted/30">
-                  <img src={deviceImg} alt="Guardian Device inline hardware" className="w-full h-full object-contain" loading="lazy" />
+                  <img src="/lovable-uploads/6ee70be5-bcb2-464c-b22c-1b3f8ac991a5.png" alt="Guardian Device inline hardware with RGB edge lighting" className="w-full h-full object-contain" loading="lazy" />
                 </figure>
                 <Button variant="outline" className="mt-4 w-full" onClick={() => navigate('/products/device')}>Learn more</Button>
               </CardContent>
@@ -95,7 +97,7 @@ const PitchDeck = () => {
               </CardHeader>
               <CardContent>
                 <figure className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted/30">
-                  <img src={osImg} alt="Guardian OS mockup" className="w-full h-full object-cover" loading="lazy" />
+                  <img src="/lovable-uploads/85e329b1-1989-4e95-883b-5917e057ba13.png" alt="Guardian OS interface mockup showing child controls" className="w-full h-full object-cover" loading="lazy" />
                 </figure>
                 <Button variant="outline" className="mt-4 w-full" onClick={() => navigate('/products/os-full')}>Learn more</Button>
               </CardContent>
@@ -107,7 +109,7 @@ const PitchDeck = () => {
               </CardHeader>
               <CardContent>
                 <figure className="aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted/30">
-                  <img src={osImg} alt="Guardian Dashboard UI preview" className="w-full h-full object-cover" loading="lazy" />
+                  <img src="/lovable-uploads/07c9596b-e586-4794-be1d-893c1024bf68.png" alt="Guardian parental dashboard UI preview" className="w-full h-full object-cover" loading="lazy" />
                 </figure>
                 <Button className="mt-4 w-full" onClick={() => navigate('/auth')}>See the dashboard</Button>
               </CardContent>
