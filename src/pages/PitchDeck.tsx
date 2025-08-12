@@ -308,7 +308,7 @@ const PitchDeck = () => {
             Jonny is a father of four boys (ages 5–13). Personal experiences with his sons’ online gaming — seeing risks firsthand and the gap in effective tools — are the reason he built Game Guardian.
           </p>
           <p className="mt-3 text-muted-foreground">
-            Previous experience: ZYBRE Internet — a start‑up, trend‑setting ISP focused purely on FTTP that built the UK's first Android TV platform in partnership with SEI Robotics, the current build partner for the Game Guardian AI. ZYBRE was sold to Octoplus at the end of 2023.
+            Previous experience: ZYBRE Internet — a start‑up, trend‑setting ISP focused purely on FTTP that built the UK’s first Android Operator Tier Android TV Platform with Google and SEI Robotics, the current build partner for the Game Guardian AI. ZYBRE was sold to Octoplus at the end of 2023.
           </p>
           <blockquote className="mt-4 border-l-4 border-primary/30 pl-4 italic text-muted-foreground">
             “Every child deserves to play, learn, and compete online without fear. Guardian exists to make that non‑negotiable.”
