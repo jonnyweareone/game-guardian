@@ -27,6 +27,7 @@ import CreatorMode from "./pages/CreatorMode";
 import OtaDemoLayout from "./pages/admin/ota-demo/OtaDemoLayout";
 import OtaUpdateManager from "./pages/admin/ota-demo/OtaUpdateManager";
 import OtaReports from "./pages/admin/ota-demo/OtaReports";
+import PitchDeck from "./pages/PitchDeck";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/how-to-guide" element={<HowToGuide />} />
             <Route path="/about" element={<About />} />
             <Route path="/creator-mode" element={<CreatorMode />} />
+            <Route path="/pitch-deck" element={<PitchDeck />} />
             <Route path="/" element={<HomePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

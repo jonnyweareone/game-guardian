@@ -30,6 +30,7 @@ const Navigation = ({ transparent = false }: NavigationProps) => {
             <Button variant="ghost" onClick={() => navigate('/blog')}>Blog</Button>
             <Button variant="ghost" onClick={() => navigate('/about')}>About</Button>
             <Button variant="ghost" onClick={() => navigate('/security')}>Security</Button>
+            <Button variant="ghost" onClick={() => navigate('/pitch-deck')}>Pitch Deck</Button>
           </nav>
           <div className="flex items-center gap-4">
             {!user ? (
