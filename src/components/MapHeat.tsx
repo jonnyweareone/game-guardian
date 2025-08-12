@@ -45,9 +45,9 @@ export default function MapHeat({ geojson, initialBounds }: Props) {
           "hate_speech",CATEGORY_COLORS.hate_speech,
           "self_harm",CATEGORY_COLORS.self_harm,
           "suspicious_contact",CATEGORY_COLORS.suspicious_contact,
-          "hsl(220 13% 18%)"
+          "#111827"
         ],
-        "circle-stroke-color":"hsl(0 0% 100%)","circle-stroke-width":0.5
+        "circle-stroke-color":"#ffffff","circle-stroke-width":0.5
       }});
       setReady(true);
       if(initialBounds) map.fitBounds(initialBounds,{padding:40,duration:0});
