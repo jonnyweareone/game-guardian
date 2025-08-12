@@ -166,24 +166,36 @@ const PitchDeck = () => {
         {/* Zero-Trust & Encryption */}
         <section aria-labelledby="zero-trust-title">
           <h2 id="zero-trust-title" className="text-2xl md:text-3xl font-semibold">Zero‑Trust Architecture & End‑to‑End Encryption</h2>
-          <p className="mt-3 text-muted-foreground">
-            Built for Safety, Privacy, and Trust — Guardian is designed from the ground up on zero‑trust principles, meaning no player, session, or connection is trusted by default; every interaction is verified.
-          </p>
-          <div className="mt-4">
-            <h3 className="sr-only">Key Elements</h3>
-            <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-              <li><strong className="text-foreground">Identity‑Verified Access:</strong> All users undergo age & ID verification via Yoti before joining a game environment.</li>
-              <li><strong className="text-foreground">Session‑Level Trust:</strong> Every device session is independently authenticated; profile switching triggers automatic reapplication of age‑appropriate policies.</li>
-              <li><strong className="text-foreground">Secure‑by‑Design:</strong> All communications — voice, text, and gameplay telemetry — are protected with end‑to‑end encryption, ensuring no third party (including Guardian) can intercept content without parental consent.</li>
-              <li><strong className="text-foreground">Tamper‑Resistant Hardware:</strong> Guardian Device firmware is locked and signed, preventing modification or bypass.</li>
-              <li><strong className="text-foreground">Safe Play Matching:</strong> Our verified child‑only servers enforce strict entry criteria, preventing any unverified or adult accounts from joining.</li>
-            </ul>
-          </div>
-          <div className="mt-4">
-            <h3 className="sr-only">Why It Matters</h3>
-            <p className="text-muted-foreground">
-              Zero‑trust combined with encryption ensures that even if a network is compromised, a player’s identity, communications, and safety settings remain secure. It creates an environment where parents, educators, and regulators can have complete confidence in every interaction.
-            </p>
+          <div className="mt-3 grid gap-6 md:grid-cols-2 items-start">
+            <div>
+              <p className="text-muted-foreground">
+                Built for Safety, Privacy, and Trust — Guardian is designed from the ground up on zero‑trust principles, meaning no player, session, or connection is trusted by default; every interaction is verified.
+              </p>
+              <div className="mt-4">
+                <h3 className="sr-only">Key Elements</h3>
+                <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                  <li><strong className="text-foreground">Identity‑Verified Access:</strong> All users undergo age & ID verification via Yoti before joining a game environment.</li>
+                  <li><strong className="text-foreground">Session‑Level Trust:</strong> Every device session is independently authenticated; profile switching triggers automatic reapplication of age‑appropriate policies.</li>
+                  <li><strong className="text-foreground">Secure‑by‑Design:</strong> All communications — voice, text, and gameplay telemetry — are protected with end‑to‑end encryption, ensuring no third party (including Guardian) can intercept content without parental consent.</li>
+                  <li><strong className="text-foreground">Tamper‑Resistant Hardware:</strong> Guardian Device firmware is locked and signed, preventing modification or bypass.</li>
+                  <li><strong className="text-foreground">Safe Play Matching:</strong> Our verified child‑only servers enforce strict entry criteria, preventing any unverified or adult accounts from joining.</li>
+                </ul>
+              </div>
+              <div className="mt-4">
+                <h3 className="sr-only">Why It Matters</h3>
+                <p className="text-muted-foreground">
+                  Zero‑trust combined with encryption ensures that even if a network is compromised, a player’s identity, communications, and safety settings remain secure. It creates an environment where parents, educators, and regulators can have complete confidence in every interaction.
+                </p>
+              </div>
+            </div>
+            <figure className="aspect-video overflow-hidden rounded-lg border border-border bg-muted/30">
+              <img
+                src="/lovable-uploads/58833672-9824-49ce-9254-cf50498ec68a.png"
+                alt="Zero‑Trust and end‑to‑end encryption diagram: identity verification, session trust, encryption, tamper‑resistant hardware, safe play matching"
+                className="w-full h-full object-contain"
+                loading="lazy"
+              />
+            </figure>
           </div>
         </section>
 
