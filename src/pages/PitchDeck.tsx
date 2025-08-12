@@ -162,31 +162,29 @@ const PitchDeck = () => {
           </div>
         </section>
 
-        {/* Roadmap */}
-        <section aria-labelledby="roadmap-title">
-          <h2 id="roadmap-title" className="text-2xl md:text-3xl font-semibold">Roadmap</h2>
-          <ol className="mt-4 grid gap-4 md:grid-cols-2">
-            <li className="rounded-lg border border-border p-4 bg-card/50">
-              <p className="text-sm text-muted-foreground">Q3 2025</p>
-              <p>Global launch of Guardian OS freeware with PR to accelerate adoption.</p>
-            </li>
-            <li className="rounded-lg border border-border p-4 bg-card/50">
-              <p className="text-sm text-muted-foreground">Q4 2025</p>
-              <p>First hardware production run; pilot programs in the UK and Australia with schools, Quaria, and Google Education.</p>
-            </li>
-            <li className="rounded-lg border border-border p-4 bg-card/50">
-              <p className="text-sm text-muted-foreground">Q1–Q2 2026</p>
-              <p>Launch verified child‑only gaming servers and the Safe Esports League.</p>
-            </li>
-            <li className="rounded-lg border border-border p-4 bg-card/50">
-              <p className="text-sm text-muted-foreground">Q3 2026</p>
-              <p>Bundled offerings with major game subscription services.</p>
-            </li>
-            <li className="rounded-lg border border-border p-4 bg-card/50 md:col-span-2">
-              <p className="text-sm text-muted-foreground">2027</p>
-              <p>Brand‑sponsored global Safe Esports tournaments, expanded education programs, and deeper publisher integrations.</p>
-            </li>
-          </ol>
+
+        {/* Zero-Trust & Encryption */}
+        <section aria-labelledby="zero-trust-title">
+          <h2 id="zero-trust-title" className="text-2xl md:text-3xl font-semibold">Zero‑Trust Architecture & End‑to‑End Encryption</h2>
+          <p className="mt-3 text-muted-foreground">
+            Built for Safety, Privacy, and Trust — Guardian is designed from the ground up on zero‑trust principles, meaning no player, session, or connection is trusted by default; every interaction is verified.
+          </p>
+          <div className="mt-4">
+            <h3 className="sr-only">Key Elements</h3>
+            <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+              <li><strong className="text-foreground">Identity‑Verified Access:</strong> All users undergo age & ID verification via Yoti before joining a game environment.</li>
+              <li><strong className="text-foreground">Session‑Level Trust:</strong> Every device session is independently authenticated; profile switching triggers automatic reapplication of age‑appropriate policies.</li>
+              <li><strong className="text-foreground">Secure‑by‑Design:</strong> All communications — voice, text, and gameplay telemetry — are protected with end‑to‑end encryption, ensuring no third party (including Guardian) can intercept content without parental consent.</li>
+              <li><strong className="text-foreground">Tamper‑Resistant Hardware:</strong> Guardian Device firmware is locked and signed, preventing modification or bypass.</li>
+              <li><strong className="text-foreground">Safe Play Matching:</strong> Our verified child‑only servers enforce strict entry criteria, preventing any unverified or adult accounts from joining.</li>
+            </ul>
+          </div>
+          <div className="mt-4">
+            <h3 className="sr-only">Why It Matters</h3>
+            <p className="text-muted-foreground">
+              Zero‑trust combined with encryption ensures that even if a network is compromised, a player’s identity, communications, and safety settings remain secure. It creates an environment where parents, educators, and regulators can have complete confidence in every interaction.
+            </p>
+          </div>
         </section>
 
         {/* Regulations */}
@@ -262,6 +260,33 @@ const PitchDeck = () => {
             Guardian will change how children experience gaming and online life — globally, safely, and compliantly. With a strong regulatory
             position, proven build plan, and massive addressable market, we’re leading a new category: zero‑trust, compliance‑first gaming for kids.
           </p>
+        </section>
+
+        {/* Roadmap */}
+        <section aria-labelledby="roadmap-title">
+          <h2 id="roadmap-title" className="text-2xl md:text-3xl font-semibold">Roadmap</h2>
+          <ol className="mt-4 grid gap-4 md:grid-cols-2">
+            <li className="rounded-lg border border-border p-4 bg-card/50">
+              <p className="text-sm text-muted-foreground">Q3 2025</p>
+              <p>Global launch of Guardian OS freeware with PR to accelerate adoption.</p>
+            </li>
+            <li className="rounded-lg border border-border p-4 bg-card/50">
+              <p className="text-sm text-muted-foreground">Q4 2025</p>
+              <p>First hardware production run; pilot programs in the UK and Australia with schools, Quaria, and Google Education.</p>
+            </li>
+            <li className="rounded-lg border border-border p-4 bg-card/50">
+              <p className="text-sm text-muted-foreground">Q1–Q2 2026</p>
+              <p>Launch verified child‑only gaming servers and the Safe Esports League.</p>
+            </li>
+            <li className="rounded-lg border border-border p-4 bg-card/50">
+              <p className="text-sm text-muted-foreground">Q3 2026</p>
+              <p>Bundled offerings with major game subscription services.</p>
+            </li>
+            <li className="rounded-lg border border-border p-4 bg-card/50 md:col-span-2">
+              <p className="text-sm text-muted-foreground">2027</p>
+              <p>Brand‑sponsored global Safe Esports tournaments, expanded education programs, and deeper publisher integrations.</p>
+            </li>
+          </ol>
         </section>
 
         {/* Founder */}
