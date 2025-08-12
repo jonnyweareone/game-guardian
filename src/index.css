@@ -130,3 +130,11 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .input { @apply w-full bg-background text-foreground border border-border rounded px-3 py-2 placeholder:text-muted-foreground/70; }
+  .select { @apply w-full bg-background text-foreground border border-border rounded px-3 py-2; }
+  .btn { @apply inline-flex items-center gap-2 border border-border rounded px-3 py-1.5 text-sm text-foreground hover:bg-accent transition-colors; }
+  .btn-primary { @apply inline-flex items-center gap-2 rounded px-3 py-1.5 text-sm text-primary-foreground bg-primary hover:opacity-90 transition-opacity; }
+  .btn-danger { @apply inline-flex items-center gap-2 rounded px-3 py-1.5 text-sm text-destructive-foreground bg-destructive hover:opacity-90 transition-opacity; }
+}

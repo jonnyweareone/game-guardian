@@ -24,6 +24,9 @@ import Security from "./pages/Security";
 import ResetPassword from "./pages/ResetPassword";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import CreatorMode from "./pages/CreatorMode";
+import OtaDemoLayout from "./pages/admin/ota-demo/OtaDemoLayout";
+import OtaUpdateManager from "./pages/admin/ota-demo/OtaUpdateManager";
+import OtaReports from "./pages/admin/ota-demo/OtaReports";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -61,6 +64,16 @@ const App = () => (
             <Route path="/products/os-mini" element={<ProductOSMini />} />
             <Route path="/products/os-full" element={<ProductOSFull />} />
             <Route path="/products/receiver" element={<ProductReceiver />} />
+
+            {/* Admin - OTA Demo */}
+            <Route path="/admin/ota-demo" element={
+              <ProtectedRoute>
+                <OtaDemoLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<OtaUpdateManager />} />
+              <Route path="reports" element={<OtaReports />} />
+            </Route>
             
             {/* Content Pages */}
             <Route path="/blog" element={<Blog />} />

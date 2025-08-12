@@ -57,6 +57,7 @@ const Navigation = ({ transparent = false }: NavigationProps) => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>Dashboard</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/security')}>Security</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin/ota-demo')}>OTA Demo</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
                 </DropdownMenuContent>
