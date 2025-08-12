@@ -264,6 +264,22 @@ const PitchDeck = () => {
           </p>
         </section>
 
+        {/* Founder */}
+        <section aria-labelledby="founder-title">
+          <h2 id="founder-title" className="text-2xl md:text-3xl font-semibold">Our Founder — Jonny Robinson</h2>
+          <p className="mt-3 text-muted-foreground">
+            Previous experience: ZYBRE Internet — a start‑up, trend‑setting ISP focused purely on FTTP that built the UK's first Android TV platform in partnership with SEI Robotics, the current build partner for the Game Guardian AI. ZYBRE was sold to Octoplus at the end of 2023.
+          </p>
+          <p className="mt-3">
+            Read more: <a
+              href="https://www.express.co.uk/life-style/science-technology/1599539/Sky-Q-rival-broadband-TV-ZYBRE-gaming"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline text-primary"
+            >Express article featuring Jonny as Sky's rival with ZYBRE</a>.
+          </p>
+        </section>
+
         {/* Demo Login CTA */}
         <section aria-labelledby="demo-title" className="border-t border-border pt-10">
           <h2 id="demo-title" className="text-2xl md:text-3xl font-semibold">Try It — Demo Login</h2>
