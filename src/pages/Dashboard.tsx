@@ -68,8 +68,8 @@ const Dashboard = () => {
   const [devicePolicies, setDevicePolicies] = useState<Record<string, any>>({});
   const [childPolicies, setChildPolicies] = useState<Record<string, any>>({});
   
-  const demoFlag = (typeof window !== 'undefined') ? localStorage.getItem('demo-mode') === 'true' : false;
-  const isDemoMode = !authLoading && !user && demoFlag;
+  // Demo mode is only allowed when NO authenticated user exists
+  const isDemoMode = (!authLoading && !user && (typeof window !== 'undefined') && localStorage.getItem('demo-mode') === 'true');
 
   useEffect(() => {
     if (authLoading) return;
@@ -129,6 +129,12 @@ const Dashboard = () => {
         setNotifications(demoNotifications);
         setConversations(demoConversations);
       } else {
+        // Clear any prior demo state before fetching real data
+        setChildren([]);
+        setAlerts([]);
+        setDevices([]);
+        setNotifications([]);
+        setConversations([]);
         // Fetch real data from Supabase
         const { data: childrenData, error: childrenError } = await supabase
           .from('children')

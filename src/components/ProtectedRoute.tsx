@@ -9,6 +9,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const isDemoMode = localStorage.getItem('demo-mode') === 'true';
 
+  // Hard-disable demo mode if a real user exists
+  if (user && isDemoMode) {
+    try { localStorage.removeItem('demo-mode'); } catch {}
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
