@@ -155,12 +155,16 @@ const Dashboard = () => {
 
         if (alertsError) throw alertsError;
 
-        // Fetch devices with child names
+        // Fetch devices with active child assignments
         const { data: devicesData, error: devicesError } = await supabase
           .from('devices')
           .select(`
             *,
-            children(name)
+            device_child_assignments!left(
+              id,
+              is_active,
+              children!inner(id, name)
+            )
           `)
           .order('created_at', { ascending: false });
 
