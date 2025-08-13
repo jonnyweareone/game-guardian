@@ -72,6 +72,7 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You've successfully signed in to Game Guardian AI.",
       });
+      try { localStorage.removeItem('demo-mode'); } catch {}
       navigate('/dashboard');
     }
   };

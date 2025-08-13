@@ -68,11 +68,11 @@ const Dashboard = () => {
   const [devicePolicies, setDevicePolicies] = useState<Record<string, any>>({});
   const [childPolicies, setChildPolicies] = useState<Record<string, any>>({});
   
-  const isDemoMode = localStorage.getItem('demo-mode') === 'true';
+  const isDemoMode = !user && localStorage.getItem('demo-mode') === 'true';
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [user, isDemoMode]);
 
   // Load apps and policies when devices/child selection changes
   useEffect(() => {

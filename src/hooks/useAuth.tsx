@@ -25,6 +25,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Clear demo mode when a real user signs in
+        if (event === 'SIGNED_IN') {
+          try { localStorage.removeItem('demo-mode'); } catch {}
+        }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -97,6 +101,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           sessionStorage.removeItem(key);
         }
       });
+      // Ensure demo mode is cleared on sign out
+      try { localStorage.removeItem('demo-mode'); } catch {}
       try {
         // @ts-ignore - scope is available in supabase-js v2
         await supabase.auth.signOut({ scope: 'global' } as any);
