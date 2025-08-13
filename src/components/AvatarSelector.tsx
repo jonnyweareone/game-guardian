@@ -19,7 +19,21 @@ import avatar10 from "@/assets/avatars/avatar-10.png";
 import avatar11 from "@/assets/avatars/avatar-11.png";
 import avatar12 from "@/assets/avatars/avatar-12.png";
 
-const PRESET_AVATARS = [
+// Import animal avatars
+import avatarCat from "@/assets/avatars/avatar-cat-01.png";
+import avatarDog from "@/assets/avatars/avatar-dog-01.png";
+import avatarPanda from "@/assets/avatars/avatar-panda-01.png";
+import avatarFox from "@/assets/avatars/avatar-fox-01.png";
+import avatarBunny from "@/assets/avatars/avatar-bunny-01.png";
+import avatarOwl from "@/assets/avatars/avatar-owl-01.png";
+import avatarBear from "@/assets/avatars/avatar-bear-01.png";
+import avatarPenguin from "@/assets/avatars/avatar-penguin-01.png";
+import avatarMonkey from "@/assets/avatars/avatar-monkey-01.png";
+import avatarLion from "@/assets/avatars/avatar-lion-01.png";
+import avatarDolphin from "@/assets/avatars/avatar-dolphin-01.png";
+import avatarElephant from "@/assets/avatars/avatar-elephant-01.png";
+
+const HUMAN_AVATARS = [
   { id: 1, src: avatar01, name: "Alex" },
   { id: 2, src: avatar02, name: "Bailey" },
   { id: 3, src: avatar03, name: "Casey" },
@@ -32,6 +46,21 @@ const PRESET_AVATARS = [
   { id: 10, src: avatar10, name: "Jordan" },
   { id: 11, src: avatar11, name: "Kai" },
   { id: 12, src: avatar12, name: "Lane" },
+];
+
+const ANIMAL_AVATARS = [
+  { id: 13, src: avatarCat, name: "Whiskers" },
+  { id: 14, src: avatarDog, name: "Buddy" },
+  { id: 15, src: avatarPanda, name: "Bamboo" },
+  { id: 16, src: avatarFox, name: "Flame" },
+  { id: 17, src: avatarBunny, name: "Hop" },
+  { id: 18, src: avatarOwl, name: "Wisdom" },
+  { id: 19, src: avatarBear, name: "Honey" },
+  { id: 20, src: avatarPenguin, name: "Waddle" },
+  { id: 21, src: avatarMonkey, name: "Banana" },
+  { id: 22, src: avatarLion, name: "Roar" },
+  { id: 23, src: avatarDolphin, name: "Splash" },
+  { id: 24, src: avatarElephant, name: "Trunk" },
 ];
 
 const HAIR_COLORS = ["#8B4513", "#FFD700", "#000000", "#FF4500", "#A0522D", "#DDA0DD"];
@@ -120,26 +149,58 @@ export const AvatarSelector = ({ selectedAvatar, onAvatarSelect }: AvatarSelecto
         </TabsList>
         
         <TabsContent value="preset" className="space-y-4">
-          <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto">
-            {PRESET_AVATARS.map((avatar) => (
-              <Card
-                key={avatar.id}
-                className={`cursor-pointer transition-all hover:scale-105 ${
-                  selectedAvatar === avatar.src ? 'ring-2 ring-primary' : ''
-                }`}
-                onClick={() => onAvatarSelect(avatar.src)}
-              >
-                <div className="p-2 text-center">
-                  <img
-                    src={avatar.src}
-                    alt={avatar.name}
-                    className="w-16 h-20 mx-auto rounded-lg object-cover mb-1"
-                  />
-                  <p className="text-xs font-medium">{avatar.name}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <Tabs defaultValue="humans" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="humans">People</TabsTrigger>
+              <TabsTrigger value="animals">Animals</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="humans">
+              <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                {HUMAN_AVATARS.map((avatar) => (
+                  <Card
+                    key={avatar.id}
+                    className={`cursor-pointer transition-all hover:scale-105 ${
+                      selectedAvatar === avatar.src ? 'ring-2 ring-primary' : ''
+                    }`}
+                    onClick={() => onAvatarSelect(avatar.src)}
+                  >
+                    <div className="p-2 text-center">
+                      <img
+                        src={avatar.src}
+                        alt={avatar.name}
+                        className="w-16 h-20 mx-auto rounded-lg object-cover mb-1"
+                      />
+                      <p className="text-xs font-medium">{avatar.name}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="animals">
+              <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                {ANIMAL_AVATARS.map((avatar) => (
+                  <Card
+                    key={avatar.id}
+                    className={`cursor-pointer transition-all hover:scale-105 ${
+                      selectedAvatar === avatar.src ? 'ring-2 ring-primary' : ''
+                    }`}
+                    onClick={() => onAvatarSelect(avatar.src)}
+                  >
+                    <div className="p-2 text-center">
+                      <img
+                        src={avatar.src}
+                        alt={avatar.name}
+                        className="w-16 h-20 mx-auto rounded-lg object-cover mb-1"
+                      />
+                      <p className="text-xs font-medium">{avatar.name}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </TabsContent>
         
         <TabsContent value="custom" className="space-y-4">
