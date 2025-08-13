@@ -1107,12 +1107,15 @@ export type Database = {
           is_active: boolean | null
           kernel_version: string | null
           last_ip: unknown | null
+          last_refresh_ip: unknown | null
           last_seen: string | null
+          last_token_issued_at: string | null
           location: Json | null
           model: string | null
           os_version: string | null
           paired_at: string | null
           parent_id: string
+          refresh_secret_hash: string | null
           ui_version: string | null
           updated_at: string
         }
@@ -1128,12 +1131,15 @@ export type Database = {
           is_active?: boolean | null
           kernel_version?: string | null
           last_ip?: unknown | null
+          last_refresh_ip?: unknown | null
           last_seen?: string | null
+          last_token_issued_at?: string | null
           location?: Json | null
           model?: string | null
           os_version?: string | null
           paired_at?: string | null
           parent_id: string
+          refresh_secret_hash?: string | null
           ui_version?: string | null
           updated_at?: string
         }
@@ -1149,12 +1155,15 @@ export type Database = {
           is_active?: boolean | null
           kernel_version?: string | null
           last_ip?: unknown | null
+          last_refresh_ip?: unknown | null
           last_seen?: string | null
+          last_token_issued_at?: string | null
           location?: Json | null
           model?: string | null
           os_version?: string | null
           paired_at?: string | null
           parent_id?: string
+          refresh_secret_hash?: string | null
           ui_version?: string | null
           updated_at?: string
         }

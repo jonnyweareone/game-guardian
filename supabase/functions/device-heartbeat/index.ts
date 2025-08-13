@@ -7,7 +7,7 @@
  */
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
-import { verify, Algorithm } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+import { verifyDeviceJWT } from "../_shared/jwt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,32 +21,19 @@ function json(body: Record<string, unknown>, init?: ResponseInit) {
   });
 }
 
-async function verifyDeviceJwt(authHeader: string | null) {
-  if (!authHeader?.startsWith("Bearer ")) return { error: "Unauthorized" };
-  const token = authHeader.replace("Bearer ", "").trim();
-  const secret = Deno.env.get("DEVICE_JWT_SECRET");
-  if (!secret) return { error: "Server not configured" };
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["verify"]
-  );
-  try {
-    const payload = (await verify(token, key, "HS256" as Algorithm)) as any;
-    return { payload, token };
-  } catch {
-    return { error: "Invalid token" };
-  }
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const authHeader = req.headers.get("Authorization");
-  const { payload, error } = await verifyDeviceJwt(authHeader);
-  if (error) return json({ error }, { status: 401 });
+  const auth = req.headers.get("authorization") || "";
+  if (!auth.startsWith("Bearer ")) return json({ error: "unauthorized" }, { status: 401 });
+  const token = auth.slice(7);
+  const v = await verifyDeviceJWT(token);
+  if (!v.ok) {
+    if (v.expired) return json({ error: "token_expired" }, { status: 401 });
+    return json({ error: "unauthorized" }, { status: 401 });
+  }
+  const device_code = String(v.payload.sub);
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -64,7 +51,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const deviceCode = (payload as any)?.sub as string;
+    const deviceCode = device_code;
     const { data: device, error: devErr } = await supabase
       .from("devices")
       .select("id")

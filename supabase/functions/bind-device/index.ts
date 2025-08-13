@@ -8,7 +8,7 @@
  */
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
-import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+import { mintDeviceJWT } from "../_shared/jwt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +20,16 @@ function json(body: Record<string, unknown>, init?: ResponseInit) {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers || {}), ...corsHeaders },
   });
+}
+
+function b64url(buf: Uint8Array) {
+  return btoa(String.fromCharCode(...buf)).replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
+}
+
+async function sha256b64url(data: string) {
+  const enc = new TextEncoder().encode(data);
+  const d = await crypto.subtle.digest("SHA-256", enc);
+  return b64url(new Uint8Array(d));
 }
 
 serve(async (req) => {
@@ -97,36 +107,23 @@ serve(async (req) => {
       return json({ error: "This device is already paired to another account." }, { status: 409 });
     }
 
-    // Sign device JWT using shared secret
-    const secret = Deno.env.get("DEVICE_JWT_SECRET");
-    if (!secret) {
-      console.error("Missing DEVICE_JWT_SECRET");
-      return json({ error: "Server is not configured" }, { status: 500 });
-    }
+    // Generate refresh secret and short-lived JWT
+    const raw = new Uint8Array(48);
+    crypto.getRandomValues(raw);
+    const refresh_secret = b64url(raw);
+    const refresh_secret_hash = await sha256b64url(refresh_secret);
 
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
+    const token = await mintDeviceJWT(deviceCode, 15);
 
-    const token = await create(
-      { alg: "HS256", typ: "JWT" },
-      {
-        sub: deviceCode,
-        role: "device",
-        parent_id: user.id,
-        exp: getNumericDate(60 * 60 * 24 * 30), // 30 days
-      },
-      key
-    );
-
-    // Cache token on the device row for device polling (if column exists)
+    // Cache token and refresh secret hash on the device row
     const { error: updErr } = await anonClient
       .from("devices")
-      .update({ device_jwt: token, is_active: true })
+      .update({ 
+        device_jwt: token, 
+        refresh_secret_hash,
+        last_token_issued_at: new Date().toISOString(),
+        is_active: true 
+      })
       .eq("device_code", deviceCode);
 
     if (updErr) {
@@ -200,7 +197,14 @@ serve(async (req) => {
       if (subInsErr) console.error("bind-device subscriptions insert error:", subInsErr);
     }
 
-    return json({ ok: true, device_jwt: token, device_code: deviceCode });
+    return json({ 
+      ok: true, 
+      device_id: deviceId, 
+      device_code: deviceCode, 
+      device_jwt: token, 
+      refresh_secret,
+      trial_started: !subRow 
+    });
   } catch (e) {
     console.error("bind-device error:", e);
     return json({ error: "Internal error" }, { status: 500 });

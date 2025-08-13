@@ -54,6 +54,19 @@ const DeviceActivation = () => {
         throw new Error(error.message || 'Failed to bind device');
       }
 
+      // Handoff JWT to localhost helper if running
+      if (data?.device_jwt) {
+        try {
+          await fetch("http://127.0.0.1:8719/token", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ device_jwt: data.device_jwt })
+          });
+        } catch { 
+          // Ignore if helper not running
+        }
+      }
+
       setIsActivated(true);
       toast({
         title: "Device activated successfully!",
