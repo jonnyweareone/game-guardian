@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, AlertTriangle, Settings, Plus, MessageSquare, TrendingUp, Bell, Eye, BadgeCheck } from 'lucide-react';
+import { Shield, Users, AlertTriangle, Settings, Plus, MessageSquare, TrendingUp, Bell, Eye, BadgeCheck, Smartphone } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +13,7 @@ import AlertCard from '@/components/AlertCard';
 import ChildSwitcher from '@/components/ChildSwitcher';
 import ConversationViewer from '@/components/ConversationViewer';
 import AIInsightCards from '@/components/AIInsightCards';
+import { ChildAppManagement } from '@/components/ChildAppManagement';
 import NotificationHistory from '@/components/NotificationHistory';
 import AddChildDialog from '@/components/AddChildDialog';
 import PairDeviceDialog from '@/components/PairDeviceDialog';
@@ -534,7 +535,7 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6" aria-label="Dashboard sections">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-10">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Overview
@@ -542,6 +543,10 @@ const Dashboard = () => {
             <TabsTrigger value="child-controls" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Child Controls
+            </TabsTrigger>
+            <TabsTrigger value="child-apps" className="flex items-center gap-2">
+              <Smartphone className="h-4 w-4" />
+              Apps
             </TabsTrigger>
             <TabsTrigger value="alerts" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
@@ -770,6 +775,25 @@ const Dashboard = () => {
                 isDemoMode={isDemoMode}
                 childPolicies={childPolicies}
                 onPolicyChange={(appId, patch) => handlePolicyChange('child', appId, patch)}
+              />
+            )}
+          </TabsContent>
+
+          {/* Child Apps Tab */}
+          <TabsContent value="child-apps" className="space-y-6">
+            {!selectedChildId ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Smartphone className="h-12 w-12 text-safe mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Select a child</h3>
+                  <p className="text-muted-foreground">Choose a child profile above to manage their app access.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <ChildAppManagement
+                childId={selectedChildId}
+                childName={selectedChildName}
+                isDemoMode={isDemoMode}
               />
             )}
           </TabsContent>

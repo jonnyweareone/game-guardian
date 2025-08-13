@@ -212,3 +212,58 @@ export async function getCurrentActivity(childId: string) {
   if (error) throw error;
   return data as { app_id: string; session_start: string; device_id: string } | null;
 }
+
+// App catalog and child app selections
+export async function getAppCatalog() {
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
+    .from('app_catalog')
+    .select('*')
+    .order('category', { ascending: true })
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function getChildAppSelections(childId: string) {
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
+    .from('v_child_app_selections')
+    .select('*')
+    .eq('child_id', childId)
+    .order('app_category', { ascending: true })
+    .order('app_name', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertChildAppSelection(childId: string, appId: string, selected: boolean) {
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
+    .from('child_app_selections')
+    .upsert({
+      child_id: childId,
+      app_id: appId,
+      selected
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function bulkUpsertChildAppSelections(childId: string, selections: { app_id: string; selected: boolean }[]) {
+  const anyClient = supabase as any;
+  const records = selections.map(sel => ({
+    child_id: childId,
+    app_id: sel.app_id,
+    selected: sel.selected
+  }));
+  
+  const { data, error } = await anyClient
+    .from('child_app_selections')
+    .upsert(records)
+    .select();
+  if (error) throw error;
+  return data;
+}
