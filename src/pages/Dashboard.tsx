@@ -53,7 +53,7 @@ interface Device {
 }
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
   const [children, setChildren] = useState<Child[]>([]);
@@ -68,11 +68,15 @@ const Dashboard = () => {
   const [devicePolicies, setDevicePolicies] = useState<Record<string, any>>({});
   const [childPolicies, setChildPolicies] = useState<Record<string, any>>({});
   
-  const isDemoMode = !user && localStorage.getItem('demo-mode') === 'true';
+  const demoFlag = (typeof window !== 'undefined') ? localStorage.getItem('demo-mode') === 'true' : false;
+  const isDemoMode = !authLoading && !user && demoFlag;
 
   useEffect(() => {
+    if (authLoading) return;
+    // Ensure demo mode is cleared when a real user is present
+    if (user) { try { localStorage.removeItem('demo-mode'); } catch {} }
     fetchDashboardData();
-  }, [user, isDemoMode]);
+  }, [authLoading, user, isDemoMode]);
 
   // Load apps and policies when devices/child selection changes
   useEffect(() => {
@@ -397,7 +401,7 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

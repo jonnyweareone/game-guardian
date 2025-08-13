@@ -23,20 +23,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // Clear demo mode when a real user signs in
-        if (event === 'SIGNED_IN') {
-          try { localStorage.removeItem('demo-mode'); } catch {}
-        }
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Clear demo mode whenever a real session is established
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        try { localStorage.removeItem('demo-mode'); } catch {}
       }
-    );
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    // Check for existing session
+    // Check for existing session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        try { localStorage.removeItem('demo-mode'); } catch {}
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
