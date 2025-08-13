@@ -2,7 +2,7 @@
 /**
  * Supabase Edge Function: device-status
  * - Public endpoint for devices to poll until device_jwt is ready
- * - Returns { device_jwt, is_active } for a given device_id (device_code)
+ * - Returns { device_jwt, is_active, activated } for a given device_id (device_code)
  */
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
@@ -35,8 +35,8 @@ serve(async (req) => {
 
     const { data, error } = await supabase
       .from("devices")
-      .select("device_jwt, is_active")
-      .eq("device_code", deviceCode)
+      .select("device_jwt, is_active, paired_at")
+      .eq("device_code", deviceCode.toUpperCase())
       .maybeSingle();
 
     if (error) {
@@ -44,7 +44,8 @@ serve(async (req) => {
       return json({ error: "Query failed" }, { status: 400 });
     }
 
-    return json(data || {});
+    const activated = !!(data?.is_active || data?.paired_at || data?.device_jwt);
+    return json({ ...(data || {}), activated });
   } catch (e) {
     console.error("device-status error:", e);
     return json({ error: "Internal error" }, { status: 500 });

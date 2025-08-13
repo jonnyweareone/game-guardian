@@ -274,6 +274,33 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_log: {
+        Row: {
+          action: string | null
+          actor: string | null
+          detail: Json | null
+          id: number
+          target: string | null
+          ts: string
+        }
+        Insert: {
+          action?: string | null
+          actor?: string | null
+          detail?: Json | null
+          id?: number
+          target?: string | null
+          ts?: string
+        }
+        Update: {
+          action?: string | null
+          actor?: string | null
+          detail?: Json | null
+          id?: number
+          target?: string | null
+          ts?: string
+        }
+        Relationships: []
+      }
       child_app_groups: {
         Row: {
           action: Database["public"]["Enums"]["rule_action"]
@@ -647,6 +674,58 @@ export type Database = {
         }
         Relationships: []
       }
+      device_activations: {
+        Row: {
+          consent_ip: unknown | null
+          consent_user_agent: string | null
+          consent_version: string
+          created_at: string
+          device_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          consent_ip?: unknown | null
+          consent_user_agent?: string | null
+          consent_version: string
+          created_at?: string
+          device_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          consent_ip?: unknown | null
+          consent_user_agent?: string | null
+          consent_version?: string
+          created_at?: string
+          device_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_activations_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_activations_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "device_activations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       device_apps: {
         Row: {
           app_id: string
@@ -793,6 +872,57 @@ export type Database = {
         }
         Relationships: []
       }
+      device_config: {
+        Row: {
+          device_id: string
+          eula_version: string | null
+          factory_reset: boolean
+          features: Json
+          firmware_update: string | null
+          manifest_url: string | null
+          theme: Json
+          ui_update: string | null
+          updated_at: string
+        }
+        Insert: {
+          device_id: string
+          eula_version?: string | null
+          factory_reset?: boolean
+          features?: Json
+          firmware_update?: string | null
+          manifest_url?: string | null
+          theme?: Json
+          ui_update?: string | null
+          updated_at?: string
+        }
+        Update: {
+          device_id?: string
+          eula_version?: string | null
+          factory_reset?: boolean
+          features?: Json
+          firmware_update?: string | null
+          manifest_url?: string | null
+          theme?: Json
+          ui_update?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_config_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: true
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_config_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: true
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["device_id"]
+          },
+        ]
+      }
       device_heartbeats: {
         Row: {
           battery: number | null
@@ -830,10 +960,13 @@ export type Database = {
           device_code: string
           device_jwt: string | null
           device_name: string | null
+          firmware_version: string | null
           id: string
           is_active: boolean | null
+          last_seen: string | null
           paired_at: string | null
           parent_id: string
+          ui_version: string | null
           updated_at: string
         }
         Insert: {
@@ -842,10 +975,13 @@ export type Database = {
           device_code: string
           device_jwt?: string | null
           device_name?: string | null
+          firmware_version?: string | null
           id?: string
           is_active?: boolean | null
+          last_seen?: string | null
           paired_at?: string | null
           parent_id: string
+          ui_version?: string | null
           updated_at?: string
         }
         Update: {
@@ -854,10 +990,13 @@ export type Database = {
           device_code?: string
           device_jwt?: string | null
           device_name?: string | null
+          firmware_version?: string | null
           id?: string
           is_active?: boolean | null
+          last_seen?: string | null
           paired_at?: string | null
           parent_id?: string
+          ui_version?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1034,6 +1173,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          stripe_customer_id: string | null
           updated_at: string
           user_id: string
         }
@@ -1042,6 +1182,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          stripe_customer_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1050,10 +1191,52 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          stripe_customer_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          plan: string
+          status: string
+          stripe_subscription_id: string | null
+          trial_ends_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan: string
+          status: string
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       ui_manifests: {
         Row: {

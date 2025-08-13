@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,39 +40,20 @@ const PairDeviceDialog = ({ children, onDevicePaired }: PairDeviceDialogProps) =
 
     setLoading(true);
     try {
-      // Check if device code exists and is not already paired
-      const { data: existingDevice, error: checkError } = await supabase
-        .from('devices')
-        .select('*')
-        .eq('device_code', deviceCode.toUpperCase())
-        .single();
-
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
-
-      if (existingDevice && existingDevice.is_active) {
-        throw new Error('This device is already paired to another account.');
-      }
-
-      // Create or update device record
-      const deviceData = {
-        device_code: deviceCode.toUpperCase(),
-        device_name: deviceName.trim() || `Guardian AI Device ${deviceCode.slice(-4)}`,
-        child_id: selectedChildId || null,
-        parent_id: (await supabase.auth.getUser()).data.user?.id,
-        is_active: true,
-        paired_at: new Date().toISOString()
-      };
-
-      const { error } = existingDevice
-        ? await supabase
-            .from('devices')
-            .update(deviceData)
-            .eq('id', existingDevice.id)
-        : await supabase
-            .from('devices')
-            .insert(deviceData);
+      // Call Edge Function to bind device (handles RLS, activation + trial creation)
+      const { data, error } = await supabase.functions.invoke('bind-device', {
+        body: {
+          device_id: deviceCode.toUpperCase(),
+          device_name: deviceName.trim() || `Guardian AI Device ${deviceCode.slice(-4)}`,
+          child_id: selectedChildId || undefined,
+          consent_version: '1.0',
+        }
+      });
 
       if (error) throw error;
+      if (!data?.ok) {
+        throw new Error(data?.error || 'Pairing failed');
+      }
 
       toast({
         title: "Device paired successfully!",
@@ -86,9 +68,10 @@ const PairDeviceDialog = ({ children, onDevicePaired }: PairDeviceDialogProps) =
     } catch (error: any) {
       toast({
         title: "Pairing failed",
-        description: error.message,
+        description: error?.message || 'Please try again.',
         variant: "destructive"
       });
+      console.error('Pair device error:', error);
     } finally {
       setLoading(false);
     }

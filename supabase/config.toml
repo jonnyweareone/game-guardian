@@ -16,11 +16,26 @@ verify_jwt = true
 [functions.youtube-upload]
 verify_jwt = true
 
-# New: bind-device requires parent JWT
+# Existing: bind-device requires parent JWT
 [functions.bind-device]
 verify_jwt = true
 
-# New: device-status is public (device polls without auth)
+# Existing: device-status is public (device polls without auth)
 [functions.device-status]
 verify_jwt = false
 
+# New: device-config (device_jwt; we verify manually)
+[functions.device-config]
+verify_jwt = false
+
+# New: device-heartbeat (device_jwt; we verify manually)
+[functions.device-heartbeat]
+verify_jwt = false
+
+# New: rotate-device-token (parent-auth required)
+[functions.rotate-device-token]
+verify_jwt = true
+
+# New: stripe-webhook (public endpoint from Stripe; we verify signature)
+[functions.stripe-webhook]
+verify_jwt = false
