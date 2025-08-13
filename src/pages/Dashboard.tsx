@@ -954,7 +954,13 @@ const Dashboard = () => {
           {/* AI Insights Tab */}
           <TabsContent value="insights" className="space-y-6">
             <h2 className="text-2xl font-bold text-foreground">AI Insights & Recommendations</h2>
-            <AIInsightCards insights={demoInsights} />
+            {isDemoMode ? (
+              <AIInsightCards insights={demoInsights} />
+            ) : (
+              <Alert>
+                <AlertDescription>Insights will appear once your devices send data.</AlertDescription>
+              </Alert>
+            )}
           </TabsContent>
 
           {/* Verification Tab */}
