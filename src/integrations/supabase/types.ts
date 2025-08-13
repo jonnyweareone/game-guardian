@@ -1471,6 +1471,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      rpc_assign_child_to_device: {
+        Args: { _device: string; _child: string; _is_active?: boolean }
+        Returns: {
+          child_id: string
+          created_at: string | null
+          device_id: string
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+        }
+      }
       rpc_issue_command: {
         Args: { _device: string; _cmd: string; _payload?: Json }
         Returns: {

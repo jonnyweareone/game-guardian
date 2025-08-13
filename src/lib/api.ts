@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Minimal API stubs wired to Supabase
@@ -155,16 +154,17 @@ export async function addTimeTokens(childId: string, delta: number, reason?: str
 
 // Device-child assignment helpers
 export async function assignChildToDevice(deviceId: string, childId: string, isActive = false) {
-  const { data, error } = await supabase
-    .from('device_child_assignments')
-    .upsert(
-      { device_id: deviceId, child_id: childId, is_active: isActive },
-      { onConflict: 'device_id,child_id' }
-    )
-    .select()
-    .maybeSingle();
+  const anyClient = supabase as any;
+  const { data, error } = await anyClient
+    .rpc('rpc_assign_child_to_device', { _device: deviceId, _child: childId, _is_active: isActive });
+
   if (error) throw error;
-  return data;
+  return data as {
+    device_id: string;
+    child_id: string;
+    is_active: boolean;
+    // ... other columns from device_child_assignments if present
+  };
 }
 
 export async function setActiveChild(deviceId: string, childId: string) {
