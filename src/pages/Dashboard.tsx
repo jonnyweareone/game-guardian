@@ -193,10 +193,15 @@ const Dashboard = () => {
           ...alert,
           child_name: alert.children?.name
         })) || []);
-        setDevices(devicesData?.map(device => ({
-          ...device,
-          child_name: device.children?.name
-        })) || []);
+        setDevices(devicesData?.map(device => {
+          // Find the active child assignment
+          const activeAssignment = device.device_child_assignments?.find(assignment => assignment.is_active);
+          return {
+            ...device,
+            child_name: activeAssignment?.children?.name || undefined,
+            child_id: activeAssignment?.children?.id || device.child_id
+          };
+        }) || []);
         setNotifications(notificationsData || []);
         setConversations(conversationsData || []);
       }
