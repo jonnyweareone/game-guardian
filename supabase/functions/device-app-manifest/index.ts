@@ -10,7 +10,7 @@ const CORS = {
 function json(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
     ...init,
-    headers: { "content-type": "application/json", ...CORS, ...(init.headers || {}) }
+    headers: { "Content-Type": "application/json", ...CORS, ...(init.headers || {}) }
   });
 }
 

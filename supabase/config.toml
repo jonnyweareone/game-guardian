@@ -32,6 +32,14 @@ verify_jwt = false
 [functions.device-heartbeat]
 verify_jwt = false
 
+# New: device-app-manifest (device_jwt; we verify manually)
+[functions.device-app-manifest]
+verify_jwt = false
+
+# New: device-refresh (device_jwt; we verify manually)
+[functions.device-refresh]
+verify_jwt = false
+
 # New: rotate-device-token (parent-auth required)
 [functions.rotate-device-token]
 verify_jwt = true
