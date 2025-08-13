@@ -433,6 +433,59 @@ export type Database = {
         }
         Relationships: []
       }
+      child_app_selections: {
+        Row: {
+          app_id: string
+          child_id: string
+          id: string
+          selected: boolean
+          updated_at: string
+        }
+        Insert: {
+          app_id: string
+          child_id: string
+          id?: string
+          selected?: boolean
+          updated_at?: string
+        }
+        Update: {
+          app_id?: string
+          child_id?: string
+          id?: string
+          selected?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_app_selections_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_app_selections_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_app_selections"
+            referencedColumns: ["app_id"]
+          },
+          {
+            foreignKeyName: "child_app_selections_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_app_selections_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       child_dns_profiles: {
         Row: {
           bypass_reason: string | null
@@ -1589,6 +1642,35 @@ export type Database = {
       }
     }
     Views: {
+      v_child_app_selections: {
+        Row: {
+          app_age_rating: number | null
+          app_category: string | null
+          app_description: string | null
+          app_id: string | null
+          app_is_essential: boolean | null
+          app_name: string | null
+          child_id: string | null
+          id: string | null
+          selected: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_app_selections_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_app_selections_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       v_effective_app_policy: {
         Row: {
           allowed: boolean | null
@@ -1684,6 +1766,10 @@ export type Database = {
       }
       is_admin: {
         Args: { _user_id?: string }
+        Returns: boolean
+      }
+      is_parent_of_child: {
+        Args: { _child: string }
         Returns: boolean
       }
       rpc_assign_child_to_device: {
