@@ -31,6 +31,9 @@ import AdminRoute from "./components/AdminRoute";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDevices from "./pages/admin/AdminDevices";
 import AdminDeviceDetail from "./pages/admin/AdminDeviceDetail";
+import AdminAppCatalog from "./pages/admin/AdminAppCatalog";
+import AdminUIThemes from "./pages/admin/AdminUIThemes";
+import AdminContentPush from "./pages/admin/AdminContentPush";
 import PitchDeck from "./pages/PitchDeck";
 const queryClient = new QueryClient();
 
@@ -90,6 +93,9 @@ const App = () => (
             }>
               <Route path="devices" element={<AdminDevices />} />
               <Route path="device/:id" element={<AdminDeviceDetail />} />
+              <Route path="app-catalog" element={<AdminAppCatalog />} />
+              <Route path="ui-themes" element={<AdminUIThemes />} />
+              <Route path="content-push" element={<AdminContentPush />} />
             </Route>
             
             {/* Content Pages */}

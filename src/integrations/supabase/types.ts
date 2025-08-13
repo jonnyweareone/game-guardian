@@ -191,6 +191,66 @@ export type Database = {
         }
         Relationships: []
       }
+      app_catalog: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          category: string
+          created_at: string
+          description: string | null
+          icon_url: string | null
+          id: string
+          is_active: boolean | null
+          is_essential: boolean | null
+          name: string
+          pegi_descriptors: string[] | null
+          pegi_rating: number | null
+          platform: string | null
+          publisher: string | null
+          updated_at: string
+          version: string | null
+          website: string | null
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          category: string
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id: string
+          is_active?: boolean | null
+          is_essential?: boolean | null
+          name: string
+          pegi_descriptors?: string[] | null
+          pegi_rating?: number | null
+          platform?: string | null
+          publisher?: string | null
+          updated_at?: string
+          version?: string | null
+          website?: string | null
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_essential?: boolean | null
+          name?: string
+          pegi_descriptors?: string[] | null
+          pegi_rating?: number | null
+          platform?: string | null
+          publisher?: string | null
+          updated_at?: string
+          version?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       app_category_policies: {
         Row: {
           allowed: boolean
@@ -1322,6 +1382,39 @@ export type Database = {
             referencedColumns: ["child_id"]
           },
         ]
+      }
+      ui_themes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          theme_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name: string
+          theme_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          theme_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

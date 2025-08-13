@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Smartphone, Gamepad2, GraduationCap, MessageCircle, Play, Globe, MoreHorizontal } from 'lucide-react';
+import { getAppsForAge, getAppCategories } from "@/lib/appCatalog";
+import { useQuery } from "@tanstack/react-query";
 
 interface AppCatalogItem {
   id: string;
@@ -32,42 +34,24 @@ const CATEGORY_ICONS = {
 } as const;
 
 export function AppSelectionStep({ childAge = 8, selectedApps, onAppToggle }: AppSelectionStepProps) {
-  const [apps, setApps] = useState<AppCatalogItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use React Query to fetch apps from the database
+  const { data: apps = [], isLoading: loading } = useQuery({
+    queryKey: ['apps-for-age', childAge],
+    queryFn: () => getAppsForAge(childAge),
+  });
 
-  useEffect(() => {
-    // Load app catalog - for now using mock data
-    const mockApps: AppCatalogItem[] = [
-      // Essential apps (always enabled)
-      { id: 'settings', name: 'Settings', description: 'System settings', category: 'App', is_essential: true, age_rating: 3 },
-      { id: 'browser', name: 'Browser', description: 'Web browsing', category: 'Browser', is_essential: true, age_rating: 8 },
-      
-      // Educational apps
-      { id: 'scratch-jr', name: 'ScratchJr', description: 'Learn programming basics', category: 'Education', is_essential: false, age_rating: 5 },
-      { id: 'khan-academy', name: 'Khan Academy Kids', description: 'Educational videos and exercises', category: 'Education', is_essential: false, age_rating: 4 },
-      { id: 'duolingo', name: 'Duolingo', description: 'Language learning', category: 'Education', is_essential: false, age_rating: 6 },
-      
-      // Games
-      { id: 'minecraft', name: 'Minecraft', description: 'Creative building game', category: 'Game', is_essential: false, age_rating: 7 },
-      { id: 'roblox', name: 'Roblox', description: 'Online gaming platform', category: 'Game', is_essential: false, age_rating: 9 },
-      { id: 'pokemon-go', name: 'Pokémon GO', description: 'Augmented reality game', category: 'Game', is_essential: false, age_rating: 9 },
-      
-      // Social/Communication
-      { id: 'messenger-kids', name: 'Messenger Kids', description: 'Safe messaging for kids', category: 'Social', is_essential: false, age_rating: 6 },
-      { id: 'discord', name: 'Discord', description: 'Voice and text chat', category: 'Social', is_essential: false, age_rating: 13 },
-      
-      // Streaming
-      { id: 'youtube-kids', name: 'YouTube Kids', description: 'Safe video content for children', category: 'Streaming', is_essential: false, age_rating: 4 },
-      { id: 'netflix', name: 'Netflix', description: 'Video streaming service', category: 'Streaming', is_essential: false, age_rating: 13 },
-    ];
+  // Map database fields to component interface
+  const mappedApps = apps.map(app => ({
+    id: app.id,
+    name: app.name,
+    description: app.description || '',
+    category: app.category,
+    icon_url: app.icon_url,
+    is_essential: app.is_essential,
+    age_rating: app.age_min, // Use age_min as the rating display
+  }));
 
-    // Filter by age appropriateness
-    const ageAppropriate = mockApps.filter(app => app.age_rating <= childAge);
-    setApps(ageAppropriate);
-    setLoading(false);
-  }, [childAge]);
-
-  const categories = Array.from(new Set(apps.map(app => app.category)));
+  const categories = Array.from(new Set(mappedApps.map(app => app.category)));
 
   if (loading) {
     return (
@@ -87,7 +71,7 @@ export function AppSelectionStep({ childAge = 8, selectedApps, onAppToggle }: Ap
       </div>
 
       {categories.map(category => {
-        const categoryApps = apps.filter(app => app.category === category);
+        const categoryApps = mappedApps.filter(app => app.category === category);
         const IconComponent = CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS] || Smartphone;
 
         return (
@@ -99,11 +83,11 @@ export function AppSelectionStep({ childAge = 8, selectedApps, onAppToggle }: Ap
               </CardTitle>
               <CardDescription className="text-sm">
                 {category === 'Education' && 'Learning and educational content'}
-                {category === 'Game' && 'Entertainment and gaming'}
-                {category === 'Social' && 'Communication and social platforms'}
-                {category === 'Streaming' && 'Video and media content'}
-                {category === 'App' && 'Utility and productivity apps'}
-                {category === 'Browser' && 'Web browsing and internet access'}
+                {category === 'Games' && 'Entertainment and gaming'}
+                {category === 'Communication' && 'Communication and social platforms'}
+                {category === 'Entertainment' && 'Video and media content'}
+                {category === 'Utilities' && 'Utility and productivity apps'}
+                {category === 'System' && 'System and essential apps'}
                 {category === 'Other' && 'Other applications'}
               </CardDescription>
             </CardHeader>
