@@ -157,9 +157,12 @@ export async function addTimeTokens(childId: string, delta: number, reason?: str
 export async function assignChildToDevice(deviceId: string, childId: string, isActive = false) {
   const { data, error } = await supabase
     .from('device_child_assignments')
-    .upsert({ device_id: deviceId, child_id: childId, is_active: isActive })
+    .upsert(
+      { device_id: deviceId, child_id: childId, is_active: isActive },
+      { onConflict: 'device_id,child_id' }
+    )
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
