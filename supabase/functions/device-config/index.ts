@@ -57,13 +57,26 @@ serve(async (req) => {
     const deviceCode = (payload as any)?.sub as string;
     if (!deviceCode) return json({ error: "Token missing device_id" }, { status: 400 });
 
-    // Map device_code -> device UUID + parent
+    // Map device_code -> device UUID + parent + assigned child
     const { data: device, error: devErr } = await supabase
       .from("devices")
-      .select("id, parent_id, ui_version, firmware_version")
+      .select("id, parent_id, child_id, ui_version, firmware_version")
       .eq("device_code", deviceCode)
       .maybeSingle();
     if (devErr || !device) return json({ error: "Device not found" }, { status: 404 });
+
+    // Get assigned child info if available
+    let childInfo = null;
+    if (device.child_id) {
+      const { data: child, error: childErr } = await supabase
+        .from("children")
+        .select("name, avatar_url")
+        .eq("id", device.child_id)
+        .maybeSingle();
+      if (!childErr && child) {
+        childInfo = child;
+      }
+    }
 
     // Ensure device_config exists
     const { data: cfg, error: cfgErr } = await supabase
@@ -131,6 +144,7 @@ serve(async (req) => {
       updated_at: config.updated_at,
       trial_remaining_days,
       billable,
+      child: childInfo,
     });
   } catch (e) {
     console.error("device-config error:", e);
