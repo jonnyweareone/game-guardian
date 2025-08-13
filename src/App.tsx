@@ -27,6 +27,10 @@ import CreatorMode from "./pages/CreatorMode";
 import OtaDemoLayout from "./pages/admin/ota-demo/OtaDemoLayout";
 import OtaUpdateManager from "./pages/admin/ota-demo/OtaUpdateManager";
 import OtaReports from "./pages/admin/ota-demo/OtaReports";
+import AdminRoute from "./components/AdminRoute";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDevices from "./pages/admin/AdminDevices";
+import AdminDeviceDetail from "./pages/admin/AdminDeviceDetail";
 import PitchDeck from "./pages/PitchDeck";
 const queryClient = new QueryClient();
 
@@ -74,6 +78,18 @@ const App = () => (
             }>
               <Route index element={<OtaUpdateManager />} />
               <Route path="reports" element={<OtaReports />} />
+            </Route>
+            
+            {/* Admin - Real Device Management */}
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              </ProtectedRoute>
+            }>
+              <Route path="devices" element={<AdminDevices />} />
+              <Route path="device/:id" element={<AdminDeviceDetail />} />
             </Route>
             
             {/* Content Pages */}

@@ -149,6 +149,13 @@ export type Database = {
             referencedRelation: "v_effective_app_policy"
             referencedColumns: ["device_id"]
           },
+          {
+            foreignKeyName: "alerts_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "vw_admin_devices"
+            referencedColumns: ["id"]
+          },
         ]
       }
       app_activity: {
@@ -718,6 +725,13 @@ export type Database = {
             referencedColumns: ["device_id"]
           },
           {
+            foreignKeyName: "device_activations_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "vw_admin_devices"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "device_activations_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -840,6 +854,13 @@ export type Database = {
             referencedRelation: "v_effective_app_policy"
             referencedColumns: ["device_id"]
           },
+          {
+            foreignKeyName: "device_child_assignments_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "vw_admin_devices"
+            referencedColumns: ["id"]
+          },
         ]
       }
       device_commands: {
@@ -921,6 +942,13 @@ export type Database = {
             referencedRelation: "v_effective_app_policy"
             referencedColumns: ["device_id"]
           },
+          {
+            foreignKeyName: "device_config_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: true
+            referencedRelation: "vw_admin_devices"
+            referencedColumns: ["id"]
+          },
         ]
       }
       device_heartbeats: {
@@ -955,6 +983,7 @@ export type Database = {
       }
       devices: {
         Row: {
+          build_id: string | null
           child_id: string | null
           created_at: string
           device_code: string
@@ -963,13 +992,19 @@ export type Database = {
           firmware_version: string | null
           id: string
           is_active: boolean | null
+          kernel_version: string | null
+          last_ip: unknown | null
           last_seen: string | null
+          location: Json | null
+          model: string | null
+          os_version: string | null
           paired_at: string | null
           parent_id: string
           ui_version: string | null
           updated_at: string
         }
         Insert: {
+          build_id?: string | null
           child_id?: string | null
           created_at?: string
           device_code: string
@@ -978,13 +1013,19 @@ export type Database = {
           firmware_version?: string | null
           id?: string
           is_active?: boolean | null
+          kernel_version?: string | null
+          last_ip?: unknown | null
           last_seen?: string | null
+          location?: Json | null
+          model?: string | null
+          os_version?: string | null
           paired_at?: string | null
           parent_id: string
           ui_version?: string | null
           updated_at?: string
         }
         Update: {
+          build_id?: string | null
           child_id?: string | null
           created_at?: string
           device_code?: string
@@ -993,7 +1034,12 @@ export type Database = {
           firmware_version?: string | null
           id?: string
           is_active?: boolean | null
+          kernel_version?: string | null
+          last_ip?: unknown | null
           last_seen?: string | null
+          location?: Json | null
+          model?: string | null
+          os_version?: string | null
           paired_at?: string | null
           parent_id?: string
           ui_version?: string | null
@@ -1173,6 +1219,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_admin: boolean | null
           stripe_customer_id: string | null
           updated_at: string
           user_id: string
@@ -1182,6 +1229,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          is_admin?: boolean | null
           stripe_customer_id?: string | null
           updated_at?: string
           user_id: string
@@ -1191,6 +1239,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_admin?: boolean | null
           stripe_customer_id?: string | null
           updated_at?: string
           user_id?: string
@@ -1462,6 +1511,75 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_admin_devices: {
+        Row: {
+          active_child_id: string | null
+          build_id: string | null
+          child_id: string | null
+          child_name: string | null
+          created_at: string | null
+          current_period_end: string | null
+          device_code: string | null
+          device_jwt: string | null
+          device_name: string | null
+          firmware_version: string | null
+          id: string | null
+          is_active: boolean | null
+          kernel_version: string | null
+          last_ip: unknown | null
+          last_seen: string | null
+          location: Json | null
+          model: string | null
+          os_version: string | null
+          paired_at: string | null
+          parent_email: string | null
+          parent_id: string | null
+          parent_name: string | null
+          status: string | null
+          subscription_plan: string | null
+          subscription_status: string | null
+          trial_ends_at: string | null
+          ui_version: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_child_assignments_child_id_fkey"
+            columns: ["active_child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_child_assignments_child_id_fkey"
+            columns: ["active_child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "devices_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "devices_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
@@ -1469,6 +1587,10 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: { _user_id?: string }
         Returns: boolean
       }
       rpc_assign_child_to_device: {

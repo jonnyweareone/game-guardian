@@ -39,3 +39,10 @@ verify_jwt = true
 # New: stripe-webhook (public endpoint from Stripe; we verify signature)
 [functions.stripe-webhook]
 verify_jwt = false
+
+# Admin functions (parent/admin auth required)
+[functions.device-config-admin]
+verify_jwt = true
+
+[functions.admin-list-devices]
+verify_jwt = true

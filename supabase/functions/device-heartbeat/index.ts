@@ -52,6 +52,11 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const ui_version = body?.ui_version as string | undefined;
     const firmware_version = body?.firmware_version as string | undefined;
+    const build_id = body?.build_id as string | undefined;
+    const os_version = body?.os_version as string | undefined;
+    const kernel_version = body?.kernel_version as string | undefined;
+    const model = body?.model as string | undefined;
+    const location = body?.location as Record<string, any> | undefined;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -67,9 +72,17 @@ serve(async (req) => {
       .maybeSingle();
     if (devErr || !device) return json({ error: "Device not found" }, { status: 404 });
 
-    const patch: Record<string, unknown> = { last_seen: new Date().toISOString() };
+    const patch: Record<string, unknown> = { 
+      last_seen: new Date().toISOString(),
+      last_ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    };
     if (ui_version) patch.ui_version = ui_version;
     if (firmware_version) patch.firmware_version = firmware_version;
+    if (build_id) patch.build_id = build_id;
+    if (os_version) patch.os_version = os_version;
+    if (kernel_version) patch.kernel_version = kernel_version;
+    if (model) patch.model = model;
+    if (location) patch.location = location;
 
     const { error: updErr } = await supabase
       .from("devices")
@@ -87,7 +100,7 @@ serve(async (req) => {
         actor: `device:${deviceCode}`,
         action: "heartbeat",
         target: `devices:${device.id}`,
-        detail: { ui_version, firmware_version },
+        detail: { ui_version, firmware_version, build_id, os_version, kernel_version, model, location },
       } as any);
     if (auditErr) console.error("device-heartbeat audit error:", auditErr);
 
