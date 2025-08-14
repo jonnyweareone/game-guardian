@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { 
   ChevronDown, 
   ChevronUp,
@@ -18,7 +17,10 @@ import {
   Activity,
   Gamepad2,
   Eye,
-  Construction
+  Construction,
+  User,
+  LogOut,
+  Trash2
 } from 'lucide-react';
 import { getChildrenWithAvatars } from '@/lib/dashboardV2Api';
 import FilterPresetPicker from '@/components/dashboard-v2/FilterPresetPicker';
@@ -26,9 +28,10 @@ import BedtimePicker from '@/components/dashboard-v2/BedtimePicker';
 import AppChooser from '@/components/dashboard-v2/AppChooser';
 import NotificationsPanel from '@/components/dashboard-v2/NotificationsPanel';
 import AlertCard from '@/components/AlertCard';
-import DashboardSidebar from '@/components/dashboard-v2/DashboardSidebar';
+import ChildRemovalDialog from '@/components/dashboard-v2/ChildRemovalDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Child {
   id: string;
@@ -57,7 +60,9 @@ const DashboardV2 = () => {
   const [expandedCards, setExpandedCards] = useState<string[]>([]);
   const [globalPreset, setGlobalPreset] = useState<'child' | 'teen' | 'adult'>('child');
   const [globalAllowedApps, setGlobalAllowedApps] = useState<string[]>([]);
+  const [childToRemove, setChildToRemove] = useState<Child | null>(null);
   const queryClient = useQueryClient();
+  const { user, signOut } = useAuth();
 
   // Fetch children data
   const { data: children = [], isLoading: childrenLoading } = useQuery({
@@ -187,21 +192,6 @@ const DashboardV2 = () => {
     }
   };
 
-  // Calculate alert counts for sidebar
-  const alertCounts = children.reduce((acc, child) => {
-    const childAlerts = getChildAlerts(child.id);
-    const criticalAlerts = childAlerts.filter(alert => 
-      alert.risk_level === 'high' && !alert.is_reviewed
-    );
-    
-    acc[child.id] = {
-      total: childAlerts.length,
-      critical: criticalAlerts.length
-    };
-    
-    return acc;
-  }, {} as Record<string, { total: number; critical: number }>);
-
   if (childrenLoading) {
     return (
       <div className="container mx-auto p-6 space-y-6">
@@ -216,272 +206,282 @@ const DashboardV2 = () => {
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full">
-        <DashboardSidebar
-          children={children}
-          selectedChildren={selectedChildren}
-          onChildrenChange={setSelectedChildren}
-          alertCounts={alertCounts}
-          onChildRemoved={handleChildRemoved}
-        />
-
-        <SidebarInset>
-          <header className="h-12 flex items-center border-b px-4">
-            <SidebarTrigger className="mr-4" />
+    <div className="min-h-screen bg-background">
+      {/* Secondary Header with Profile and Logout */}
+      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold">Guardian Dashboard V2</h1>
+              <h1 className="text-2xl font-bold">Guardian Dashboard V2</h1>
               <Badge variant="secondary">Beta</Badge>
             </div>
-          </header>
-
-          <div className="p-6 space-y-8">
-            {/* Development Notice */}
-            <Alert>
-              <Construction className="h-4 w-4" />
-              <AlertDescription>
-                Dashboard V2 is currently under development. Some features are temporarily disabled while the database migration is being completed.
-                The original dashboard is still fully functional.
-              </AlertDescription>
-            </Alert>
-
-            {/* Global Controls */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Global Controls
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <FilterPresetPicker
-                    selectedPreset={globalPreset}
-                    onPresetChange={setGlobalPreset}
-                  />
-                  
-                  <BedtimePicker
-                    onValueChange={(value) => {
-                      console.log('Global bedtime changed:', value);
-                    }}
-                  />
-                </div>
-                
-                <div className="space-y-3">
-                  <h3 className="font-medium flex items-center gap-2">
-                    <Gamepad2 className="h-4 w-4" />
-                    Global App Access
-                  </h3>
-                  
-                  <AppChooser
-                    selectedApps={globalAllowedApps}
-                    onSelectionChange={setGlobalAllowedApps}
-                  >
-                    <Button variant="outline" className="w-full">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Configure Global App Access ({globalAllowedApps.length} apps selected)
-                    </Button>
-                  </AppChooser>
-                </div>
-                
-                <NotificationsPanel scope="GLOBAL" />
-              </CardContent>
-            </Card>
-
-            {/* Per-Child Cards - Only show selected children */}
-            {selectedChildren.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-2xl font-bold">
-                  Selected Children ({selectedChildren.length})
-                </h2>
-                
-                {children
-                  .filter(child => selectedChildren.includes(child.id))
-                  .map((child) => {
-                    const isExpanded = expandedCards.includes(child.id);
-                    const childAlerts = getChildAlerts(child.id);
-                    const unreadAlerts = childAlerts.filter(alert => !alert.is_reviewed);
-                    
-                    return (
-                      <Card key={child.id} className="overflow-hidden">
-                        <Collapsible>
-                          <CollapsibleTrigger asChild>
-                            <CardHeader 
-                              className="cursor-pointer hover:bg-muted/50 transition-colors"
-                              onClick={() => toggleChildCard(child.id)}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <Avatar className="h-16 w-16 border-2 border-primary/20">
-                                    <AvatarImage src={child.avatar_url} alt={child.name} />
-                                    <AvatarFallback className="text-lg font-medium">
-                                      {child.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  
-                                  <div>
-                                    <CardTitle className="flex items-center gap-2">
-                                      {child.name}
-                                      {child.age && (
-                                        <Badge variant="outline">
-                                          {child.age} years old
-                                        </Badge>
-                                      )}
-                                    </CardTitle>
-                                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                                      <div className="flex items-center gap-1">
-                                        <Activity className="h-3 w-3" />
-                                        <span>Online</span>
-                                      </div>
-                                      {unreadAlerts.length > 0 && (
-                                        <div className="flex items-center gap-1">
-                                          <AlertTriangle className="h-3 w-3 text-warning" />
-                                          <span>{unreadAlerts.length} alerts</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex items-center gap-2">
-                                  {unreadAlerts.length > 0 && (
-                                    <Badge variant="destructive">
-                                      {unreadAlerts.length}
-                                    </Badge>
-                                  )}
-                                  {isExpanded ? 
-                                    <ChevronUp className="h-5 w-5" /> : 
-                                    <ChevronDown className="h-5 w-5" />
-                                  }
-                                </div>
-                              </div>
-                            </CardHeader>
-                          </CollapsibleTrigger>
-                          
-                          <CollapsibleContent>
-                            <CardContent className="space-y-6 border-t bg-muted/20">
-                              {/* Alerts Section */}
-                              {childAlerts.length > 0 && (
-                                <div className="space-y-3">
-                                  <h3 className="font-medium flex items-center gap-2">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    Recent Alerts
-                                    {unreadAlerts.length > 0 && (
-                                      <Badge variant="destructive" className="text-xs">
-                                        {unreadAlerts.length} new
-                                      </Badge>
-                                    )}
-                                  </h3>
-                                  
-                                  <div className="space-y-2">
-                                    {childAlerts.slice(0, 3).map((alert) => (
-                                      <AlertCard
-                                        key={alert.id}
-                                        alert={alert}
-                                        onMarkReviewed={handleMarkReviewed}
-                                      />
-                                    ))}
-                                  </div>
-                                  
-                                  {childAlerts.length > 3 && (
-                                    <Button variant="outline" size="sm">
-                                      <Eye className="h-3 w-3 mr-1" />
-                                      View All Alerts ({childAlerts.length})
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
-                              
-                              {/* Apps & Controls */}
-                              <div className="space-y-3">
-                                <h3 className="font-medium flex items-center gap-2">
-                                  <Gamepad2 className="h-4 w-4" />
-                                  Apps & Controls
-                                </h3>
-                                
-                                <div className="grid md:grid-cols-2 gap-4">
-                                  <AppChooser
-                                    selectedApps={[]}
-                                    onSelectionChange={(apps) => {
-                                      console.log(`${child.name} apps:`, apps);
-                                    }}
-                                  >
-                                    <Button variant="outline" className="w-full">
-                                      <Settings className="h-4 w-4 mr-2" />
-                                      Manage Apps
-                                    </Button>
-                                  </AppChooser>
-                                  
-                                  <BedtimePicker
-                                    onValueChange={(value) => {
-                                      console.log(`${child.name} bedtime:`, value);
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                              
-                              {/* Policy Overrides */}
-                              <div className="space-y-3">
-                                <h3 className="font-medium">Policy Overrides</h3>
-                                <FilterPresetPicker
-                                  selectedPreset="child"
-                                  onPresetChange={(preset) => {
-                                    console.log(`${child.name} preset:`, preset);
-                                  }}
-                                  childName={child.name}
-                                  childAvatar={child.avatar_url}
-                                />
-                              </div>
-                              
-                              {/* Notifications */}
-                              <NotificationsPanel 
-                                scope="CHILD" 
-                                child={{
-                                  id: child.id,
-                                  name: child.name,
-                                  avatar_url: child.avatar_url
-                                }}
-                              />
-                            </CardContent>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </Card>
-                    );
-                  })}
-              </div>
-            )}
-
-            {selectedChildren.length === 0 && children.length > 0 && (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-medium text-lg mb-2">No Children Selected</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Select children from the sidebar to monitor their activity.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {children.length === 0 && (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <Avatar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-medium text-lg mb-2">No Children Added</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Add your first child to start protecting them with Guardian AI.
-                  </p>
-                  <Button>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Add Child
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm">
+                <User className="h-4 w-4 mr-2" />
+                {user?.email}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={signOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
-        </SidebarInset>
+        </div>
       </div>
-    </SidebarProvider>
+
+      <div className="container mx-auto p-6 space-y-8">
+        {/* Development Notice */}
+        <Alert>
+          <Construction className="h-4 w-4" />
+          <AlertDescription>
+            Dashboard V2 is currently under development. Some features are temporarily disabled while the database migration is being completed.
+            The original dashboard is still fully functional.
+          </AlertDescription>
+        </Alert>
+
+        {/* Global Controls */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Global Controls
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <FilterPresetPicker
+                selectedPreset={globalPreset}
+                onPresetChange={setGlobalPreset}
+              />
+              
+              <BedtimePicker
+                onValueChange={(value) => {
+                  console.log('Global bedtime changed:', value);
+                }}
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="font-medium flex items-center gap-2">
+                <Gamepad2 className="h-4 w-4" />
+                Global App Access
+              </h3>
+              
+              <AppChooser
+                selectedApps={globalAllowedApps}
+                onSelectionChange={setGlobalAllowedApps}
+              >
+                <Button variant="outline" className="w-full">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure Global App Access ({globalAllowedApps.length} apps selected)
+                </Button>
+              </AppChooser>
+            </div>
+            
+            <NotificationsPanel scope="GLOBAL" />
+          </CardContent>
+        </Card>
+
+        {/* Per-Child Cards */}
+        {children.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">
+              Children ({children.length})
+            </h2>
+            
+            {children.map((child) => {
+              const isExpanded = expandedCards.includes(child.id);
+              const childAlerts = getChildAlerts(child.id);
+              const unreadAlerts = childAlerts.filter(alert => !alert.is_reviewed);
+              
+              return (
+                <Card key={child.id} className="overflow-hidden">
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <CardHeader 
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => toggleChildCard(child.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16 border-2 border-primary/20">
+                              <AvatarImage src={child.avatar_url} alt={child.name} />
+                              <AvatarFallback className="text-lg font-medium">
+                                {child.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div>
+                              <CardTitle className="flex items-center gap-2">
+                                {child.name}
+                                {child.age && (
+                                  <Badge variant="outline">
+                                    {child.age} years old
+                                  </Badge>
+                                )}
+                              </CardTitle>
+                              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Activity className="h-3 w-3" />
+                                  <span>Online</span>
+                                </div>
+                                {unreadAlerts.length > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <AlertTriangle className="h-3 w-3 text-warning" />
+                                    <span>{unreadAlerts.length} alerts</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setChildToRemove(child);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            {unreadAlerts.length > 0 && (
+                              <Badge variant="destructive">
+                                {unreadAlerts.length}
+                              </Badge>
+                            )}
+                            {isExpanded ? 
+                              <ChevronUp className="h-5 w-5" /> : 
+                              <ChevronDown className="h-5 w-5" />
+                            }
+                          </div>
+                        </div>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent>
+                      <CardContent className="space-y-6 border-t bg-muted/20">
+                        {/* Alerts Section */}
+                        {childAlerts.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="font-medium flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4" />
+                              Recent Alerts
+                              {unreadAlerts.length > 0 && (
+                                <Badge variant="destructive" className="text-xs">
+                                  {unreadAlerts.length} new
+                                </Badge>
+                              )}
+                            </h3>
+                            
+                            <div className="space-y-2">
+                              {childAlerts.slice(0, 3).map((alert) => (
+                                <AlertCard
+                                  key={alert.id}
+                                  alert={alert}
+                                  onMarkReviewed={handleMarkReviewed}
+                                />
+                              ))}
+                            </div>
+                            
+                            {childAlerts.length > 3 && (
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-3 w-3 mr-1" />
+                                View All Alerts ({childAlerts.length})
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Apps & Controls */}
+                        <div className="space-y-3">
+                          <h3 className="font-medium flex items-center gap-2">
+                            <Gamepad2 className="h-4 w-4" />
+                            Apps & Controls
+                          </h3>
+                          
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <AppChooser
+                              selectedApps={[]}
+                              onSelectionChange={(apps) => {
+                                console.log(`${child.name} apps:`, apps);
+                              }}
+                            >
+                              <Button variant="outline" className="w-full">
+                                <Settings className="h-4 w-4 mr-2" />
+                                Manage Apps
+                              </Button>
+                            </AppChooser>
+                            
+                            <BedtimePicker
+                              onValueChange={(value) => {
+                                console.log(`${child.name} bedtime:`, value);
+                              }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Policy Overrides */}
+                        <div className="space-y-3">
+                          <h3 className="font-medium">Policy Overrides</h3>
+                          <FilterPresetPicker
+                            selectedPreset="child"
+                            onPresetChange={(preset) => {
+                              console.log(`${child.name} preset:`, preset);
+                            }}
+                            childName={child.name}
+                            childAvatar={child.avatar_url}
+                          />
+                        </div>
+                        
+                        {/* Notifications */}
+                        <NotificationsPanel 
+                          scope="CHILD" 
+                          child={{
+                            id: child.id,
+                            name: child.name,
+                            avatar_url: child.avatar_url
+                          }}
+                        />
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        {children.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Avatar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-medium text-lg mb-2">No Children Added</h3>
+              <p className="text-muted-foreground mb-4">
+                Add your first child to start protecting them with Guardian AI.
+              </p>
+              <Button>
+                <Settings className="h-4 w-4 mr-2" />
+                Add Child
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <ChildRemovalDialog
+        child={childToRemove}
+        open={!!childToRemove}
+        onOpenChange={() => setChildToRemove(null)}
+        onConfirm={(childId) => {
+          handleChildRemoved(childId);
+          setChildToRemove(null);
+        }}
+      />
+    </div>
   );
 };
 
