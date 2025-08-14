@@ -9,6 +9,7 @@ import Auth from '@/pages/Auth';
 import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
 import DashboardV2 from '@/pages/DashboardV2';
+import DeviceActivation from '@/pages/DeviceActivation';
 import About from '@/pages/About';
 import Blog from '@/pages/Blog';
 import HowToGuide from '@/pages/HowToGuide';
@@ -55,6 +56,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/activate" element={<DeviceActivation />} />
               <Route path="/about" element={<About />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/how-to-guide" element={<HowToGuide />} />
