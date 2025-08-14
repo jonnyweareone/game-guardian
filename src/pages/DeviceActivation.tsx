@@ -43,6 +43,8 @@ const DeviceActivation = () => {
       setIsLoading(true);
 
       // New: delegate bind + token minting to Edge Function
+      console.log('DeviceActivation: Calling bind-device with:', { device_id: deviceId, device_name: deviceName });
+      
       const { data, error } = await supabase.functions.invoke('bind-device', {
         body: {
           device_id: deviceId,
@@ -50,7 +52,10 @@ const DeviceActivation = () => {
         },
       });
 
+      console.log('DeviceActivation: bind-device response:', { data, error });
+
       if (error) {
+        console.error('DeviceActivation: bind-device error details:', error);
         throw new Error(error.message || 'Failed to bind device');
       }
 
