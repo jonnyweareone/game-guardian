@@ -143,11 +143,11 @@ function App() {
                 </WithNavigation>
               </ProtectedRoute>
             } />
+            
+            {/* Dashboard V2 - NO Navigation (has its own header) */}
             <Route path="/dashboard-v2" element={
               <ProtectedRoute>
-                <WithNavigation>
-                  <DashboardV2 />
-                </WithNavigation>
+                <DashboardV2 />
               </ProtectedRoute>
             } />
             
