@@ -32,6 +32,8 @@ interface ActivationWizardProps {
 }
 
 const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationWizardProps) => {
+  console.log('ActivationWizard props:', { deviceId, deviceCode, isOpen });
+  
   const [step, setStep] = useState(1);
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChild, setSelectedChild] = useState<string>('');
@@ -43,22 +45,32 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
   const { user } = useAuth();
 
   useEffect(() => {
+    console.log('ActivationWizard isOpen changed:', isOpen);
     if (isOpen) {
+      console.log('ActivationWizard opening, loading data...');
       loadChildren();
       loadApps();
+      // Reset state when opening
+      setStep(1);
+      setSelectedChild('');
+      setNewChildName('');
+      setSelectedApps([]);
     }
   }, [isOpen]);
 
   const loadChildren = async () => {
     try {
+      console.log('Loading children...');
       const { data, error } = await supabase
         .from('children')
         .select('id, name')
         .order('name');
       
       if (error) throw error;
+      console.log('Children loaded:', data);
       setChildren(data || []);
     } catch (error: any) {
+      console.error('Error loading children:', error);
       toast({
         title: 'Error loading children',
         description: error.message,
@@ -69,6 +81,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
 
   const loadApps = async () => {
     try {
+      console.log('Loading apps...');
       const { data, error } = await supabase
         .from('app_catalog')
         .select('id, name, category')
@@ -77,6 +90,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
         .order('name', { ascending: true });
       
       if (error) throw error;
+      console.log('Apps loaded:', data);
       setApps(data || []);
       
       // Pre-select some apps if available
@@ -87,6 +101,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
         setSelectedApps(essentialApps.map(app => app.id));
       }
     } catch (error: any) {
+      console.error('Error loading apps:', error);
       toast({
         title: 'Error loading apps',
         description: error.message,
@@ -99,6 +114,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
     if (!newChildName.trim() || !user?.id) return null;
     
     try {
+      console.log('Creating child:', newChildName);
       const { data, error } = await supabase
         .from('children')
         .insert({ 
@@ -109,8 +125,10 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
         .single();
       
       if (error) throw error;
+      console.log('Child created:', data);
       return data.id;
     } catch (error: any) {
+      console.error('Error creating child:', error);
       toast({
         title: 'Error creating child',
         description: error.message,
@@ -121,6 +139,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
   };
 
   const handleNext = async () => {
+    console.log('handleNext - current step:', step);
     if (step === 1) {
       let childId = selectedChild;
       
@@ -146,6 +165,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
   };
 
   const handleConfirm = async () => {
+    console.log('handleConfirm - activating device...');
     setLoading(true);
     
     try {
@@ -161,6 +181,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
         throw new Error(error?.message || data?.error || 'Post-install failed');
       }
       
+      console.log('Device activated successfully');
       toast({
         title: 'Device activated successfully!',
         description: 'Your device is being configured and will be ready shortly.'
@@ -168,6 +189,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
       
       onClose();
     } catch (error: any) {
+      console.error('Activation failed:', error);
       toast({
         title: 'Activation failed',
         description: error.message,
@@ -188,8 +210,16 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
 
   const selectedChildName = children.find(c => c.id === selectedChild)?.name || newChildName;
 
+  // Don't render anything if not open
+  if (!isOpen) {
+    console.log('ActivationWizard not rendering - isOpen is false');
+    return null;
+  }
+
+  console.log('ActivationWizard rendering dialog...');
+
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
