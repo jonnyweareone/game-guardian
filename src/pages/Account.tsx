@@ -1,3 +1,6 @@
+// MOBILE APP: Essential account management page for mobile
+// Mobile features: Biometric settings, push notification preferences, profile management
+// Key sections: Verification, Security (2FA/biometrics), Notification channels
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

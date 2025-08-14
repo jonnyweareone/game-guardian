@@ -1,3 +1,6 @@
+// MOBILE APP: Legacy dashboard - Consider using DashboardV2 for mobile instead
+// If used in mobile: Focus on real-time alerts, quick device status, simplified navigation
+// Key mobile features: Pull-to-refresh, push notifications, offline alert history
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';

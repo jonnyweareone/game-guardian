@@ -1,3 +1,6 @@
+
+// MOBILE APP: Password recovery flow - Important for mobile app
+// Mobile features: Deep linking support, biometric re-setup after password change
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

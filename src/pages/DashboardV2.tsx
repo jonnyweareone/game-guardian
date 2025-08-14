@@ -1,3 +1,6 @@
+// MOBILE APP: Primary dashboard for mobile app - Enhanced version with better mobile UX
+// Mobile features: Swipe gestures, card-based layout, quick actions, real-time updates
+// Key screens: Overview, Alerts (with push), Social Media monitoring, Settings
 
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';

@@ -1,3 +1,5 @@
+// MOBILE APP: Core authentication page - Essential for Flutter mobile app
+// Features needed in mobile: Biometric auth, push notification setup, offline demo mode
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
