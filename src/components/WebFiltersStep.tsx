@@ -52,20 +52,20 @@ export function WebFiltersStep({
       </div>
 
       {/* Automatic Protection Box */}
-      <Card className="border-green-200 bg-green-50/50 border-2 border-blue-400">
+      <Card className="bg-gray-900 text-white border-2 border-blue-400">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base text-green-800">
+          <CardTitle className="flex items-center gap-2 text-base text-white">
             <ShieldCheck className="h-4 w-4" />
             Automatic Protection Active
           </CardTitle>
-          <CardDescription className="text-green-700">
+          <CardDescription className="text-gray-300">
             These categories have been automatically removed to safeguard {childName}:
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             {automaticProtections.map((protection) => (
-              <div key={protection} className="flex items-center gap-2 text-sm text-green-700">
+              <div key={protection} className="flex items-center gap-2 text-sm text-gray-200">
                 <Shield className="h-3 w-3" />
                 <span>{protection}</span>
               </div>
@@ -75,17 +75,17 @@ export function WebFiltersStep({
       </Card>
 
       {/* Safe Search Information */}
-      <Card className="border-blue-200 bg-blue-50/50 border-2 border-blue-400">
+      <Card className="bg-gray-900 text-white border-2 border-blue-400">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base text-blue-800">
+          <CardTitle className="flex items-center gap-2 text-base text-white">
             <CheckCircle className="h-4 w-4" />
             Safe Search Enabled
           </CardTitle>
-          <CardDescription className="text-blue-700">
+          <CardDescription className="text-gray-300">
             Safe Search is automatically enabled across all search engines
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-blue-700">
+        <CardContent className="text-sm text-gray-200">
           <p>Filters explicit content from search results on Google, Bing, YouTube, and other platforms to ensure {childName} sees age-appropriate content.</p>
         </CardContent>
       </Card>
