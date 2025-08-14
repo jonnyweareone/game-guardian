@@ -1,4 +1,3 @@
-
 import { HomeIcon, Users, Settings, Shield, BookOpen, Newspaper, HelpCircle, Palette, Info } from "lucide-react";
 import Index from "./pages/Index";
 import HomePage from "./pages/HomePage";
@@ -57,6 +56,12 @@ export const navItems = [
     page: <DashboardV2 />,
   },
   {
+    title: "Account",
+    to: "/account",
+    icon: <Settings className="h-4 w-4" />,
+    page: <Account />,
+  },
+  {
     title: "Devices",
     to: "/devices",
     icon: <Settings className="h-4 w-4" />,
@@ -109,12 +114,6 @@ export const navItems = [
     to: "/security",
     icon: <Shield className="h-4 w-4" />,
     page: <Security />,
-  },
-  {
-    title: "Account",
-    to: "/account",
-    icon: <Settings className="h-4 w-4" />,
-    page: <Account />,
   },
   {
     title: "Blog",
