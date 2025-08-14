@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth, AuthProvider } from '@/hooks/useAuth';
@@ -46,6 +46,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Layout wrapper for pages that need Navigation
+const WithNavigation = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen bg-background">
+    <Navigation />
+    {children}
+  </div>
+);
+
 function App() {
   // Clean up demo mode on mount
   useEffect(() => {
@@ -59,138 +67,120 @@ function App() {
       <Toaster />
       <BrowserRouter>
         <AuthProvider>
-          <div className="min-h-screen bg-background">
-            <Routes>
-              {/* Routes with Navigation */}
-              <Route path="/" element={
-                <div>
-                  <Navigation />
-                  <HomePage />
-                </div>
-              } />
-              <Route path="/auth" element={
-                <div>
-                  <Navigation />
-                  <Auth />
-                </div>
-              } />
-              <Route path="/reset-password" element={
-                <div>
-                  <Navigation />
-                  <ResetPassword />
-                </div>
-              } />
-              <Route path="/activate" element={
-                <div>
-                  <Navigation />
-                  <DeviceActivation />
-                </div>
-              } />
-              <Route path="/about" element={
-                <div>
-                  <Navigation />
-                  <About />
-                </div>
-              } />
-              <Route path="/blog" element={
-                <div>
-                  <Navigation />
-                  <Blog />
-                </div>
-              } />
-              <Route path="/how-to-guide" element={
-                <div>
-                  <Navigation />
-                  <HowToGuide />
-                </div>
-              } />
-              <Route path="/products" element={
-                <div>
-                  <Navigation />
-                  <Products />
-                </div>
-              } />
-              <Route path="/products/device" element={
-                <div>
-                  <Navigation />
-                  <ProductDevice />
-                </div>
-              } />
-              <Route path="/products/os-full" element={
-                <div>
-                  <Navigation />
-                  <ProductOSFull />
-                </div>
-              } />
-              <Route path="/products/receiver" element={
-                <div>
-                  <Navigation />
-                  <ProductReceiver />
-                </div>
-              } />
-              <Route path="/creator-mode" element={
-                <div>
-                  <Navigation />
-                  <CreatorMode />
-                </div>
-              } />
-              <Route path="/press-releases" element={
-                <div>
-                  <Navigation />
-                  <PressReleases />
-                </div>
-              } />
-              
-              {/* Protected Routes with Navigation */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <div>
-                    <Navigation />
-                    <Dashboard />
-                  </div>
-                </ProtectedRoute>
-              } />
-              <Route path="/dashboard-v2" element={
-                <ProtectedRoute>
-                  <div>
-                    <Navigation />
-                    <DashboardV2 />
-                  </div>
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin Routes - NO Navigation (they have their own headers) */}
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Navigate to="/admin/devices" replace />} />
-                <Route path="devices" element={<AdminDevices />} />
-                <Route path="app-catalog" element={<AdminAppCatalog />} />
-                <Route path="ui-themes" element={<AdminUIThemes />} />
-                <Route path="content-push" element={<AdminContentPush />} />
-              </Route>
-              
-              {/* OTA Demo Routes - NO Navigation (they have their own headers) */}
-              <Route path="/admin/ota-demo" element={
-                <ProtectedRoute>
-                  <OtaDemoLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<OtaUpdateManager />} />
-                <Route path="reports" element={<OtaReports />} />
-              </Route>
-              
-              {/* 404 Route */}
-              <Route path="*" element={
-                <div>
-                  <Navigation />
-                  <NotFound />
-                </div>
-              } />
-            </Routes>
-          </div>
+          <Routes>
+            {/* Public Routes with Navigation */}
+            <Route path="/" element={
+              <WithNavigation>
+                <HomePage />
+              </WithNavigation>
+            } />
+            <Route path="/auth" element={
+              <WithNavigation>
+                <Auth />
+              </WithNavigation>
+            } />
+            <Route path="/reset-password" element={
+              <WithNavigation>
+                <ResetPassword />
+              </WithNavigation>
+            } />
+            <Route path="/activate" element={
+              <WithNavigation>
+                <DeviceActivation />
+              </WithNavigation>
+            } />
+            <Route path="/about" element={
+              <WithNavigation>
+                <About />
+              </WithNavigation>
+            } />
+            <Route path="/blog" element={
+              <WithNavigation>
+                <Blog />
+              </WithNavigation>
+            } />
+            <Route path="/how-to-guide" element={
+              <WithNavigation>
+                <HowToGuide />
+              </WithNavigation>
+            } />
+            <Route path="/products" element={
+              <WithNavigation>
+                <Products />
+              </WithNavigation>
+            } />
+            <Route path="/products/device" element={
+              <WithNavigation>
+                <ProductDevice />
+              </WithNavigation>
+            } />
+            <Route path="/products/os-full" element={
+              <WithNavigation>
+                <ProductOSFull />
+              </WithNavigation>
+            } />
+            <Route path="/products/receiver" element={
+              <WithNavigation>
+                <ProductReceiver />
+              </WithNavigation>
+            } />
+            <Route path="/creator-mode" element={
+              <WithNavigation>
+                <CreatorMode />
+              </WithNavigation>
+            } />
+            <Route path="/press-releases" element={
+              <WithNavigation>
+                <PressReleases />
+              </WithNavigation>
+            } />
+            
+            {/* Protected Routes with Navigation */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <WithNavigation>
+                  <Dashboard />
+                </WithNavigation>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard-v2" element={
+              <ProtectedRoute>
+                <WithNavigation>
+                  <DashboardV2 />
+                </WithNavigation>
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin Routes - NO Navigation (they have their own headers) */}
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="/admin/devices" replace />} />
+              <Route path="devices" element={<AdminDevices />} />
+              <Route path="app-catalog" element={<AdminAppCatalog />} />
+              <Route path="ui-themes" element={<AdminUIThemes />} />
+              <Route path="content-push" element={<AdminContentPush />} />
+            </Route>
+            
+            {/* OTA Demo Routes - NO Navigation (they have their own headers) */}
+            <Route path="/admin/ota-demo" element={
+              <ProtectedRoute>
+                <OtaDemoLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<OtaUpdateManager />} />
+              <Route path="reports" element={<OtaReports />} />
+            </Route>
+            
+            {/* 404 Route */}
+            <Route path="*" element={
+              <WithNavigation>
+                <NotFound />
+              </WithNavigation>
+            } />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
