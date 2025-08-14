@@ -70,6 +70,9 @@ export default function AdminDevices() {
   const pagination = data?.pagination;
 
   const getStatusBadge = (status: string, lastSeen: string | null) => {
+    // Log device status for debugging
+    console.log('Device status:', status, 'Last seen:', lastSeen);
+    
     if (status === 'online') {
       return <Badge className="bg-green-100 text-green-800 border-green-200">Online</Badge>;
     }

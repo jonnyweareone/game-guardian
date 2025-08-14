@@ -98,7 +98,7 @@ const Dashboard = () => {
     }
   }, [devicesData]);
 
-  // Add realtime subscription for device updates
+  // Add realtime subscription for device updates with proper typing
   useEffect(() => {
     const channel = supabase
       .channel('devices-realtime')
@@ -108,13 +108,15 @@ const Dashboard = () => {
         table: 'devices' 
       }, (payload) => {
         console.log('Device realtime update:', payload);
-        setDevices((prev) => 
-          prev.map(d => 
-            d.id === payload.new?.id 
-              ? { ...d, ...payload.new } 
-              : d
-          )
-        );
+        if (payload.new && typeof payload.new === 'object' && 'id' in payload.new) {
+          setDevices((prev) => 
+            prev.map(d => 
+              d.id === (payload.new as any).id 
+                ? { ...d, ...(payload.new as any) } 
+                : d
+            )
+          );
+        }
       })
       .subscribe();
 
