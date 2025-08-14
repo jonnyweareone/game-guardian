@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth, AuthProvider } from '@/hooks/useAuth';
@@ -46,19 +46,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Component to conditionally render navigation
-const ConditionalNavigation = () => {
-  const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
-  
-  // Don't render main navigation on admin routes as they have their own headers
-  if (isAdminRoute) {
-    return null;
-  }
-  
-  return <Navigation />;
-};
-
 function App() {
   // Clean up demo mode on mount
   useEffect(() => {
@@ -73,35 +60,106 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <div className="min-h-screen bg-background">
-            <ConditionalNavigation />
             <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/activate" element={<DeviceActivation />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/how-to-guide" element={<HowToGuide />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/products/device" element={<ProductDevice />} />
-              <Route path="/products/os-full" element={<ProductOSFull />} />
-              <Route path="/products/receiver" element={<ProductReceiver />} />
-              <Route path="/creator-mode" element={<CreatorMode />} />
-              <Route path="/press-releases" element={<PressReleases />} />
+              {/* Routes with Navigation */}
+              <Route path="/" element={
+                <div>
+                  <Navigation />
+                  <HomePage />
+                </div>
+              } />
+              <Route path="/auth" element={
+                <div>
+                  <Navigation />
+                  <Auth />
+                </div>
+              } />
+              <Route path="/reset-password" element={
+                <div>
+                  <Navigation />
+                  <ResetPassword />
+                </div>
+              } />
+              <Route path="/activate" element={
+                <div>
+                  <Navigation />
+                  <DeviceActivation />
+                </div>
+              } />
+              <Route path="/about" element={
+                <div>
+                  <Navigation />
+                  <About />
+                </div>
+              } />
+              <Route path="/blog" element={
+                <div>
+                  <Navigation />
+                  <Blog />
+                </div>
+              } />
+              <Route path="/how-to-guide" element={
+                <div>
+                  <Navigation />
+                  <HowToGuide />
+                </div>
+              } />
+              <Route path="/products" element={
+                <div>
+                  <Navigation />
+                  <Products />
+                </div>
+              } />
+              <Route path="/products/device" element={
+                <div>
+                  <Navigation />
+                  <ProductDevice />
+                </div>
+              } />
+              <Route path="/products/os-full" element={
+                <div>
+                  <Navigation />
+                  <ProductOSFull />
+                </div>
+              } />
+              <Route path="/products/receiver" element={
+                <div>
+                  <Navigation />
+                  <ProductReceiver />
+                </div>
+              } />
+              <Route path="/creator-mode" element={
+                <div>
+                  <Navigation />
+                  <CreatorMode />
+                </div>
+              } />
+              <Route path="/press-releases" element={
+                <div>
+                  <Navigation />
+                  <PressReleases />
+                </div>
+              } />
               
-              {/* Protected Routes */}
+              {/* Protected Routes with Navigation */}
               <Route path="/dashboard" element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <div>
+                    <Navigation />
+                    <Dashboard />
+                  </div>
                 </ProtectedRoute>
               } />
               <Route path="/dashboard-v2" element={
                 <ProtectedRoute>
-                  <DashboardV2 />
+                  <div>
+                    <Navigation />
+                    <DashboardV2 />
+                  </div>
                 </ProtectedRoute>
               } />
               
-              {/* Admin Routes */}
+              {/* Admin Routes - NO Navigation (they have their own headers) */}
               <Route path="/admin" element={
                 <ProtectedRoute>
                   <AdminLayout />
@@ -114,7 +172,7 @@ function App() {
                 <Route path="content-push" element={<AdminContentPush />} />
               </Route>
               
-              {/* OTA Demo Routes */}
+              {/* OTA Demo Routes - NO Navigation (they have their own headers) */}
               <Route path="/admin/ota-demo" element={
                 <ProtectedRoute>
                   <OtaDemoLayout />
@@ -125,7 +183,12 @@ function App() {
               </Route>
               
               {/* 404 Route */}
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={
+                <div>
+                  <Navigation />
+                  <NotFound />
+                </div>
+              } />
             </Routes>
           </div>
         </AuthProvider>

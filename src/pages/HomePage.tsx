@@ -1,3 +1,4 @@
+
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,12 +16,11 @@ import {
   Globe,
   Lock
 } from 'lucide-react';
+import EcosystemHero from '@/components/EcosystemHero';
 
 const HomePage = () => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Remove any duplicate navigation/header components that might be here */}
-      
       {/* Hero Section */}
       <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
@@ -40,6 +40,9 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Guardian Ecosystem Section */}
+      <EcosystemHero />
 
       {/* Features Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-muted/50">
