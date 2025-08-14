@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verify, Algorithm } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
@@ -54,21 +55,21 @@ serve(async (req) => {
       .eq("is_active", true)
       .maybeSingle();
 
-    // Essentials from catalog
+    // Essentials from catalog (now including icon_url)
     const { data: essentials, error: e2 } = await svc
       .from("app_catalog")
-      .select("id, name, category, is_essential, platform, version, description, enabled")
+      .select("id, name, category, is_essential, platform, version, description, enabled, icon_url")
       .eq("is_essential", true)
       .eq("enabled", true);
 
     if (e2) throw e2;
 
-    // Child-selected
+    // Child-selected apps (now including icon_url)
     let chosen: any[] = [];
     if (assign?.child_id) {
       const { data, error } = await svc
         .from("child_app_selections")
-        .select("selected, app_id, app_catalog:app_id ( id, name, category, is_essential, platform, version, description, enabled )")
+        .select("selected, app_id, app_catalog:app_id ( id, name, category, is_essential, platform, version, description, enabled, icon_url )")
         .eq("child_id", assign.child_id)
         .eq("selected", true);
       if (error) throw error;
@@ -86,10 +87,39 @@ serve(async (req) => {
       category: a.category,
       platform: a.platform,
       version: a.version,
-      description: a.description
+      description: a.description,
+      icon_url: a.icon_url
     }));
 
-    return json({ device_code, child_id: assign?.child_id || null, apps });
+    // Fetch DNS configuration for active child
+    let dnsConfig = null;
+    if (assign?.child_id) {
+      const { data: dnsProfile } = await svc
+        .from("child_dns_profiles")
+        .select("nextdns_config, school_hours_enabled, bypass_until, bypass_reason")
+        .eq("child_id", assign.child_id)
+        .maybeSingle();
+      
+      if (dnsProfile) {
+        dnsConfig = {
+          profile_id: dnsProfile.nextdns_config,
+          school_hours_enabled: dnsProfile.school_hours_enabled,
+          bypass_until: dnsProfile.bypass_until,
+          bypass_reason: dnsProfile.bypass_reason,
+          dns_servers: [
+            `${dnsProfile.nextdns_config}.dns1.nextdns.io`,
+            `${dnsProfile.nextdns_config}.dns2.nextdns.io`
+          ]
+        };
+      }
+    }
+
+    return json({ 
+      device_code, 
+      child_id: assign?.child_id || null, 
+      apps,
+      dns_config: dnsConfig
+    });
   } catch (e) {
     return json({ error: e.message || "Unauthorized" }, { status: 401 });
   }

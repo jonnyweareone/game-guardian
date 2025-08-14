@@ -54,3 +54,7 @@ verify_jwt = true
 
 [functions.admin-list-devices]
 verify_jwt = true
+
+# NextDNS profile management (parent auth required)
+[functions.nextdns-profile-manager]
+verify_jwt = true

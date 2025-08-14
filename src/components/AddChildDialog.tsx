@@ -109,24 +109,35 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
         }
       }
 
-      // Save DNS configuration if provided
-      if (dnsConfig.nextDnsConfig.trim()) {
-        try {
-          await supabase
-            .from('child_dns_profiles')
-            .insert({
-              child_id: childData.id,
-              nextdns_config: dnsConfig.nextDnsConfig.trim(),
-              school_hours_enabled: dnsConfig.schoolHoursEnabled
-            });
-        } catch (dnsError) {
-          console.warn('Failed to save DNS configuration:', dnsError);
+      // Create NextDNS profile automatically
+      try {
+        const { error: dnsError } = await supabase.functions.invoke('nextdns-profile-manager', {
+          body: {
+            action: 'create_profile',
+            child_id: childData.id,
+            child_name: name.trim(),
+            age: childAge,
+            school_hours_enabled: dnsConfig.schoolHoursEnabled
+          }
+        });
+
+        if (dnsError) {
+          console.warn('Failed to create NextDNS profile:', dnsError);
+          toast({
+            title: "DNS Setup Warning",
+            description: "Child profile created but DNS filtering could not be configured automatically. You can set this up manually later.",
+            variant: "destructive"
+          });
+        } else {
+          console.log('NextDNS profile created successfully');
         }
+      } catch (dnsError) {
+        console.warn('Failed to create NextDNS profile:', dnsError);
       }
 
       toast({
         title: "Child profile created",
-        description: `${name} has been added to your family dashboard with age-appropriate app selections.`
+        description: `${name} has been added to your family dashboard with age-appropriate app selections and DNS filtering.`
       });
 
       // Reset form
@@ -227,7 +238,7 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Age is used to show appropriate apps based on PEGI ratings
+                Age is used to show appropriate apps and configure DNS filtering
               </p>
             </div>
             
@@ -282,7 +293,7 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
                 Back
               </Button>
               <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? 'Creating...' : 'Create Profile'}
+                {loading ? 'Creating Profile & DNS...' : 'Create Profile'}
               </Button>
             </div>
           </form>

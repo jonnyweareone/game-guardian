@@ -82,7 +82,7 @@ export function AppSelectionStep({ childAge = 8, selectedApps, onAppToggle }: Ap
           <span>Showing apps suitable for age {childAge} (PEGI {childAge} and below)</span>
         </div>
         <p className="text-sm text-muted-foreground">
-          Essential apps are automatically selected. You can add or remove others.
+          Essential apps are automatically selected. Icons will appear once apps are installed.
         </p>
       </div>
 
@@ -126,9 +126,28 @@ export function AppSelectionStep({ childAge = 8, selectedApps, onAppToggle }: Ap
                   
                   return (
                     <div key={app.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/5">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {app.icon_url ? (
+                            <img 
+                              src={app.icon_url} 
+                              alt={`${app.name} icon`}
+                              className="w-full h-full object-cover rounded-lg"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-full h-full flex items-center justify-center ${app.icon_url ? 'hidden' : ''}`}>
+                            <IconComponent className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </div>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-medium">{app.name}</span>
                             {app.is_essential && (
                               <Badge variant="secondary" className="text-xs">
@@ -144,10 +163,10 @@ export function AppSelectionStep({ childAge = 8, selectedApps, onAppToggle }: Ap
                               Ages {app.age_min}-{app.age_max}
                             </Badge>
                           </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {app.description || 'No description available'}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {app.description || 'No description available'}
-                        </p>
                       </div>
                       
                       <div className="flex items-center space-x-2">
@@ -174,7 +193,7 @@ export function AppSelectionStep({ childAge = 8, selectedApps, onAppToggle }: Ap
       )}
 
       <div className="text-center text-sm text-muted-foreground">
-        {selectedApps.size} apps selected • Age restrictions help keep your child safe online
+        {selectedApps.size} apps selected • Age restrictions and DNS filtering help keep your child safe online
       </div>
     </div>
   );
