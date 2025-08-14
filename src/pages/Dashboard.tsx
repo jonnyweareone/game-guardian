@@ -88,25 +88,68 @@ const Dashboard = () => {
     
     console.log('Activation check:', { shouldActivate, deviceId, deviceCode });
     
-    if (shouldActivate && deviceId && deviceCode) {
-      console.log('Dashboard: Opening activation wizard for device:', deviceId, deviceCode);
-      setActivationDeviceId(deviceId);
-      setActivationDeviceCode(deviceCode);
-      setShowActivationWizard(true);
-      
-      // Clear the search params to avoid showing the wizard again on refresh
-      setSearchParams(prev => {
-        const newParams = new URLSearchParams(prev);
-        newParams.delete('activate');
-        newParams.delete('device_id');
-        newParams.delete('device_code');
-        console.log('Clearing URL parameters...');
-        return newParams;
-      });
+    if (shouldActivate && deviceId) {
+      // If we have deviceId but no deviceCode, look up the device code from the database
+      if (!deviceCode) {
+        console.log('Dashboard: Looking up device code for device ID:', deviceId);
+        lookupDeviceCode(deviceId);
+      } else {
+        console.log('Dashboard: Opening activation wizard for device:', deviceId, deviceCode);
+        setActivationDeviceId(deviceId);
+        setActivationDeviceCode(deviceCode);
+        setShowActivationWizard(true);
+        clearUrlParams();
+      }
     } else {
       console.log('Dashboard: Activation conditions not met');
     }
   }, [searchParams, setSearchParams]);
+
+  const lookupDeviceCode = async (deviceId: string) => {
+    try {
+      console.log('Looking up device code for device ID:', deviceId);
+      const { data, error } = await supabase
+        .from('devices')
+        .select('device_code')
+        .eq('id', deviceId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data?.device_code) {
+        console.log('Found device code:', data.device_code);
+        setActivationDeviceId(deviceId);
+        setActivationDeviceCode(data.device_code);
+        setShowActivationWizard(true);
+        clearUrlParams();
+      } else {
+        console.error('Device not found or no device code');
+        toast({
+          title: 'Device not found',
+          description: 'Could not find the device to activate.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      console.error('Error looking up device:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to look up device information.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const clearUrlParams = () => {
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.delete('activate');
+      newParams.delete('device_id');
+      newParams.delete('device_code');
+      console.log('Clearing URL parameters...');
+      return newParams;
+    });
+  };
 
   // Debug effect to log wizard state changes
   useEffect(() => {
