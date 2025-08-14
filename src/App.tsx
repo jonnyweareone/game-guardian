@@ -1,120 +1,73 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import HomePage from "./pages/HomePage";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import DeviceActivation from "./pages/DeviceActivation";
-import Products from "./pages/Products";
-import ProductDevice from "./pages/ProductDevice";
-import ProductOSMini from "./pages/ProductOSMini";
-import ProductOSFull from "./pages/ProductOSFull";
-import ProductReceiver from "./pages/ProductReceiver";
-import Blog from "./pages/Blog";
-import BlogPost from "./components/BlogPost";
-import PressReleases from "./pages/PressReleases";
-import HowToGuide from "./pages/HowToGuide";
-import About from "./pages/About";
-import NotFound from "./pages/NotFound";
-import Security from "./pages/Security";
-import ResetPassword from "./pages/ResetPassword";
-import AdminWaitlist from "./pages/AdminWaitlist";
-import CreatorMode from "./pages/CreatorMode";
-import OtaDemoLayout from "./pages/admin/ota-demo/OtaDemoLayout";
-import OtaUpdateManager from "./pages/admin/ota-demo/OtaUpdateManager";
-import OtaReports from "./pages/admin/ota-demo/OtaReports";
-import AdminRoute from "./components/AdminRoute";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDevices from "./pages/admin/AdminDevices";
-import AdminDeviceDetail from "./pages/admin/AdminDeviceDetail";
-import AdminAppCatalog from "./pages/admin/AdminAppCatalog";
-import AdminUIThemes from "./pages/admin/AdminUIThemes";
-import AdminContentPush from "./pages/admin/AdminContentPush";
-import PitchDeck from "./pages/PitchDeck";
-import BrandAssets from "./pages/BrandAssets";
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { useAuth, AuthProvider } from '@/hooks/useAuth';
+import Index from '@/pages/Index';
+import Auth from '@/pages/Auth';
+import ResetPassword from '@/pages/ResetPassword';
+import Dashboard from '@/pages/Dashboard';
+import DashboardV2 from '@/pages/DashboardV2';
+
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/reset" element={<ResetPassword />} />
-            <Route path="/activate" element={<DeviceActivation />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/security" element={
-              <ProtectedRoute>
-                <Security />
-              </ProtectedRoute>
-            } />
-            
-            {/* Admin */}
-            <Route path="/admin/waitlist" element={
-              <ProtectedRoute>
-                <AdminWaitlist />
-              </ProtectedRoute>
-            } />
-            
-            {/* Product Pages */}
-            <Route path="/products" element={<Products />} />
-            <Route path="/products/device" element={<ProductDevice />} />
-            <Route path="/products/os-mini" element={<ProductOSMini />} />
-            <Route path="/products/os-full" element={<ProductOSFull />} />
-            <Route path="/products/receiver" element={<ProductReceiver />} />
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
 
-            {/* Admin - OTA Demo */}
-            <Route path="/admin/ota-demo" element={
-              <ProtectedRoute>
-                <OtaDemoLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<OtaUpdateManager />} />
-              <Route path="reports" element={<OtaReports />} />
-            </Route>
-            
-            {/* Admin - Real Device Management */}
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              </ProtectedRoute>
-            }>
-              <Route path="devices" element={<AdminDevices />} />
-              <Route path="device/:id" element={<AdminDeviceDetail />} />
-              <Route path="app-catalog" element={<AdminAppCatalog />} />
-              <Route path="ui-themes" element={<AdminUIThemes />} />
-              <Route path="content-push" element={<AdminContentPush />} />
-            </Route>
-            
-            {/* Content Pages */}
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:slug" element={<BlogPost />} />
-            <Route path="/press-releases" element={<PressReleases />} />
-            <Route path="/how-to-guide" element={<HowToGuide />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/creator-mode" element={<CreatorMode />} />
-            <Route path="/pitch-deck" element={<PitchDeck />} />
-            <Route path="/brand-assets" element={<BrandAssets />} />
-            <Route path="/" element={<HomePage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+import Navigation from '@/components/Navigation';
+
+function App() {
+  // Clean up demo mode on mount
+  useEffect(() => {
+    if (window.location.pathname !== '/auth') {
+      try { localStorage.removeItem('demo-mode'); } catch {}
+    }
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Toaster />
+      <BrowserRouter>
+        <AuthProvider>
+          <div className="min-h-screen bg-background">
+            <Navigation />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard-v2" element={
+                <ProtectedRoute>
+                  <DashboardV2 />
+                </ProtectedRoute>
+              } />
+              <Route path="*" element={
+                <div className="container mx-auto p-4">
+                  <h1 className="text-2xl font-bold">Page Not Found</h1>
+                  <p>Sorry, the page you are looking for does not exist.</p>
+                  <Link to="/" className="text-blue-500">Go Home</Link>
+                </div>
+              } />
+            </Routes>
+          </div>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

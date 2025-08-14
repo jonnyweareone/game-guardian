@@ -1,88 +1,128 @@
-
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdmin } from '@/hooks/useAdmin';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
-interface NavigationProps {
-  transparent?: boolean;
-}
-
-const Navigation = ({ transparent = false }: NavigationProps) => {
-  const navigate = useNavigate();
+const Navigation = () => {
   const { user, signOut } = useAuth();
-  const { isAdmin } = useAdmin();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const { toast } = useToast()
+
+  useEffect(() => {
+    // Check for demo mode on component mount
+    const demoMode = localStorage.getItem('demo-mode') === 'true';
+    setIsDemoMode(demoMode);
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    // Redirect to auth page after sign out
+    navigate('/auth');
+  };
+
+  const handleToggleDemoMode = () => {
+    if (isDemoMode) {
+      localStorage.removeItem('demo-mode');
+      setIsDemoMode(false);
+      toast({
+        title: "Demo mode disabled",
+        description: "You're back to the real world!",
+      })
+    } else {
+      localStorage.setItem('demo-mode', 'true');
+      setIsDemoMode(true);
+      toast({
+        title: "Demo mode enabled",
+        description: "Welcome to the demo! All changes are temporary.",
+      })
+    }
+  };
 
   return (
-    <header className={`${transparent ? 'bg-transparent' : 'bg-card/50 backdrop-blur-sm border-b border-border'} sticky top-0 z-50`}>
+    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <Shield className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Game Guardian AI™</h1>
-              <p className="text-xs text-muted-foreground">Intelligent Gaming Protection</p>
-            </div>
+        <div className="flex justify-between h-16">
+          <div className="flex items-center space-x-8">
+            <Link to="/" className="flex items-center space-x-2">
+              <img 
+                src="/lovable-uploads/guardian-logo-transparent.png" 
+                alt="Guardian AI" 
+                className="h-8 w-auto"
+              />
+              <span className="font-bold text-xl text-gray-900">Guardian AI</span>
+            </Link>
+
+            {user && (
+              <div className="hidden md:flex items-center space-x-6">
+                <Link
+                  to="/dashboard"
+                  className="text-gray-700 hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/dashboard-v2"
+                  className="text-gray-700 hover:text-primary transition-colors flex items-center gap-1"
+                >
+                  Dashboard V2
+                  <Badge variant="secondary" className="text-xs">New</Badge>
+                </Link>
+                {isDemoMode && (
+                  <Badge variant="destructive">Demo Mode</Badge>
+                )}
+              </div>
+            )}
           </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <Button variant="ghost" onClick={() => navigate('/products')}>Products</Button>
-            <Button variant="ghost" onClick={() => navigate('/how-to-guide')}>How-to Guide</Button>
-            <Button variant="ghost" onClick={() => navigate('/blog')}>Blog</Button>
-            <Button variant="ghost" onClick={() => navigate('/about')}>About</Button>
-            <Button variant="ghost" onClick={() => navigate('/security')}>Security</Button>
-            <Button variant="ghost" onClick={() => navigate('/pitch-deck')}>Pitch Deck</Button>
-          </nav>
-          <div className="flex items-center gap-4">
-            {!user ? (
-              <>
-                <Button variant="ghost" onClick={() => navigate('/auth')}>
-                  Sign In
-                </Button>
-                <Button onClick={() => navigate('/auth')}>
-                  Get Started
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </>
-            ) : (
+
+          <div className="flex items-center ml-4 md:ml-6">
+            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 focus:outline-none">
-                    <Avatar>
-                      <AvatarFallback>{(user.email?.[0] || 'U').toUpperCase()}</AvatarFallback>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name} />
+                      <AvatarFallback>{user.user_metadata?.full_name?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span className="hidden sm:inline text-sm text-foreground">{user.email}</span>
-                  </button>
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel>
+                    {user.user_metadata?.full_name}
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>Dashboard</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/security')}>Security</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/admin/ota-demo')}>OTA Demo</DropdownMenuItem>
-                  
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Admin</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => navigate('/admin/devices')}>Admin Dashboard</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/admin/app-catalog')}>App Catalog</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/admin/ui-themes')}>UI Themes</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/admin/content-push')}>Content Push</DropdownMenuItem>
-                    </>
-                  )}
-                  
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleToggleDemoMode}>
+                    {isDemoMode ? 'Disable Demo Mode' : 'Enable Demo Mode'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    Sign Out
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            ) : (
+              location.pathname !== '/auth' && (
+                <Link to="/auth">
+                  <Button>Sign In</Button>
+                </Link>
+              )
             )}
           </div>
         </div>
       </div>
-    </header>
+    </nav>
   );
 };
 
