@@ -49,17 +49,19 @@ const DeviceActivation = () => {
         session_exists: !!session 
       });
       
-      // Create a new Supabase client with the current session for this specific call
-      const authenticatedClient = supabase;
-      
-      // Make sure we have a valid session
-      const { data: sessionData, error: sessionError } = await authenticatedClient.auth.getSession();
+      // Ensure we have a valid session before making the call
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !sessionData.session) {
         throw new Error('Authentication session expired. Please sign in again.');
       }
 
-      const { data, error } = await authenticatedClient.functions.invoke('bind-device', {
+      console.log('DeviceActivation: Session validated, access_token exists:', !!sessionData.session.access_token);
+
+      // The supabase.functions.invoke() method automatically includes:
+      // - apikey header with the anon key from client configuration
+      // - authorization header with the user's access token
+      const { data, error } = await supabase.functions.invoke('bind-device', {
         body: {
           device_id: deviceId,
           device_name: deviceName || undefined,
