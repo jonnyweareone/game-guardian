@@ -64,7 +64,10 @@ const BrandAssets = () => {
     const link = document.createElement('a');
     link.href = assetPath;
     link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   };
 
   return (
