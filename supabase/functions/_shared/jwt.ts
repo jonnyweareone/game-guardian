@@ -1,3 +1,4 @@
+
 import { create, verify, getNumericDate, Header, Payload } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const secretRaw = Deno.env.get("DEVICE_JWT_SECRET");
@@ -5,10 +6,8 @@ if (!secretRaw) {
   throw new Error("DEVICE_JWT_SECRET environment variable is not set");
 }
 
-// Decode base64 Supabase JWT secret
-const SECRET = new Uint8Array(
-  atob(secretRaw).split('').map(char => char.charCodeAt(0))
-);
+// Handle the secret as a plain string for HS256
+const SECRET = new TextEncoder().encode(secretRaw);
 
 export async function mintDeviceJWT(device_code: string, minutes = 15) {
   try {
