@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Shield, 
   Users, 
@@ -17,7 +18,8 @@ import {
   AlertTriangle,
   Activity,
   Gamepad2,
-  Eye
+  Eye,
+  Construction
 } from 'lucide-react';
 import { getChildrenWithAvatars, getAppCatalogWithIcons } from '@/lib/dashboardV2Api';
 import { getChildren } from '@/lib/api';
@@ -152,7 +154,7 @@ const DashboardV2 = () => {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Shield className="h-8 w-8 text-primary" />
-            Guardian Dashboard
+            Guardian Dashboard V2
           </h1>
           <p className="text-muted-foreground mt-1">
             Complete family protection and monitoring
@@ -175,6 +177,15 @@ const DashboardV2 = () => {
           })}
         </div>
       </div>
+
+      {/* Development Notice */}
+      <Alert>
+        <Construction className="h-4 w-4" />
+        <AlertDescription>
+          Dashboard V2 is currently under development. Some features are temporarily disabled while the database migration is being completed.
+          The original dashboard is still fully functional.
+        </AlertDescription>
+      </Alert>
 
       {/* Global Controls */}
       <Card>

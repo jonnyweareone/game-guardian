@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Bell, Shield, MessageSquare, AlertTriangle, Settings } from 'lucide-react';
+import { Bell, Shield, MessageSquare, AlertTriangle, Settings, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import SeveritySelect from './SeveritySelect';
 import DigestSelect from './DigestSelect';
 import { getNotificationPreferences, upsertNotificationPreference, NotificationPreference } from '@/lib/dashboardV2Api';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Child {
   id: string;
@@ -46,7 +47,10 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
       console.log('Loaded preferences:', prefs);
     } catch (error) {
       console.error('Failed to load notification preferences:', error);
-      toast.error('Failed to load notification preferences');
+      // Don't show error toast for stubbed functions
+      if (!error?.message?.includes('stubbed')) {
+        toast.error('Failed to load notification preferences');
+      }
     } finally {
       setLoading(false);
     }
@@ -75,10 +79,14 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
       await upsertNotificationPreference(preference);
       await loadPreferences();
       
-      toast.success(`${alertType.toLowerCase()} notification updated`);
+      // Don't show success toast for stubbed functions
+      console.log(`${alertType.toLowerCase()} notification updated (stubbed)`);
     } catch (error) {
       console.error('Failed to update notification preference:', error);
-      toast.error('Failed to update notification preference');
+      // Don't show error toast for stubbed functions
+      if (!error?.message?.includes('stubbed')) {
+        toast.error('Failed to update notification preference');
+      }
     } finally {
       setUpdating(null);
     }
@@ -121,6 +129,13 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
       </CardHeader>
       
       <CardContent className="space-y-6">
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Notification preferences are temporarily disabled while the database is being set up.
+          </AlertDescription>
+        </Alert>
+
         {alertTypes.map((alertType) => {
           const preference = getPreference(alertType.type);
           const isEnabled = preference !== undefined && preference.min_severity < 10;
@@ -129,7 +144,7 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
           const isUpdating = updating === updateKey;
           
           return (
-            <div key={alertType.type} className="space-y-3">
+            <div key={alertType.type} className="space-y-3 opacity-50">
               <div className="flex items-start gap-3">
                 <Icon className="h-4 w-4 mt-1 text-muted-foreground" />
                 <div className="flex-1 space-y-2">
@@ -142,9 +157,9 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
                     </div>
                     <Switch
                       checked={isEnabled}
-                      disabled={isUpdating}
+                      disabled={true}
                       onCheckedChange={(enabled) => {
-                        console.log(`Toggling ${alertType.type} to ${enabled}`);
+                        console.log(`Toggling ${alertType.type} to ${enabled} (stubbed)`);
                         if (enabled) {
                           updatePreference(alertType.type, {
                             min_severity: 2,
@@ -152,7 +167,6 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
                             digest: 'NONE'
                           });
                         } else {
-                          // Set a very high severity to effectively disable
                           updatePreference(alertType.type, { 
                             min_severity: 10,
                             channel_ids: [],
@@ -170,7 +184,7 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
                         <SeveritySelect
                           value={preference.min_severity}
                           onValueChange={(severity) => {
-                            console.log(`Changing severity for ${alertType.type} to ${severity}`);
+                            console.log(`Changing severity for ${alertType.type} to ${severity} (stubbed)`);
                             updatePreference(alertType.type, { min_severity: severity });
                           }}
                         />
@@ -181,7 +195,7 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
                         <DigestSelect
                           value={preference.digest}
                           onValueChange={(digest) => {
-                            console.log(`Changing digest for ${alertType.type} to ${digest}`);
+                            console.log(`Changing digest for ${alertType.type} to ${digest} (stubbed)`);
                             updatePreference(alertType.type, { digest });
                           }}
                         />
