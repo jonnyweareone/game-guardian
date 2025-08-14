@@ -5,11 +5,11 @@ import { Download, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-// Brand assets are now in public folder for direct access
-const logoTransparent = "/branding/logo-transparent.png";
-const splashScreen = "/branding/splash-screen.png";
-const wallpaperDesktop = "/branding/wallpaper-desktop.png";
-const wallpaperMobile = "/branding/wallpaper-mobile.png";
+// Brand assets are now in public uploads folder for reliable access
+const logoTransparent = "/lovable-uploads/guardian-logo-transparent.png";
+const splashScreen = "/lovable-uploads/guardian-splash-screen.png";
+const wallpaperDesktop = "/lovable-uploads/guardian-wallpaper-desktop.png";
+const wallpaperMobile = "/lovable-uploads/guardian-wallpaper-mobile.png";
 
 const BrandAssets = () => {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
