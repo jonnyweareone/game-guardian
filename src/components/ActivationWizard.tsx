@@ -7,10 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, User, Smartphone, CheckCircle } from 'lucide-react';
+import { Loader2, User, Smartphone, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { AvatarSelector } from './AvatarSelector';
+import { AppSelectionStep } from './AppSelectionStep';
 
 interface App {
   id: string;
@@ -38,11 +40,15 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChild, setSelectedChild] = useState<string>('');
   const [newChildName, setNewChildName] = useState('');
+  const [newChildAge, setNewChildAge] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [apps, setApps] = useState<App[]>([]);
-  const [selectedApps, setSelectedApps] = useState<string[]>([]);
+  const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const childAge = newChildAge ? parseInt(newChildAge) : undefined;
 
   useEffect(() => {
     console.log('ActivationWizard isOpen changed:', isOpen);
@@ -54,7 +60,9 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
       setStep(1);
       setSelectedChild('');
       setNewChildName('');
-      setSelectedApps([]);
+      setNewChildAge('');
+      setSelectedAvatar(null);
+      setSelectedApps(new Set());
     }
   }, [isOpen]);
 
@@ -98,7 +106,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
         const essentialApps = data.filter(app => 
           ['Firefox', 'Chrome', 'Educational Games'].includes(app.name)
         );
-        setSelectedApps(essentialApps.map(app => app.id));
+        setSelectedApps(new Set(essentialApps.map(app => app.id)));
       }
     } catch (error: any) {
       console.error('Error loading apps:', error);
@@ -114,11 +122,13 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
     if (!newChildName.trim() || !user?.id) return null;
     
     try {
-      console.log('Creating child:', newChildName);
+      console.log('Creating child:', { name: newChildName, age: childAge });
       const { data, error } = await supabase
         .from('children')
         .insert({ 
           name: newChildName.trim(),
+          age: childAge,
+          avatar_url: selectedAvatar,
           parent_id: user.id
         })
         .select()
@@ -144,6 +154,14 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
       let childId = selectedChild;
       
       if (newChildName.trim()) {
+        if (!newChildAge) {
+          toast({
+            title: 'Age required',
+            description: 'Please enter your child\'s age to show appropriate apps.',
+            variant: 'destructive'
+          });
+          return;
+        }
         childId = await createChild();
         if (!childId) return;
       }
@@ -164,6 +182,12 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
     }
   };
 
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+
   const handleConfirm = async () => {
     console.log('handleConfirm - activating device...');
     setLoading(true);
@@ -173,7 +197,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
         body: {
           device_id: deviceId,
           child_id: selectedChild,
-          app_ids: selectedApps
+          app_ids: Array.from(selectedApps)
         }
       });
       
@@ -200,12 +224,16 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
     }
   };
 
-  const toggleApp = (appId: string) => {
-    setSelectedApps(prev => 
-      prev.includes(appId) 
-        ? prev.filter(id => id !== appId)
-        : [...prev, appId]
-    );
+  const handleAppToggle = (appId: string, selected: boolean) => {
+    setSelectedApps(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(appId);
+      } else {
+        newSet.delete(appId);
+      }
+      return newSet;
+    });
   };
 
   const selectedChildName = children.find(c => c.id === selectedChild)?.name || newChildName;
@@ -220,7 +248,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Smartphone className="h-5 w-5" />
@@ -228,120 +256,140 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
           </DialogTitle>
         </DialogHeader>
 
-        {step === 1 && (
-          <div className="space-y-4">
-            <h3 className="font-medium">Select or Create Child Profile</h3>
-            
-            {children.length > 0 && (
-              <div className="space-y-2">
-                <Label>Select existing child:</Label>
-                <Select value={selectedChild} onValueChange={setSelectedChild}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a child..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {children.map(child => (
-                      <SelectItem key={child.id} value={child.id}>
-                        {child.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <div className="min-h-[500px]">
+          {step === 1 && (
+            <div className="space-y-6">
+              <h3 className="font-medium text-lg">Select or Create Child Profile</h3>
+              
+              {children.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Select existing child:</Label>
+                  <Select value={selectedChild} onValueChange={setSelectedChild}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a child..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {children.map(child => (
+                        <SelectItem key={child.id} value={child.id}>
+                          {child.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
               </div>
-            )}
-            
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newChild">Create new child - Name *</Label>
+                  <Input
+                    id="newChild"
+                    placeholder="Enter child's name..."
+                    value={newChildName}
+                    onChange={(e) => {
+                      setNewChildName(e.target.value);
+                      setSelectedChild('');
+                    }}
+                  />
+                </div>
+
+                {newChildName.trim() && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="child-age">Age *</Label>
+                      <Input
+                        id="child-age"
+                        type="number"
+                        min="3"
+                        max="18"
+                        value={newChildAge}
+                        onChange={(e) => setNewChildAge(e.target.value)}
+                        placeholder="Enter age (used for app recommendations)"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Age is used to show appropriate apps and configure DNS filtering
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Choose Avatar</Label>
+                      <AvatarSelector
+                        selectedAvatar={selectedAvatar}
+                        onAvatarSelect={setSelectedAvatar}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="newChild">Create new child:</Label>
-              <Input
-                id="newChild"
-                placeholder="Enter child's name..."
-                value={newChildName}
-                onChange={(e) => {
-                  setNewChildName(e.target.value);
-                  setSelectedChild('');
-                }}
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <h3 className="font-medium text-lg">Select Apps for {selectedChildName}</h3>
+              <AppSelectionStep
+                childAge={childAge}
+                selectedApps={selectedApps}
+                onAppToggle={handleAppToggle}
               />
             </div>
-          </div>
-        )}
+          )}
 
-        {step === 2 && (
-          <div className="space-y-4">
-            <h3 className="font-medium">Select Apps for {selectedChildName}</h3>
-            <div className="max-h-60 overflow-y-auto space-y-2">
-              {apps.map(app => (
-                <div key={app.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={app.id}
-                    checked={selectedApps.includes(app.id)}
-                    onCheckedChange={() => toggleApp(app.id)}
-                  />
-                  <Label htmlFor={app.id} className="flex-1 cursor-pointer">
-                    {app.name}
-                    {app.category && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        ({app.category})
-                      </span>
-                    )}
-                  </Label>
-                </div>
-              ))}
+          {step === 3 && (
+            <div className="space-y-4">
+              <h3 className="font-medium flex items-center gap-2 text-lg">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                Confirm Activation
+              </h3>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Setup Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Device:</span>
+                    <span>{deviceCode}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Child:</span>
+                    <span>{selectedChildName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Apps:</span>
+                    <span>{selectedApps.size} selected</span>
+                  </div>
+                </CardContent>
+              </Card>
+              <p className="text-sm text-muted-foreground">
+                Click "Activate Device" to begin the setup process. Your device will install the selected apps and reboot automatically.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {selectedApps.length} apps selected
-            </p>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-4">
-            <h3 className="font-medium flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              Confirm Activation
-            </h3>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Setup Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Device:</span>
-                  <span>{deviceCode}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Child:</span>
-                  <span>{selectedChildName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Apps:</span>
-                  <span>{selectedApps.length} selected</span>
-                </div>
-              </CardContent>
-            </Card>
-            <p className="text-sm text-muted-foreground">
-              Click "Activate Device" to begin the setup process. Your device will install the selected apps and reboot automatically.
-            </p>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="flex justify-between pt-4">
           {step > 1 && (
-            <Button variant="outline" onClick={() => setStep(step - 1)}>
+            <Button variant="outline" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
           )}
           <div className="ml-auto">
             {step < 3 ? (
-              <Button onClick={handleNext}>Next</Button>
+              <Button onClick={handleNext}>
+                <ArrowRight className="h-4 w-4 mr-2" />
+                Next
+              </Button>
             ) : (
               <Button onClick={handleConfirm} disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
