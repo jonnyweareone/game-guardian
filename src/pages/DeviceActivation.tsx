@@ -25,27 +25,41 @@ const DeviceActivation = () => {
   const [isActivated, setIsActivated] = useState(false);
   const [deviceName, setDeviceName] = useState('');
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Auto-pair device after successful authentication
   useEffect(() => {
-    if (user && deviceId && !isActivated) {
+    if (user && session && deviceId && !isActivated) {
       handleDevicePairing();
     }
-  }, [user, deviceId]);
+  }, [user, session, deviceId]);
 
   const handleDevicePairing = async () => {
-    if (!deviceId || !user) return;
+    if (!deviceId || !user || !session) return;
     
     try {
       setIsLoading(true);
 
-      // New: delegate bind + token minting to Edge Function
-      console.log('DeviceActivation: Calling bind-device with:', { device_id: deviceId, device_name: deviceName });
+      console.log('DeviceActivation: Calling bind-device with:', { 
+        device_id: deviceId, 
+        device_name: deviceName,
+        user_id: user.id,
+        session_exists: !!session 
+      });
       
-      const { data, error } = await supabase.functions.invoke('bind-device', {
+      // Create a new Supabase client with the current session for this specific call
+      const authenticatedClient = supabase;
+      
+      // Make sure we have a valid session
+      const { data: sessionData, error: sessionError } = await authenticatedClient.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        throw new Error('Authentication session expired. Please sign in again.');
+      }
+
+      const { data, error } = await authenticatedClient.functions.invoke('bind-device', {
         body: {
           device_id: deviceId,
           device_name: deviceName || undefined,
@@ -84,11 +98,17 @@ const DeviceActivation = () => {
       }, 3000);
 
     } catch (error: any) {
+      console.error('DeviceActivation: Device pairing error:', error);
       toast({
         title: "Activation failed",
         description: error.message,
         variant: "destructive"
       });
+      
+      // If it's an auth error, reset to sign-in state
+      if (error.message.includes('Authentication') || error.message.includes('Unauthorized')) {
+        setError('Please sign in again to activate your device.');
+      }
     } finally {
       setIsLoading(false);
     }
