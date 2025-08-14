@@ -84,6 +84,7 @@ serve(async (req) => {
     // Optionally validate child belongs to this parent
     let validChildId: string | null = null;
     if (childId) {
+      console.log("bind-device: Validating child ownership", childId);
       const { data: child, error: childErr } = await anonClient
         .from("children")
         .select("id")
@@ -96,8 +97,10 @@ serve(async (req) => {
       }
       validChildId = child ? child.id : null;
       if (childId && !validChildId) {
+        console.log("bind-device: Child not found or not owned by parent");
         return json({ error: "Child not found or not owned by parent" }, { status: 403 });
       }
+      console.log("bind-device: Child validation successful", validChildId);
     }
 
     // Upsert device by device_code (unique)
@@ -110,6 +113,8 @@ serve(async (req) => {
     if (deviceName) row.device_name = deviceName;
     if (validChildId) row.child_id = validChildId;
 
+    console.log("bind-device: Upserting device", row);
+
     const { data: upserted, error: upsertErr } = await anonClient
       .from("devices")
       .upsert(row, { onConflict: "device_code" })
@@ -121,6 +126,8 @@ serve(async (req) => {
       // Most likely the device_code is already owned by another account
       return json({ error: "This device is already paired to another account." }, { status: 409 });
     }
+
+    console.log("bind-device: Device upserted successfully", upserted);
 
     // Generate refresh secret and short-lived JWT
     const raw = new Uint8Array(48);
@@ -147,14 +154,23 @@ serve(async (req) => {
     }
 
     // Record device activation consent (service role)
-    const ip =
-      req.headers.get("x-forwarded-for") ||
-      req.headers.get("x-real-ip") ||
-      undefined;
+    const xForwardedFor = req.headers.get("x-forwarded-for");
+    const xRealIp = req.headers.get("x-real-ip");
+    let ip: string | undefined;
+    
+    if (xForwardedFor) {
+      // Handle comma-separated list of IPs by taking the first one
+      ip = xForwardedFor.split(',')[0].trim();
+    } else if (xRealIp) {
+      ip = xRealIp;
+    }
+    
     const ua = req.headers.get("user-agent") || undefined;
 
     // We need device UUID for device_activations and device_config linkage
     const deviceId = upserted.id as string;
+
+    console.log("bind-device: Recording activation consent", { deviceId, ip, ua });
 
     const { error: actErr } = await serviceClient
       .from("device_activations")
@@ -162,7 +178,7 @@ serve(async (req) => {
         device_id: deviceId,
         user_id: user.id,
         consent_version: consentVersion,
-        consent_ip: ip,
+        consent_ip: ip || null,
         consent_user_agent: ua,
       } as any); // cast for safety if types lag
 
@@ -190,6 +206,25 @@ serve(async (req) => {
       if (cfgInsErr) console.error("bind-device device_config insert error:", cfgInsErr);
     }
 
+    // Create device-child assignment if child was specified
+    if (validChildId) {
+      console.log("bind-device: Creating device-child assignment", { deviceId, validChildId });
+      const { error: assignErr } = await serviceClient
+        .from("device_child_assignments")
+        .upsert({
+          device_id: deviceId,
+          child_id: validChildId,
+          is_active: true,
+        } as any, { onConflict: "device_id,child_id" });
+      
+      if (assignErr) {
+        console.error("bind-device device-child assignment error:", assignErr);
+        // Non-fatal, but log it
+      } else {
+        console.log("bind-device: Device-child assignment created successfully");
+      }
+    }
+
     // Start 30-day trial subscription if none exists (service role)
     const { data: subRow, error: subErr } = await serviceClient
       .from("subscriptions")
@@ -212,13 +247,16 @@ serve(async (req) => {
       if (subInsErr) console.error("bind-device subscriptions insert error:", subInsErr);
     }
 
+    console.log("bind-device: Process completed successfully");
+
     return json({ 
       ok: true, 
       device_id: deviceId, 
       device_code: deviceCode, 
       device_jwt: token, 
       refresh_secret,
-      trial_started: !subRow 
+      trial_started: !subRow,
+      child_assigned: !!validChildId
     });
   } catch (e) {
     console.error("bind-device error:", e);

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Shield, Wifi } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { assignChildToDevice } from '@/lib/api';
 
 interface Child {
   id: string;
@@ -40,6 +41,9 @@ const PairDeviceDialog = ({ children, onDevicePaired }: PairDeviceDialogProps) =
 
     setLoading(true);
     try {
+      console.log('Pairing device with code:', deviceCode);
+      console.log('Selected child ID:', selectedChildId);
+      
       // Call Edge Function to bind device (handles RLS, activation + trial creation)
       const { data, error } = await supabase.functions.invoke('bind-device', {
         body: {
@@ -50,9 +54,33 @@ const PairDeviceDialog = ({ children, onDevicePaired }: PairDeviceDialogProps) =
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('bind-device error:', error);
+        throw error;
+      }
+      
       if (!data?.ok) {
+        console.error('bind-device failed:', data);
         throw new Error(data?.error || 'Pairing failed');
+      }
+
+      console.log('Device paired successfully:', data);
+
+      // If a child was selected, create the device-child assignment
+      if (selectedChildId && data.device_id) {
+        try {
+          console.log('Assigning child to device:', data.device_id, selectedChildId);
+          await assignChildToDevice(data.device_id, selectedChildId, true);
+          console.log('Child assignment successful');
+        } catch (assignError) {
+          console.error('Child assignment error:', assignError);
+          // Don't fail the whole process, just warn
+          toast({
+            title: "Device paired but assignment failed",
+            description: "The device was paired successfully, but we couldn't assign it to the selected child. You can assign it manually later.",
+            variant: "destructive"
+          });
+        }
       }
 
       toast({
@@ -66,12 +94,12 @@ const PairDeviceDialog = ({ children, onDevicePaired }: PairDeviceDialogProps) =
       setOpen(false);
       onDevicePaired();
     } catch (error: any) {
+      console.error('Pair device error:', error);
       toast({
         title: "Pairing failed",
         description: error?.message || 'Please try again.',
         variant: "destructive"
       });
-      console.error('Pair device error:', error);
     } finally {
       setLoading(false);
     }
@@ -135,6 +163,9 @@ const PairDeviceDialog = ({ children, onDevicePaired }: PairDeviceDialogProps) =
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              You can change this assignment later in the device settings
+            </p>
           </div>
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
