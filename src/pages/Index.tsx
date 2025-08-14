@@ -6,8 +6,12 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to the home page
-    navigate('/home', { replace: true });
+    // Use a small delay to ensure the router is fully initialized
+    const timer = setTimeout(() => {
+      navigate('/home', { replace: true });
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [navigate]);
 
   // Show loading while redirecting
