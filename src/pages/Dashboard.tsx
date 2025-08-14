@@ -63,43 +63,65 @@ interface Device {
 }
 
 const Dashboard = () => {
+  console.log('Dashboard component rendering...');
+  
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
 
-  const { data: devicesData, isLoading: devicesLoading, refetch: refetchDevices } = useQuery({
+  // Add error boundary-like logging
+  useEffect(() => {
+    console.log('Dashboard useEffect - component mounted');
+    return () => {
+      console.log('Dashboard useEffect - component unmounting');
+    };
+  }, []);
+
+  const { data: devicesData, isLoading: devicesLoading, error: devicesError, refetch: refetchDevices } = useQuery({
     queryKey: ['devices'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('devices')
-        .select(`
-          id,
-          device_code,
-          device_name,
-          is_active,
-          status,
-          last_seen,
-          child_id,
-          children (
+      console.log('Fetching devices...');
+      try {
+        const { data, error } = await supabase
+          .from('devices')
+          .select(`
             id,
-            name
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Device[];
+            device_code,
+            device_name,
+            is_active,
+            status,
+            last_seen,
+            child_id,
+            children (
+              id,
+              name
+            )
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Devices query error:', error);
+          throw error;
+        }
+        console.log('Devices fetched successfully:', data);
+        return data as Device[];
+      } catch (err) {
+        console.error('Error in devices query:', err);
+        throw err;
+      }
     },
   });
 
   // Update local devices state when query data changes
   useEffect(() => {
     if (devicesData) {
+      console.log('Updating local devices state:', devicesData);
       setDevices(devicesData);
     }
   }, [devicesData]);
 
   // Add realtime subscription for device updates with proper typing
   useEffect(() => {
+    console.log('Setting up realtime subscription...');
     const channel = supabase
       .channel('devices-realtime')
       .on('postgres_changes', { 
@@ -121,103 +143,160 @@ const Dashboard = () => {
       .subscribe();
 
     return () => {
+      console.log('Cleaning up realtime subscription...');
       supabase.removeChannel(channel);
     };
   }, []);
 
-  const { data: children = [] } = useQuery({
+  const { data: children = [], isLoading: childrenLoading, error: childrenError } = useQuery({
     queryKey: ['children'],
-    queryFn: getChildren,
-  });
-
-  const { data: alertsData = [] } = useQuery({
-    queryKey: ['alerts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('alerts')
-        .select(`
-          id,
-          alert_type,
-          risk_level,
-          ai_summary,
-          flagged_at,
-          transcript_snippet,
-          confidence_score,
-          is_reviewed,
-          child_id
-        `)
-        .order('flagged_at', { ascending: false })
-        .limit(10);
-      
-      if (error) throw error;
-      
-      // Get child names separately to avoid join issues
-      const childIds = [...new Set(data.map(alert => alert.child_id))];
-      const { data: childrenData } = await supabase
-        .from('children')
-        .select('id, name')
-        .in('id', childIds);
-      
-      const childrenMap = new Map(childrenData?.map(child => [child.id, child.name]) || []);
-      
-      return data.map(alert => ({
-        ...alert,
-        child_name: childrenMap.get(alert.child_id)
-      })) as Alert[];
+      console.log('Fetching children...');
+      try {
+        const result = await getChildren();
+        console.log('Children fetched successfully:', result);
+        return result;
+      } catch (err) {
+        console.error('Error fetching children:', err);
+        throw err;
+      }
     },
   });
 
-  const { data: conversations = [], refetch: refetchConversations } = useQuery({
+  const { data: alertsData = [], isLoading: alertsLoading, error: alertsError } = useQuery({
+    queryKey: ['alerts'],
+    queryFn: async () => {
+      console.log('Fetching alerts...');
+      try {
+        const { data, error } = await supabase
+          .from('alerts')
+          .select(`
+            id,
+            alert_type,
+            risk_level,
+            ai_summary,
+            flagged_at,
+            transcript_snippet,
+            confidence_score,
+            is_reviewed,
+            child_id
+          `)
+          .order('flagged_at', { ascending: false })
+          .limit(10);
+        
+        if (error) {
+          console.error('Alerts query error:', error);
+          throw error;
+        }
+        
+        // Get child names separately to avoid join issues
+        const childIds = [...new Set(data.map(alert => alert.child_id))];
+        const { data: childrenData } = await supabase
+          .from('children')
+          .select('id, name')
+          .in('id', childIds);
+        
+        const childrenMap = new Map(childrenData?.map(child => [child.id, child.name]) || []);
+        
+        const result = data.map(alert => ({
+          ...alert,
+          child_name: childrenMap.get(alert.child_id)
+        })) as Alert[];
+        
+        console.log('Alerts fetched successfully:', result);
+        return result;
+      } catch (err) {
+        console.error('Error fetching alerts:', err);
+        throw err;
+      }
+    },
+  });
+
+  const { data: conversations = [], refetch: refetchConversations, isLoading: conversationsLoading, error: conversationsError } = useQuery({
     queryKey: ['conversations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('conversations')
-        .select(`
-          id,
-          platform,
-          session_start,
-          total_messages,
-          risk_assessment,
-          child_id
-        `)
-        .order('session_start', { ascending: false })
-        .limit(20);
-      
-      if (error) throw error;
-      
-      // Get child names separately to avoid join issues
-      const childIds = [...new Set(data.map(conv => conv.child_id))];
-      const { data: childrenData } = await supabase
-        .from('children')
-        .select('id, name')
-        .in('id', childIds);
-      
-      const childrenMap = new Map(childrenData?.map(child => [child.id, child.name]) || []);
-      
-      return data.map(conv => ({
-        ...conv,
-        child_name: childrenMap.get(conv.child_id) || 'Unknown Child'
-      })) as ConversationData[];
+      console.log('Fetching conversations...');
+      try {
+        const { data, error } = await supabase
+          .from('conversations')
+          .select(`
+            id,
+            platform,
+            session_start,
+            total_messages,
+            risk_assessment,
+            child_id
+          `)
+          .order('session_start', { ascending: false })
+          .limit(20);
+        
+        if (error) {
+          console.error('Conversations query error:', error);
+          throw error;
+        }
+        
+        // Get child names separately to avoid join issues
+        const childIds = [...new Set(data.map(conv => conv.child_id))];
+        const { data: childrenData } = await supabase
+          .from('children')
+          .select('id, name')
+          .in('id', childIds);
+        
+        const childrenMap = new Map(childrenData?.map(child => [child.id, child.name]) || []);
+        
+        const result = data.map(conv => ({
+          ...conv,
+          child_name: childrenMap.get(conv.child_id) || 'Unknown Child'
+        })) as ConversationData[];
+        
+        console.log('Conversations fetched successfully:', result);
+        return result;
+      } catch (err) {
+        console.error('Error fetching conversations:', err);
+        throw err;
+      }
     },
     enabled: children.length > 0,
   });
 
+  // Log any errors
+  useEffect(() => {
+    if (devicesError) console.error('Devices error:', devicesError);
+    if (childrenError) console.error('Children error:', childrenError);
+    if (alertsError) console.error('Alerts error:', alertsError);
+    if (conversationsError) console.error('Conversations error:', conversationsError);
+  }, [devicesError, childrenError, alertsError, conversationsError]);
+
+  // Log loading states
+  useEffect(() => {
+    console.log('Loading states:', {
+      devicesLoading,
+      childrenLoading,
+      alertsLoading,
+      conversationsLoading
+    });
+  }, [devicesLoading, childrenLoading, alertsLoading, conversationsLoading]);
+
   const handleDevicePaired = () => {
+    console.log('Device paired, refetching...');
     refetchDevices();
   };
 
   const handleAssignmentChanged = () => {
+    console.log('Assignment changed, refetching...');
     refetchDevices();
   };
 
   const handleMarkReviewed = async (alertId: string) => {
     try {
+      console.log('Marking alert as reviewed:', alertId);
       const { error } = await supabase
         .from('alerts')
         .update({ is_reviewed: true, reviewed_at: new Date().toISOString() })
         .eq('id', alertId);
       
       if (error) throw error;
+      console.log('Alert marked as reviewed successfully');
       
       // Refetch alerts to update the UI
       // You would need to add this query refetch here
@@ -278,6 +357,50 @@ const Dashboard = () => {
       "Lily": ["GamerGirl2024", "PuzzleSolver", "TeamLeader"]
     }
   };
+
+  // Show loading state
+  if (devicesLoading || childrenLoading) {
+    console.log('Showing loading state');
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (devicesError || childrenError) {
+    console.log('Showing error state', { devicesError, childrenError });
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600 font-medium">Failed to load dashboard</p>
+            <p className="text-muted-foreground text-sm mt-2">
+              {devicesError?.message || childrenError?.message || 'Unknown error occurred'}
+            </p>
+            <Button 
+              onClick={() => {
+                refetchDevices();
+                // Add refetch for children too if needed
+              }} 
+              className="mt-4"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('Rendering dashboard content');
 
   return (
     <div className="container mx-auto p-6 space-y-6">
