@@ -5,11 +5,11 @@ import { Download, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-// Import the generated brand assets
-import logoTransparent from "@/assets/branding/logo-transparent.png";
-import splashScreen from "@/assets/branding/splash-screen.png";
-import wallpaperDesktop from "@/assets/branding/wallpaper-desktop.png";
-import wallpaperMobile from "@/assets/branding/wallpaper-mobile.png";
+// Brand assets are now in public folder for direct access
+const logoTransparent = "/branding/logo-transparent.png";
+const splashScreen = "/branding/splash-screen.png";
+const wallpaperDesktop = "/branding/wallpaper-desktop.png";
+const wallpaperMobile = "/branding/wallpaper-mobile.png";
 
 const BrandAssets = () => {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
