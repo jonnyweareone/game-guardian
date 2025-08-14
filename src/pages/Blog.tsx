@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Clock, User, Search, Filter } from "lucide-react";
@@ -6,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import SEOHead from "@/components/SEOHead";
-import Navigation from "@/components/Navigation";
 import { blogPosts, categories, getFeaturedPost } from "@/data/blogData";
 
 const Blog = () => {
@@ -41,7 +41,6 @@ const Blog = () => {
       />
 
       <div className="min-h-screen bg-background">
-        <Navigation />
         <div className="container mx-auto px-4 py-16">
           {/* Header */}
           <div className="text-center mb-16">

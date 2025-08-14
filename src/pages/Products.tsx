@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Shield, Cpu, Monitor, Headphones, ArrowRight, CheckCircle } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
-import Navigation from "@/components/Navigation";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -12,7 +11,7 @@ const Products = () => {
   const products = [
     {
       id: "device",
-      name: "Game Guardian Device",
+      name: "Game Guardian Device", 
       description: "AI-powered hardware that monitors gaming voice chats in real-time",
       icon: Shield,
       features: ["Real-time voice monitoring", "Bluetooth & USB connectivity", "3.5mm headset output", "Instant parent alerts"],
@@ -71,7 +70,6 @@ const Products = () => {
       />
 
       <div className="min-h-screen bg-background">
-        <Navigation />
         <div className="container mx-auto px-4 py-16">
           {/* Header */}
           <div className="text-center mb-16">
