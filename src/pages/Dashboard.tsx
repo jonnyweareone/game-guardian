@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +13,9 @@ import {
   Activity,
   TrendingUp,
   Clock,
-  Eye
+  Eye,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { getChildren } from '@/lib/api';
 import PairDeviceDialog from '@/components/PairDeviceDialog';
@@ -47,16 +48,37 @@ interface ConversationData {
   child_name?: string;
 }
 
+interface Device {
+  id: string;
+  device_code: string;
+  device_name: string | null;
+  is_active: boolean;
+  status: string;
+  last_seen: string | null;
+  child_id: string | null;
+  children?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
 const Dashboard = () => {
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
+  const [devices, setDevices] = useState<Device[]>([]);
 
-  const { data: devices, isLoading: devicesLoading, refetch: refetchDevices } = useQuery({
+  const { data: devicesData, isLoading: devicesLoading, refetch: refetchDevices } = useQuery({
     queryKey: ['devices'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('devices')
         .select(`
-          *,
+          id,
+          device_code,
+          device_name,
+          is_active,
+          status,
+          last_seen,
+          child_id,
           children (
             id,
             name
@@ -65,9 +87,41 @@ const Dashboard = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as Device[];
     },
   });
+
+  // Update local devices state when query data changes
+  useEffect(() => {
+    if (devicesData) {
+      setDevices(devicesData);
+    }
+  }, [devicesData]);
+
+  // Add realtime subscription for device updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('devices-realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'devices' 
+      }, (payload) => {
+        console.log('Device realtime update:', payload);
+        setDevices((prev) => 
+          prev.map(d => 
+            d.id === payload.new?.id 
+              ? { ...d, ...payload.new } 
+              : d
+          )
+        );
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const { data: children = [] } = useQuery({
     queryKey: ['children'],
@@ -170,6 +224,27 @@ const Dashboard = () => {
     }
   };
 
+  const getStatusBadge = (device: Device) => {
+    const isOnline = device.status === 'online';
+    return (
+      <div className="flex items-center gap-2">
+        {isOnline ? (
+          <Wifi className="h-4 w-4 text-green-500" />
+        ) : (
+          <WifiOff className="h-4 w-4 text-gray-400" />
+        )}
+        <Badge variant={isOnline ? "default" : "secondary"}>
+          {isOnline ? 'Online' : 'Offline'}
+        </Badge>
+      </div>
+    );
+  };
+
+  const getLastSeenText = (device: Device) => {
+    if (!device.last_seen) return 'Never';
+    return formatDistanceToNow(new Date(device.last_seen), { addSuffix: true });
+  };
+
   // Mock insights data - in a real app, this would come from your API
   const mockInsights = {
     weeklyStats: {
@@ -218,7 +293,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {devices?.filter(d => d.is_active).length || 0}
+              {devices?.filter(d => d.status === 'online').length || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               of {devices?.length || 0} total devices
@@ -300,18 +375,19 @@ const Dashboard = () => {
                   {devices.slice(0, 3).map((device) => (
                     <div key={device.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${device.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                        <div className={`w-3 h-3 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-gray-300'}`} />
                         <div>
                           <p className="font-medium">{device.device_name || device.device_code}</p>
                           <p className="text-sm text-muted-foreground">
                             {device.children ? `Assigned to ${device.children.name}` : 'Unassigned'}
                           </p>
+                          <p className="text-xs text-muted-foreground">
+                            Last seen: {getLastSeenText(device)}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge variant={device.is_active ? "default" : "secondary"}>
-                          {device.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
+                        {getStatusBadge(device)}
                         <DeviceChildAssignmentDialog
                           device={device}
                           children={children}

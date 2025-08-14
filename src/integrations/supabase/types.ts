@@ -1131,6 +1131,7 @@ export type Database = {
           paired_at: string | null
           parent_id: string
           refresh_secret_hash: string | null
+          status: string | null
           ui_version: string | null
           updated_at: string
         }
@@ -1155,6 +1156,7 @@ export type Database = {
           paired_at?: string | null
           parent_id: string
           refresh_secret_hash?: string | null
+          status?: string | null
           ui_version?: string | null
           updated_at?: string
         }
@@ -1179,6 +1181,7 @@ export type Database = {
           paired_at?: string | null
           parent_id?: string
           refresh_secret_hash?: string | null
+          status?: string | null
           ui_version?: string | null
           updated_at?: string
         }
@@ -1795,6 +1798,10 @@ export type Database = {
       is_parent_of_child: {
         Args: { _child: string }
         Returns: boolean
+      }
+      mark_devices_offline_if_stale: {
+        Args: { grace_seconds: number }
+        Returns: undefined
       }
       rpc_assign_child_to_device: {
         Args: { _child: string; _device: string; _is_active?: boolean }
