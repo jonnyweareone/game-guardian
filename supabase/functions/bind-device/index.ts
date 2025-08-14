@@ -35,8 +35,13 @@ async function sha256b64url(data: string) {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  console.log("bind-device: Function invoked");
+
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return json({ error: "Unauthorized" }, { status: 401 });
+  if (!authHeader) {
+    console.log("bind-device: No authorization header");
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const anonClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -52,10 +57,15 @@ serve(async (req) => {
   );
 
   try {
+    console.log("bind-device: Getting user from auth");
     // Identify the current user (parent)
     const { data: userData, error: userErr } = await anonClient.auth.getUser();
-    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, { status: 401 });
+    if (userErr || !userData?.user) {
+      console.log("bind-device: User auth failed", userErr);
+      return json({ error: "Unauthorized" }, { status: 401 });
+    }
     const user = userData.user;
+    console.log("bind-device: User authenticated", user.id);
 
     // Parse body
     const body = await req.json().catch(() => ({}));
@@ -64,7 +74,12 @@ serve(async (req) => {
     const childId = body?.child_id as string | undefined;
     const consentVersion = (body?.consent_version as string | undefined) ?? "1.0";
 
-    if (!deviceCode) return json({ error: "device_id required" }, { status: 400 });
+    console.log("bind-device: Request body parsed", { deviceCode, deviceName, childId });
+
+    if (!deviceCode) {
+      console.log("bind-device: Missing device_id");
+      return json({ error: "device_id required" }, { status: 400 });
+    }
 
     // Optionally validate child belongs to this parent
     let validChildId: string | null = null;
