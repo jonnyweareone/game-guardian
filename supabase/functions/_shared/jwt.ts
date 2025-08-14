@@ -1,5 +1,5 @@
 
-import { create, verify, getNumericDate, Header, Payload } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+import { create, verify, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const secretRaw = Deno.env.get("DEVICE_JWT_SECRET");
 if (!secretRaw) {
@@ -11,8 +11,7 @@ const SECRET = new TextEncoder().encode(secretRaw);
 
 export async function mintDeviceJWT(device_code: string, minutes = 15) {
   try {
-    const header: Header = { alg: "HS256", typ: "JWT" };
-    const payload: Payload = {
+    const payload = {
       sub: device_code,
       aud: "guardian-device",
       iss: "guardian-edge",
@@ -20,7 +19,9 @@ export async function mintDeviceJWT(device_code: string, minutes = 15) {
       nbf: getNumericDate(0),
       exp: getNumericDate(minutes * 60),
     };
-    return await create(header, payload, SECRET);
+    
+    // Use the simpler create function signature
+    return await create({ alg: "HS256", typ: "JWT" }, payload, SECRET);
   } catch (error) {
     console.error("JWT minting error:", error);
     console.error("SECRET length:", SECRET?.length);
@@ -31,7 +32,7 @@ export async function mintDeviceJWT(device_code: string, minutes = 15) {
 
 export async function verifyDeviceJWT(jwt: string) {
   try {
-    const { payload } = await verify(jwt, SECRET, "HS256");
+    const payload = await verify(jwt, SECRET, "HS256");
     return { ok: true, payload };
   } catch (e) {
     const msg = String(e?.message || e);
