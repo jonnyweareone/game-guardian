@@ -6,8 +6,14 @@ if (!secretRaw) {
   throw new Error("DEVICE_JWT_SECRET environment variable is not set");
 }
 
-// Handle the secret as a plain string for HS256
-const SECRET = new TextEncoder().encode(secretRaw);
+// Create a proper key for HS256
+const key = await crypto.subtle.importKey(
+  "raw",
+  new TextEncoder().encode(secretRaw),
+  { name: "HMAC", hash: "SHA-256" },
+  false,
+  ["sign", "verify"]
+);
 
 export async function mintDeviceJWT(device_code: string, minutes = 15) {
   try {
@@ -20,11 +26,10 @@ export async function mintDeviceJWT(device_code: string, minutes = 15) {
       exp: getNumericDate(minutes * 60),
     };
     
-    // Use the simpler create function signature
-    return await create({ alg: "HS256", typ: "JWT" }, payload, SECRET);
+    // Use the proper create function with imported key
+    return await create({ alg: "HS256", typ: "JWT" }, payload, key);
   } catch (error) {
     console.error("JWT minting error:", error);
-    console.error("SECRET length:", SECRET?.length);
     console.error("device_code:", device_code);
     throw new Error(`Failed to mint JWT: ${error.message}`);
   }
@@ -32,7 +37,7 @@ export async function mintDeviceJWT(device_code: string, minutes = 15) {
 
 export async function verifyDeviceJWT(jwt: string) {
   try {
-    const payload = await verify(jwt, SECRET, "HS256");
+    const payload = await verify(jwt, key, "HS256");
     return { ok: true, payload };
   } catch (e) {
     const msg = String(e?.message || e);
