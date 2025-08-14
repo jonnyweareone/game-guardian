@@ -5,9 +5,9 @@ if (!secretRaw) {
   throw new Error("DEVICE_JWT_SECRET environment variable is not set");
 }
 
-// Convert hex string to Uint8Array for proper HS256 signing
+// Decode base64 Supabase JWT secret
 const SECRET = new Uint8Array(
-  secretRaw.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+  atob(secretRaw).split('').map(char => char.charCodeAt(0))
 );
 
 export async function mintDeviceJWT(device_code: string, minutes = 15) {
