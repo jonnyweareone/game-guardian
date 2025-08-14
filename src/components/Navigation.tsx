@@ -95,8 +95,10 @@ const Navigation = () => {
           <div className="flex items-center gap-4">
             {user ? (
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm">
-                  <User className="h-4 w-4" />
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/dashboard">
+                    <User className="h-4 w-4" />
+                  </Link>
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleSignOut}>
                   <LogOut className="h-4 w-4" />
@@ -104,11 +106,11 @@ const Navigation = () => {
               </div>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => navigate('/auth')}>
-                  Sign In
+                <Button variant="ghost" asChild>
+                  <Link to="/auth">Sign In</Link>
                 </Button>
-                <Button onClick={() => navigate('/auth')}>
-                  Get Started
+                <Button asChild>
+                  <Link to="/auth">Get Started</Link>
                 </Button>
               </>
             )}

@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth, AuthProvider } from '@/hooks/useAuth';
@@ -19,6 +19,15 @@ import ProductOSFull from '@/pages/ProductOSFull';
 import ProductReceiver from '@/pages/ProductReceiver';
 import CreatorMode from '@/pages/CreatorMode';
 import PressReleases from '@/pages/PressReleases';
+import AdminLayout from '@/pages/admin/AdminLayout';
+import AdminDevices from '@/pages/admin/AdminDevices';
+import AdminAppCatalog from '@/pages/admin/AdminAppCatalog';
+import AdminUIThemes from '@/pages/admin/AdminUIThemes';
+import AdminContentPush from '@/pages/admin/AdminContentPush';
+import OtaDemoLayout from '@/pages/admin/ota-demo/OtaDemoLayout';
+import OtaUpdateManager from '@/pages/admin/ota-demo/OtaUpdateManager';
+import OtaReports from '@/pages/admin/ota-demo/OtaReports';
+import NotFound from '@/pages/NotFound';
 import Navigation from '@/components/Navigation';
 
 const queryClient = new QueryClient();
@@ -37,6 +46,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Component to conditionally render navigation
+const ConditionalNavigation = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  // Don't render main navigation on admin routes as they have their own headers
+  if (isAdminRoute) {
+    return null;
+  }
+  
+  return <Navigation />;
+};
+
 function App() {
   // Clean up demo mode on mount
   useEffect(() => {
@@ -51,7 +73,7 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <div className="min-h-screen bg-background">
-            <Navigation />
+            <ConditionalNavigation />
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Auth />} />
@@ -66,6 +88,8 @@ function App() {
               <Route path="/products/receiver" element={<ProductReceiver />} />
               <Route path="/creator-mode" element={<CreatorMode />} />
               <Route path="/press-releases" element={<PressReleases />} />
+              
+              {/* Protected Routes */}
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />
@@ -76,13 +100,32 @@ function App() {
                   <DashboardV2 />
                 </ProtectedRoute>
               } />
-              <Route path="*" element={
-                <div className="container mx-auto p-4">
-                  <h1 className="text-2xl font-bold">Page Not Found</h1>
-                  <p>Sorry, the page you are looking for does not exist.</p>
-                  <Link to="/" className="text-blue-500">Go Home</Link>
-                </div>
-              } />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Navigate to="/admin/devices" replace />} />
+                <Route path="devices" element={<AdminDevices />} />
+                <Route path="app-catalog" element={<AdminAppCatalog />} />
+                <Route path="ui-themes" element={<AdminUIThemes />} />
+                <Route path="content-push" element={<AdminContentPush />} />
+              </Route>
+              
+              {/* OTA Demo Routes */}
+              <Route path="/admin/ota-demo" element={
+                <ProtectedRoute>
+                  <OtaDemoLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<OtaUpdateManager />} />
+                <Route path="reports" element={<OtaReports />} />
+              </Route>
+              
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
         </AuthProvider>

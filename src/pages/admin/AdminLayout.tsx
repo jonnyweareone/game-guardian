@@ -1,3 +1,4 @@
+
 import { NavLink, Outlet } from "react-router-dom";
 import { Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ export default function AdminLayout() {
     { to: "/admin/app-catalog", label: "App Catalog" },
     { to: "/admin/ui-themes", label: "UI Themes" },
     { to: "/admin/content-push", label: "Content Push" },
+    { to: "/admin/ota-demo", label: "OTA Demo" },
   ];
 
   return (
@@ -21,7 +23,10 @@ export default function AdminLayout() {
             <Shield className="h-6 w-6 text-primary" />
             <span className="text-lg font-semibold">Guardian Admin</span>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-4">
+            <Button variant="ghost" asChild>
+              <NavLink to="/dashboard">Back to Dashboard</NavLink>
+            </Button>
             <Button variant="outline" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
