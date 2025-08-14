@@ -134,20 +134,19 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
                             digest: 'NONE'
                           });
                         } else {
-                          // This would require a delete operation
-                          // For now, we'll just disable by setting a very high severity
+                          // Set a very high severity to effectively disable
                           updatePreference(alertType.type, { min_severity: 10 });
                         }
                       }}
                     />
                   </div>
                   
-                  {isEnabled && (
+                  {isEnabled && preference && (
                     <div className="grid grid-cols-2 gap-3 ml-0">
                       <div className="space-y-1">
                         <Label className="text-xs">Minimum Severity</Label>
                         <SeveritySelect
-                          value={preference?.min_severity || 2}
+                          value={preference.min_severity}
                           onValueChange={(severity) => 
                             updatePreference(alertType.type, { min_severity: severity })
                           }
@@ -157,7 +156,7 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
                       <div className="space-y-1">
                         <Label className="text-xs">Delivery</Label>
                         <DigestSelect
-                          value={preference?.digest || 'NONE'}
+                          value={preference.digest}
                           onValueChange={(digest) => 
                             updatePreference(alertType.type, { digest })
                           }

@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
-// Notification Channels - Mock implementation using existing data
+// Notification Channels - Real implementation using RPC functions
 export interface NotificationChannel {
   id: string;
   user_id: string;
@@ -12,19 +13,31 @@ export interface NotificationChannel {
 }
 
 export async function getNotificationChannels(): Promise<NotificationChannel[]> {
-  // Mock implementation - return empty array for now
-  // TODO: Replace with actual RPC call once migration is deployed
-  return [];
+  const { data, error } = await supabase.rpc('rpc_get_notification_channels');
+  
+  if (error) {
+    console.error('Failed to fetch notification channels:', error);
+    throw error;
+  }
+  
+  return data || [];
 }
 
 export async function addNotificationChannel(kind: 'SMS' | 'EMAIL', destination: string) {
-  // Mock implementation - return success for now
-  // TODO: Replace with actual RPC call once migration is deployed
-  console.log('Mock: Adding notification channel', { kind, destination });
-  return { success: true };
+  const { data, error } = await supabase.rpc('rpc_add_notification_channel', {
+    _kind: kind,
+    _destination: destination
+  });
+  
+  if (error) {
+    console.error('Failed to add notification channel:', error);
+    throw error;
+  }
+  
+  return data;
 }
 
-// Notification Preferences - Mock implementation
+// Notification Preferences - Real implementation using RPC functions
 export interface NotificationPreference {
   id: string;
   user_id: string;
@@ -40,19 +53,39 @@ export interface NotificationPreference {
 }
 
 export async function getNotificationPreferences(scope?: 'GLOBAL' | 'CHILD', childId?: string): Promise<NotificationPreference[]> {
-  // Mock implementation - return empty array for now
-  // TODO: Replace with actual RPC call once migration is deployed
-  return [];
+  const { data, error } = await supabase.rpc('rpc_get_notification_preferences', {
+    _scope: scope || null,
+    _child_id: childId || null
+  });
+  
+  if (error) {
+    console.error('Failed to fetch notification preferences:', error);
+    throw error;
+  }
+  
+  return data || [];
 }
 
 export async function upsertNotificationPreference(preference: Partial<NotificationPreference>) {
-  // Mock implementation - return success for now
-  // TODO: Replace with actual RPC call once migration is deployed
-  console.log('Mock: Upserting notification preference', preference);
-  return { success: true };
+  const { data, error } = await supabase.rpc('rpc_upsert_notification_preference', {
+    _scope: preference.scope!,
+    _child_id: preference.child_id || null,
+    _alert_type: preference.alert_type!,
+    _min_severity: preference.min_severity!,
+    _channel_ids: preference.channel_ids || [],
+    _digest: preference.digest!,
+    _quiet_hours: preference.quiet_hours || null
+  });
+  
+  if (error) {
+    console.error('Failed to upsert notification preference:', error);
+    throw error;
+  }
+  
+  return data;
 }
 
-// Policy Effective States - Mock implementation
+// Policy Effective States - Real implementation using RPC functions
 export interface PolicyEffective {
   id: string;
   user_id: string;
@@ -64,16 +97,32 @@ export interface PolicyEffective {
 }
 
 export async function getPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', subjectId?: string): Promise<PolicyEffective | null> {
-  // Mock implementation - return null for now
-  // TODO: Replace with actual RPC call once migration is deployed
-  return null;
+  const { data, error } = await supabase.rpc('rpc_get_policy_effective', {
+    _scope: scope,
+    _subject_id: subjectId || null
+  });
+  
+  if (error) {
+    console.error('Failed to fetch policy effective:', error);
+    throw error;
+  }
+  
+  return data;
 }
 
 export async function setPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', policyData: any, subjectId?: string) {
-  // Mock implementation - return success for now
-  // TODO: Replace with actual RPC call once migration is deployed
-  console.log('Mock: Setting policy effective', { scope, policyData, subjectId });
-  return { success: true };
+  const { data, error } = await supabase.rpc('rpc_set_policy_effective', {
+    _scope: scope,
+    _policy_data: policyData,
+    _subject_id: subjectId || null
+  });
+  
+  if (error) {
+    console.error('Failed to set policy effective:', error);
+    throw error;
+  }
+  
+  return data;
 }
 
 // Enhanced child data with avatars - using existing children table
