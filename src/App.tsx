@@ -1,12 +1,15 @@
+
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth, AuthProvider } from '@/hooks/useAuth';
+import { useEffect } from 'react';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
 import DashboardV2 from '@/pages/DashboardV2';
+import Navigation from '@/components/Navigation';
 
 const queryClient = new QueryClient();
 
@@ -23,8 +26,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   return <>{children}</>;
 };
-
-import Navigation from '@/components/Navigation';
 
 function App() {
   // Clean up demo mode on mount

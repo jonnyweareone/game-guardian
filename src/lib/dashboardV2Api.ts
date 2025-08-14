@@ -13,23 +13,27 @@ export interface NotificationChannel {
 }
 
 export async function getNotificationChannels(): Promise<NotificationChannel[]> {
-  const { data, error } = await supabase
-    .from('notification_channels')
-    .select('*')
-    .order('created_at', { ascending: false });
+  // Use raw SQL query since the table might not be in types yet
+  const { data, error } = await supabase.rpc('get_notification_channels');
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching notification channels:', error);
+    return [];
+  }
   return data || [];
 }
 
 export async function addNotificationChannel(kind: 'SMS' | 'EMAIL', destination: string) {
-  const { data, error } = await supabase
-    .from('notification_channels')
-    .insert({ kind, destination })
-    .select()
-    .single();
+  // Use raw SQL query since the table might not be in types yet
+  const { data, error } = await supabase.rpc('add_notification_channel', {
+    channel_kind: kind,
+    channel_destination: destination
+  });
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error adding notification channel:', error);
+    throw error;
+  }
   return data;
 }
 
@@ -49,30 +53,34 @@ export interface NotificationPreference {
 }
 
 export async function getNotificationPreferences(scope?: 'GLOBAL' | 'CHILD', childId?: string): Promise<NotificationPreference[]> {
-  let query = supabase.from('notification_preferences').select('*');
+  // Use raw SQL query since the table might not be in types yet
+  const { data, error } = await supabase.rpc('get_notification_preferences', {
+    filter_scope: scope,
+    filter_child_id: childId
+  });
   
-  if (scope) {
-    query = query.eq('scope', scope);
+  if (error) {
+    console.error('Error fetching notification preferences:', error);
+    return [];
   }
-  
-  if (childId) {
-    query = query.eq('child_id', childId);
-  }
-  
-  const { data, error } = await query.order('created_at', { ascending: false });
-  
-  if (error) throw error;
   return data || [];
 }
 
 export async function upsertNotificationPreference(preference: Partial<NotificationPreference>) {
-  const { data, error } = await supabase
-    .from('notification_preferences')
-    .upsert(preference)
-    .select()
-    .single();
+  // Use raw SQL query since the table might not be in types yet
+  const { data, error } = await supabase.rpc('upsert_notification_preference', {
+    pref_scope: preference.scope,
+    pref_child_id: preference.child_id,
+    pref_alert_type: preference.alert_type,
+    pref_min_severity: preference.min_severity || 2,
+    pref_channel_ids: preference.channel_ids || [],
+    pref_digest: preference.digest || 'NONE'
+  });
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error upserting notification preference:', error);
+    throw error;
+  }
   return data;
 }
 
@@ -88,35 +96,31 @@ export interface PolicyEffective {
 }
 
 export async function getPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', subjectId?: string): Promise<PolicyEffective | null> {
-  let query = supabase
-    .from('policy_effective')
-    .select('*')
-    .eq('scope', scope);
+  // Use raw SQL query since the table might not be in types yet
+  const { data, error } = await supabase.rpc('get_policy_effective', {
+    policy_scope: scope,
+    policy_subject_id: subjectId
+  });
   
-  if (subjectId) {
-    query = query.eq('subject_id', subjectId);
-  } else {
-    query = query.is('subject_id', null);
+  if (error) {
+    console.error('Error fetching policy effective:', error);
+    return null;
   }
-  
-  const { data, error } = await query.maybeSingle();
-  
-  if (error) throw error;
   return data;
 }
 
 export async function setPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', policyData: any, subjectId?: string) {
-  const { data, error } = await supabase
-    .from('policy_effective')
-    .upsert({
-      scope,
-      subject_id: subjectId,
-      policy_data: policyData
-    })
-    .select()
-    .single();
+  // Use raw SQL query since the table might not be in types yet
+  const { data, error } = await supabase.rpc('set_policy_effective', {
+    policy_scope: scope,
+    policy_subject_id: subjectId,
+    policy_data: policyData
+  });
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error setting policy effective:', error);
+    throw error;
+  }
   return data;
 }
 

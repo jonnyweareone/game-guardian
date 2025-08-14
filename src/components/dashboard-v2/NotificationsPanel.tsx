@@ -48,11 +48,11 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
     }
   };
 
-  const getPreference = (alertType: string): NotificationPreference | undefined => {
+  const getPreference = (alertType: 'BULLYING' | 'GROOMING' | 'PROFANITY' | 'LOGIN' | 'SYSTEM'): NotificationPreference | undefined => {
     return preferences.find(p => p.alert_type === alertType && p.scope === scope && p.child_id === child?.id);
   };
 
-  const updatePreference = async (alertType: string, updates: Partial<NotificationPreference>) => {
+  const updatePreference = async (alertType: 'BULLYING' | 'GROOMING' | 'PROFANITY' | 'LOGIN' | 'SYSTEM', updates: Partial<NotificationPreference>) => {
     try {
       const existing = getPreference(alertType);
       const preference = {
