@@ -200,7 +200,7 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
           Add Child Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -212,92 +212,94 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
           </DialogDescription>
         </DialogHeader>
 
-        {step === 'basic' ? (
-          <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="child-name">Child's Name *</Label>
-              <Input
-                id="child-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your child's name"
-                required
+        <div className="min-h-[500px]">
+          {step === 'basic' ? (
+            <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="child-name">Child's Name *</Label>
+                <Input
+                  id="child-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your child's name"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="child-age">Age *</Label>
+                <Input
+                  id="child-age"
+                  type="number"
+                  min="3"
+                  max="18"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder="Enter age (used for app recommendations)"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Age is used to show appropriate apps and configure DNS filtering
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Choose Avatar</Label>
+                <AvatarSelector
+                  selectedAvatar={selectedAvatar}
+                  onAvatarSelect={setSelectedAvatar}
+                />
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1">
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Next: Choose Apps
+                </Button>
+              </div>
+            </form>
+          ) : step === 'apps' ? (
+            <div className="space-y-4">
+              <AppSelectionStep
+                childAge={childAge}
+                selectedApps={selectedApps}
+                onAppToggle={handleAppToggle}
               />
+              
+              <div className="flex gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+                <Button type="button" onClick={handleNext} className="flex-1">
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Next: DNS Controls
+                </Button>
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="child-age">Age *</Label>
-              <Input
-                id="child-age"
-                type="number"
-                min="3"
-                max="18"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="Enter age (used for app recommendations)"
-                required
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <DNSControlsStep
+                dnsConfig={dnsConfig}
+                onDnsConfigChange={setDnsConfig}
+                childName={name}
               />
-              <p className="text-xs text-muted-foreground">
-                Age is used to show appropriate apps and configure DNS filtering
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Choose Avatar</Label>
-              <AvatarSelector
-                selectedAvatar={selectedAvatar}
-                onAvatarSelect={setSelectedAvatar}
-              />
-            </div>
-            
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
-                Cancel
-              </Button>
-              <Button type="submit" className="flex-1">
-                <ArrowRight className="h-4 w-4 mr-2" />
-                Next: Choose Apps
-              </Button>
-            </div>
-          </form>
-        ) : step === 'apps' ? (
-          <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="space-y-4">
-            <AppSelectionStep
-              childAge={childAge}
-              selectedApps={selectedApps}
-              onAppToggle={handleAppToggle}
-            />
-            
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-              <Button type="submit" className="flex-1">
-                <ArrowRight className="h-4 w-4 mr-2" />
-                Next: DNS Controls
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <DNSControlsStep
-              dnsConfig={dnsConfig}
-              onDnsConfigChange={setDnsConfig}
-              childName={name}
-            />
-            
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? 'Creating Profile & DNS...' : 'Create Profile'}
-              </Button>
-            </div>
-          </form>
-        )}
+              
+              <div className="flex gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+                <Button type="submit" disabled={loading} className="flex-1">
+                  {loading ? 'Creating Profile & DNS...' : 'Create Profile'}
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

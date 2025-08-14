@@ -127,22 +127,25 @@ export function AppSelectionStep({ childAge = 8, selectedApps, onAppToggle }: Ap
                   return (
                     <div key={app.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/5">
                       <div className="flex items-center gap-3 flex-1">
-                        <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0 overflow-hidden border">
                           {app.icon_url ? (
                             <img 
                               src={app.icon_url} 
                               alt={`${app.name} icon`}
-                              className="w-full h-full object-cover rounded-lg"
+                              className="w-full h-full object-contain rounded-lg"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
-                                const fallback = target.nextElementSibling as HTMLElement;
-                                if (fallback) fallback.style.display = 'flex';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const fallback = parent.querySelector('.fallback-icon') as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }
                               }}
                             />
                           ) : null}
-                          <div className={`w-full h-full flex items-center justify-center ${app.icon_url ? 'hidden' : ''}`}>
-                            <IconComponent className="h-4 w-4 text-muted-foreground" />
+                          <div className={`w-full h-full flex items-center justify-center fallback-icon ${app.icon_url ? 'hidden' : ''}`}>
+                            <IconComponent className="h-5 w-5 text-muted-foreground" />
                           </div>
                         </div>
                         
