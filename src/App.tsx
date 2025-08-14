@@ -35,6 +35,7 @@ import AdminAppCatalog from "./pages/admin/AdminAppCatalog";
 import AdminUIThemes from "./pages/admin/AdminUIThemes";
 import AdminContentPush from "./pages/admin/AdminContentPush";
 import PitchDeck from "./pages/PitchDeck";
+import BrandAssets from "./pages/BrandAssets";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -106,6 +107,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/creator-mode" element={<CreatorMode />} />
             <Route path="/pitch-deck" element={<PitchDeck />} />
+            <Route path="/brand-assets" element={<BrandAssets />} />
             <Route path="/" element={<HomePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
