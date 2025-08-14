@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from './AvatarSelector';
 import { AppSelectionStep } from './AppSelectionStep';
+import { DNSControlsStep } from './DNSControlsStep';
 import { bulkUpsertChildAppSelections } from '@/lib/api';
 
 interface AddChildDialogProps {
@@ -17,27 +19,49 @@ interface AddChildDialogProps {
 const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'basic' | 'apps'>('basic');
+  const [step, setStep] = useState<'basic' | 'apps' | 'dns'>('basic');
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
+  const [dnsConfig, setDnsConfig] = useState({
+    schoolHoursEnabled: false,
+    nextDnsConfig: ''
+  });
   const { toast } = useToast();
 
+  const childAge = age ? parseInt(age) : undefined;
+
   const handleNext = () => {
-    if (!name.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter your child's name.",
-        variant: "destructive"
-      });
-      return;
+    if (step === 'basic') {
+      if (!name.trim()) {
+        toast({
+          title: "Name required",
+          description: "Please enter your child's name.",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (!age) {
+        toast({
+          title: "Age required",
+          description: "Please enter your child's age to show appropriate apps.",
+          variant: "destructive"
+        });
+        return;
+      }
+      setStep('apps');
+    } else if (step === 'apps') {
+      setStep('dns');
     }
-    setStep('apps');
   };
 
   const handleBack = () => {
-    setStep('basic');
+    if (step === 'apps') {
+      setStep('basic');
+    } else if (step === 'dns') {
+      setStep('apps');
+    }
   };
 
   const handleAppToggle = (appId: string, selected: boolean) => {
@@ -62,7 +86,7 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
         .from('children')
         .insert({
           name: name.trim(),
-          age: age ? parseInt(age) : null,
+          age: childAge,
           avatar_url: selectedAvatar,
           parent_id: (await supabase.auth.getUser()).data.user?.id
         })
@@ -82,21 +106,31 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
           await bulkUpsertChildAppSelections(childData.id, selections);
         } catch (appError) {
           console.warn('Failed to save app selections:', appError);
-          // Don't fail the whole process if app selections fail
+        }
+      }
+
+      // Save DNS configuration if provided
+      if (dnsConfig.nextDnsConfig.trim()) {
+        try {
+          await supabase
+            .from('child_dns_profiles')
+            .insert({
+              child_id: childData.id,
+              nextdns_config: dnsConfig.nextDnsConfig.trim(),
+              school_hours_enabled: dnsConfig.schoolHoursEnabled
+            });
+        } catch (dnsError) {
+          console.warn('Failed to save DNS configuration:', dnsError);
         }
       }
 
       toast({
         title: "Child profile created",
-        description: `${name} has been added to your family dashboard.`
+        description: `${name} has been added to your family dashboard with age-appropriate app selections.`
       });
 
       // Reset form
-      setName('');
-      setAge('');
-      setSelectedAvatar(null);
-      setSelectedApps(new Set());
-      setStep('basic');
+      resetForm();
       setOpen(false);
       onChildAdded();
     } catch (error: any) {
@@ -110,15 +144,40 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
     }
   };
 
+  const resetForm = () => {
+    setStep('basic');
+    setName('');
+    setAge('');
+    setSelectedAvatar(null);
+    setSelectedApps(new Set());
+    setDnsConfig({
+      schoolHoursEnabled: false,
+      nextDnsConfig: ''
+    });
+  };
+
   const handleDialogChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen) {
-      // Reset form when dialog closes
-      setStep('basic');
-      setName('');
-      setAge('');
-      setSelectedAvatar(null);
-      setSelectedApps(new Set());
+      resetForm();
+    }
+  };
+
+  const getStepTitle = () => {
+    switch (step) {
+      case 'basic': return 'Basic Information';
+      case 'apps': return 'App Selection';
+      case 'dns': return 'DNS Controls';
+      default: return 'Add Child Profile';
+    }
+  };
+
+  const getStepDescription = () => {
+    switch (step) {
+      case 'basic': return 'Set up your child\'s profile with basic information and avatar.';
+      case 'apps': return `Choose age-appropriate apps for ${name} (Age ${age}).`;
+      case 'dns': return `Configure DNS filtering and parental controls for ${name}.`;
+      default: return 'Add a new child to your Game Guardian AI monitoring dashboard.';
     }
   };
 
@@ -134,21 +193,16 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Add Child Profile
-            {step === 'apps' && (
-              <span className="text-sm font-normal text-muted-foreground">- Step 2 of 2</span>
-            )}
+            {getStepTitle()}
+            <span className="text-sm font-normal text-muted-foreground">- Step {step === 'basic' ? 1 : step === 'apps' ? 2 : 3} of 3</span>
           </DialogTitle>
           <DialogDescription>
-            {step === 'basic' 
-              ? 'Add a new child to your Game Guardian AI monitoring dashboard.'
-              : 'Choose which apps your child can access on their devices.'
-            }
+            {getStepDescription()}
           </DialogDescription>
         </DialogHeader>
 
         {step === 'basic' ? (
-          <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="child-name">Child's Name *</Label>
               <Input
@@ -159,8 +213,9 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
                 required
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="child-age">Age (optional)</Label>
+              <Label htmlFor="child-age">Age *</Label>
               <Input
                 id="child-age"
                 type="number"
@@ -168,8 +223,12 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
                 max="18"
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
-                placeholder="Enter age"
+                placeholder="Enter age (used for app recommendations)"
+                required
               />
+              <p className="text-xs text-muted-foreground">
+                Age is used to show appropriate apps based on PEGI ratings
+              </p>
             </div>
             
             <div className="space-y-2">
@@ -190,12 +249,31 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
               </Button>
             </div>
           </form>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+        ) : step === 'apps' ? (
+          <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="space-y-4">
             <AppSelectionStep
-              childAge={age ? parseInt(age) : undefined}
+              childAge={childAge}
               selectedApps={selectedApps}
               onAppToggle={handleAppToggle}
+            />
+            
+            <div className="flex gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <Button type="submit" className="flex-1">
+                <ArrowRight className="h-4 w-4 mr-2" />
+                Next: DNS Controls
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <DNSControlsStep
+              dnsConfig={dnsConfig}
+              onDnsConfigChange={setDnsConfig}
+              childName={name}
             />
             
             <div className="flex gap-2 pt-4">
