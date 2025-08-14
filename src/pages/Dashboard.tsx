@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -91,7 +90,7 @@ const Dashboard = () => {
           confidence_score,
           is_reviewed,
           child_id,
-          children!inner(name)
+          children:children!conversations_child_id_fkey(name)
         `)
         .order('flagged_at', { ascending: false })
         .limit(10);
@@ -117,7 +116,7 @@ const Dashboard = () => {
           total_messages,
           risk_assessment,
           child_id,
-          children(name)
+          children:children!conversations_child_id_fkey(name)
         `)
         .order('session_start', { ascending: false })
         .limit(20);
@@ -328,7 +327,18 @@ const Dashboard = () => {
                   {alerts.slice(0, 3).map((alert) => (
                     <AlertCard
                       key={alert.id}
-                      alert={alert}
+                      alert={{
+                        id: alert.id,
+                        child_id: alert.child_id,
+                        alert_type: alert.alert_type,
+                        risk_level: alert.risk_level,
+                        ai_summary: alert.ai_summary,
+                        transcript_snippet: alert.transcript_snippet ?? '',
+                        confidence_score: alert.confidence_score ?? 0.5,
+                        is_reviewed: alert.is_reviewed ?? false,
+                        flagged_at: alert.flagged_at,
+                        child_name: alert.child_name
+                      }}
                       onMarkReviewed={handleMarkReviewed}
                     />
                   ))}
@@ -356,7 +366,18 @@ const Dashboard = () => {
               {alerts.map((alert) => (
                 <AlertCard
                   key={alert.id}
-                  alert={alert}
+                  alert={{
+                    id: alert.id,
+                    child_id: alert.child_id,
+                    alert_type: alert.alert_type,
+                    risk_level: alert.risk_level,
+                    ai_summary: alert.ai_summary,
+                    transcript_snippet: alert.transcript_snippet ?? '',
+                    confidence_score: alert.confidence_score ?? 0.5,
+                    is_reviewed: alert.is_reviewed ?? false,
+                    flagged_at: alert.flagged_at,
+                    child_name: alert.child_name
+                  }}
                   onMarkReviewed={handleMarkReviewed}
                 />
               ))}
