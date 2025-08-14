@@ -1,39 +1,65 @@
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { navItems } from "./nav-items";
-import Index from "./pages/Index";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
+import { AuthProvider } from "@/hooks/useAuth";
+import AuthGuard from "@/components/AuthGuard";
+import Navigation from "@/components/Navigation";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {navItems.map(({ to, page, requiresAuth, requiresAdmin }) => {
-            let element = page;
-            
-            // Wrap admin routes with AdminRoute
-            if (requiresAdmin) {
-              element = <AdminRoute>{page}</AdminRoute>;
-            }
-            // Wrap protected routes with ProtectedRoute (but not admin routes as they handle their own auth)
-            else if (requiresAuth) {
-              element = <ProtectedRoute>{page}</ProtectedRoute>;
-            }
-            
-            return <Route key={to} path={to} element={element} />;
-          })}
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <div className="min-h-screen bg-background">
+            <Navigation />
+            <Routes>
+              {/* Public routes */}
+              <Route path="/auth" element={
+                <AuthGuard requireAuth={false}>
+                  {navItems.find(item => item.to === "/auth")?.page}
+                </AuthGuard>
+              } />
+              
+              {/* Redirect root to dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/index" element={<Navigate to="/dashboard" replace />} />
+              
+              {/* Protected routes */}
+              {navItems
+                .filter(item => item.to !== "/auth")
+                .map(({ to, page, title, requiresAuth = true, requiresAdmin = false }) => (
+                  <Route
+                    key={to}
+                    path={to}
+                    element={
+                      <AuthGuard requireAuth={requiresAuth}>
+                        {requiresAdmin ? (
+                          <AuthGuard requireAuth={true}>
+                            {page}
+                          </AuthGuard>
+                        ) : (
+                          page
+                        )}
+                      </AuthGuard>
+                    }
+                  />
+                ))}
+              
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </div>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

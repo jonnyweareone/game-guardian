@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -45,9 +46,14 @@ interface ConversationData {
   id: string;
   platform: string;
   session_start: string;
+  session_end?: string;
   total_messages: number;
   risk_assessment: string;
   child_id: string;
+  participants: string[];
+  sentiment_score: number;
+  conversation_type: string;
+  transcript: any[];
   child_name?: string;
 }
 
@@ -89,7 +95,6 @@ const Dashboard = () => {
     console.log('Activation check:', { shouldActivate, deviceId, deviceCode });
     
     if (shouldActivate && deviceId) {
-      // If we have deviceId but no deviceCode, look up the device code from the database
       if (!deviceCode) {
         console.log('Dashboard: Looking up device code for device ID:', deviceId);
         lookupDeviceCode(deviceId);
@@ -151,23 +156,6 @@ const Dashboard = () => {
     });
   };
 
-  // Debug effect to log wizard state changes
-  useEffect(() => {
-    console.log('Activation wizard state changed:', {
-      showActivationWizard,
-      activationDeviceId,
-      activationDeviceCode
-    });
-  }, [showActivationWizard, activationDeviceId, activationDeviceCode]);
-
-  // Add error boundary-like logging
-  useEffect(() => {
-    console.log('Dashboard useEffect - component mounted');
-    return () => {
-      console.log('Dashboard useEffect - component unmounting');
-    };
-  }, []);
-
   const { data: devicesData, isLoading: devicesLoading, error: devicesError, refetch: refetchDevices } = useQuery({
     queryKey: ['devices'],
     queryFn: async () => {
@@ -211,7 +199,7 @@ const Dashboard = () => {
     }
   }, [devicesData]);
 
-  // Add realtime subscription for device updates with proper typing
+  // Add realtime subscription for device updates
   useEffect(() => {
     console.log('Setting up realtime subscription...');
     const channel = supabase
@@ -271,7 +259,8 @@ const Dashboard = () => {
             transcript_snippet,
             confidence_score,
             is_reviewed,
-            child_id
+            child_id,
+            children:children!alerts_child_id_fkey ( name )
           `)
           .order('flagged_at', { ascending: false })
           .limit(10);
@@ -281,18 +270,9 @@ const Dashboard = () => {
           throw error;
         }
         
-        // Get child names separately to avoid join issues
-        const childIds = [...new Set(data.map(alert => alert.child_id))];
-        const { data: childrenData } = await supabase
-          .from('children')
-          .select('id, name')
-          .in('id', childIds);
-        
-        const childrenMap = new Map(childrenData?.map(child => [child.id, child.name]) || []);
-        
         const result = data.map(alert => ({
           ...alert,
-          child_name: childrenMap.get(alert.child_id)
+          child_name: (alert.children as any)?.name
         })) as Alert[];
         
         console.log('Alerts fetched successfully:', result);
@@ -315,9 +295,15 @@ const Dashboard = () => {
             id,
             platform,
             session_start,
+            session_end,
             total_messages,
             risk_assessment,
-            child_id
+            child_id,
+            participants,
+            sentiment_score,
+            conversation_type,
+            transcript,
+            children:children!conversations_child_id_fkey ( name )
           `)
           .order('session_start', { ascending: false })
           .limit(20);
@@ -327,18 +313,9 @@ const Dashboard = () => {
           throw error;
         }
         
-        // Get child names separately to avoid join issues
-        const childIds = [...new Set(data.map(conv => conv.child_id))];
-        const { data: childrenData } = await supabase
-          .from('children')
-          .select('id, name')
-          .in('id', childIds);
-        
-        const childrenMap = new Map(childrenData?.map(child => [child.id, child.name]) || []);
-        
         const result = data.map(conv => ({
           ...conv,
-          child_name: childrenMap.get(conv.child_id) || 'Unknown Child'
+          child_name: (conv.children as any)?.name || 'Unknown Child'
         })) as ConversationData[];
         
         console.log('Conversations fetched successfully:', result);
@@ -350,24 +327,6 @@ const Dashboard = () => {
     },
     enabled: children.length > 0,
   });
-
-  // Log any errors
-  useEffect(() => {
-    if (devicesError) console.error('Devices error:', devicesError);
-    if (childrenError) console.error('Children error:', childrenError);
-    if (alertsError) console.error('Alerts error:', alertsError);
-    if (conversationsError) console.error('Conversations error:', conversationsError);
-  }, [devicesError, childrenError, alertsError, conversationsError]);
-
-  // Log loading states
-  useEffect(() => {
-    console.log('Loading states:', {
-      devicesLoading,
-      childrenLoading,
-      alertsLoading,
-      conversationsLoading
-    });
-  }, [devicesLoading, childrenLoading, alertsLoading, conversationsLoading]);
 
   const handleDevicePaired = () => {
     console.log('Device paired, refetching...');
@@ -385,7 +344,6 @@ const Dashboard = () => {
     setActivationDeviceId('');
     setActivationDeviceCode('');
     
-    // Refresh dashboard data to show the newly activated device
     refetchDevices();
     
     toast({
@@ -404,9 +362,6 @@ const Dashboard = () => {
       
       if (error) throw error;
       console.log('Alert marked as reviewed successfully');
-      
-      // Refetch alerts to update the UI
-      // You would need to add this query refetch here
     } catch (error) {
       console.error('Failed to mark alert as reviewed:', error);
     }
@@ -433,7 +388,7 @@ const Dashboard = () => {
     return formatDistanceToNow(new Date(device.last_seen), { addSuffix: true });
   };
 
-  // Mock insights data - in a real app, this would come from your API
+  // Mock insights data with proper structure
   const mockInsights = {
     weeklyStats: {
       totalSessions: conversations.length,
@@ -495,7 +450,6 @@ const Dashboard = () => {
             <Button 
               onClick={() => {
                 refetchDevices();
-                // Add refetch for children too if needed
               }} 
               className="mt-4"
             >
@@ -762,18 +716,7 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <ConversationViewer 
-                    conversation={{
-                      id: selectedConversation.id,
-                      child_id: selectedConversation.child_id,
-                      session_start: selectedConversation.session_start,
-                      session_end: undefined,
-                      platform: selectedConversation.platform,
-                      participants: [],
-                      sentiment_score: 0,
-                      conversation_type: 'voice_chat',
-                      risk_assessment: selectedConversation.risk_assessment,
-                      transcript: []
-                    }}
+                    conversation={selectedConversation}
                     childName={selectedConversation.child_name || 'Unknown'}
                     onClose={() => setSelectedConversation(null)}
                   />
@@ -803,16 +746,6 @@ const Dashboard = () => {
         isOpen={showActivationWizard}
         onClose={handleActivationComplete}
       />
-      
-      {/* Debug info - remove this after testing */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 bg-black text-white p-2 rounded text-xs">
-          <div>Wizard Open: {showActivationWizard.toString()}</div>
-          <div>Device ID: {activationDeviceId}</div>
-          <div>Device Code: {activationDeviceCode}</div>
-          <div>URL Params: {JSON.stringify(Object.fromEntries(searchParams.entries()))}</div>
-        </div>
-      )}
     </div>
   );
 };

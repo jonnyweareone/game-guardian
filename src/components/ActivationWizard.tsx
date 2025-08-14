@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { AvatarSelector } from './AvatarSelector';
 import { AppSelectionStep } from './AppSelectionStep';
 import { WebFiltersStep } from './WebFiltersStep';
+import { invokeEdgeFunction } from '@/lib/supabase-functions';
 
 interface App {
   id: string;
@@ -54,7 +54,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
   const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
   const [webFilterConfig, setWebFilterConfig] = useState<WebFilterConfig>({
     schoolHoursEnabled: false,
-    socialMediaBlocked: true, // Default to blocking social media for safety
+    socialMediaBlocked: true,
     gamingBlocked: false,
     entertainmentBlocked: false
   });
@@ -112,7 +112,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
       console.log('Loading apps...');
       const { data, error } = await supabase
         .from('app_catalog')
-        .select('id, name, category')
+        .select('id, name, category, is_essential')
         .eq('is_active', true)
         .order('category', { ascending: true })
         .order('name', { ascending: true });
@@ -121,11 +121,9 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
       console.log('Apps loaded:', data);
       setApps(data || []);
       
-      // Pre-select some apps if available
+      // Pre-select essential apps
       if (data && data.length > 0) {
-        const essentialApps = data.filter(app => 
-          ['Firefox', 'Chrome', 'Educational Games'].includes(app.name)
-        );
+        const essentialApps = data.filter(app => app.is_essential);
         setSelectedApps(new Set(essentialApps.map(app => app.id)));
       }
     } catch (error: any) {
@@ -246,13 +244,12 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
         console.warn('Failed to create web filter profile:', dnsError);
       }
 
-      const { data, error } = await supabase.functions.invoke('device-postinstall', {
-        body: {
-          device_id: deviceId,
-          child_id: selectedChild,
-          app_ids: Array.from(selectedApps),
-          web_filter_config: webFilterConfig
-        }
+      // Call device post-install using the helper
+      const { data, error } = await invokeEdgeFunction('device-postinstall', {
+        device_id: deviceId,
+        child_id: selectedChild,
+        app_ids: Array.from(selectedApps),
+        web_filter_config: webFilterConfig
       });
       
       if (error || !data?.ok) {
@@ -262,7 +259,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
       console.log('Device activated successfully');
       toast({
         title: 'Device activated successfully!',
-        description: 'Your device is being configured with web filters and will be ready shortly.'
+        description: 'Your device is being configured and will be ready shortly.'
       });
       
       onClose();
