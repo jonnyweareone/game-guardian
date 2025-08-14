@@ -9,8 +9,15 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from './AvatarSelector';
 import { AppSelectionStep } from './AppSelectionStep';
-import { DNSControlsStep } from './DNSControlsStep';
+import { WebFiltersStep } from './WebFiltersStep';
 import { bulkUpsertChildAppSelections } from '@/lib/api';
+
+interface WebFilterConfig {
+  schoolHoursEnabled: boolean;
+  socialMediaBlocked: boolean;
+  gamingBlocked: boolean;
+  entertainmentBlocked: boolean;
+}
 
 interface AddChildDialogProps {
   onChildAdded: () => void;
@@ -19,14 +26,16 @@ interface AddChildDialogProps {
 const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'basic' | 'apps' | 'dns'>('basic');
+  const [step, setStep] = useState<'basic' | 'apps' | 'webfilters'>('basic');
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
-  const [dnsConfig, setDnsConfig] = useState({
+  const [webFilterConfig, setWebFilterConfig] = useState<WebFilterConfig>({
     schoolHoursEnabled: false,
-    nextDnsConfig: ''
+    socialMediaBlocked: true, // Default to blocking social media for safety
+    gamingBlocked: false,
+    entertainmentBlocked: false
   });
   const { toast } = useToast();
 
@@ -52,14 +61,14 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
       }
       setStep('apps');
     } else if (step === 'apps') {
-      setStep('dns');
+      setStep('webfilters');
     }
   };
 
   const handleBack = () => {
     if (step === 'apps') {
       setStep('basic');
-    } else if (step === 'dns') {
+    } else if (step === 'webfilters') {
       setStep('apps');
     }
   };
@@ -109,35 +118,40 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
         }
       }
 
-      // Create NextDNS profile automatically
+      // Create web filter profile automatically
       try {
-        const { error: dnsError } = await supabase.functions.invoke('nextdns-profile-manager', {
+        const { error: webFilterError } = await supabase.functions.invoke('nextdns-profile-manager', {
           body: {
             action: 'create_profile',
             child_id: childData.id,
             child_name: name.trim(),
             age: childAge,
-            school_hours_enabled: dnsConfig.schoolHoursEnabled
+            school_hours_enabled: webFilterConfig.schoolHoursEnabled,
+            content_categories: {
+              social_media: webFilterConfig.socialMediaBlocked,
+              gaming: webFilterConfig.gamingBlocked,
+              entertainment: webFilterConfig.entertainmentBlocked
+            }
           }
         });
 
-        if (dnsError) {
-          console.warn('Failed to create NextDNS profile:', dnsError);
+        if (webFilterError) {
+          console.warn('Failed to create web filter profile:', webFilterError);
           toast({
-            title: "DNS Setup Warning",
-            description: "Child profile created but DNS filtering could not be configured automatically. You can set this up manually later.",
+            title: "Web Filter Setup Warning",
+            description: "Child profile created but web filtering could not be configured automatically. You can set this up manually later.",
             variant: "destructive"
           });
         } else {
-          console.log('NextDNS profile created successfully');
+          console.log('Web filter profile created successfully');
         }
-      } catch (dnsError) {
-        console.warn('Failed to create NextDNS profile:', dnsError);
+      } catch (webFilterError) {
+        console.warn('Failed to create web filter profile:', webFilterError);
       }
 
       toast({
         title: "Child profile created",
-        description: `${name} has been added to your family dashboard with age-appropriate app selections and DNS filtering.`
+        description: `${name} has been added to your family dashboard with age-appropriate app selections and web filtering.`
       });
 
       // Reset form
@@ -161,9 +175,11 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
     setAge('');
     setSelectedAvatar(null);
     setSelectedApps(new Set());
-    setDnsConfig({
+    setWebFilterConfig({
       schoolHoursEnabled: false,
-      nextDnsConfig: ''
+      socialMediaBlocked: true,
+      gamingBlocked: false,
+      entertainmentBlocked: false
     });
   };
 
@@ -178,7 +194,7 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
     switch (step) {
       case 'basic': return 'Basic Information';
       case 'apps': return 'App Selection';
-      case 'dns': return 'DNS Controls';
+      case 'webfilters': return 'Web Filters';
       default: return 'Add Child Profile';
     }
   };
@@ -187,7 +203,7 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
     switch (step) {
       case 'basic': return 'Set up your child\'s profile with basic information and avatar.';
       case 'apps': return `Choose age-appropriate apps for ${name} (Age ${age}).`;
-      case 'dns': return `Configure DNS filtering and parental controls for ${name}.`;
+      case 'webfilters': return `Configure web filtering and parental controls for ${name}.`;
       default: return 'Add a new child to your Game Guardian AI monitoring dashboard.';
     }
   };
@@ -276,16 +292,17 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
                 </Button>
                 <Button type="button" onClick={handleNext} className="flex-1">
                   <ArrowRight className="h-4 w-4 mr-2" />
-                  Next: DNS Controls
+                  Next: Web Filters
                 </Button>
               </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <DNSControlsStep
-                dnsConfig={dnsConfig}
-                onDnsConfigChange={setDnsConfig}
+              <WebFiltersStep
+                webFilterConfig={webFilterConfig}
+                onWebFilterConfigChange={setWebFilterConfig}
                 childName={name}
+                childAge={childAge}
               />
               
               <div className="flex gap-2 pt-4">
@@ -294,7 +311,7 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
                   Back
                 </Button>
                 <Button type="submit" disabled={loading} className="flex-1">
-                  {loading ? 'Creating Profile & DNS...' : 'Create Profile'}
+                  {loading ? 'Creating Profile & Web Filters...' : 'Create Profile'}
                 </Button>
               </div>
             </form>

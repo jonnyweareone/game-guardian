@@ -33,9 +33,14 @@ serve(async (req) => {
     );
 
     const body = await req.json().catch(() => ({}));
-    const { device_id, child_id, app_ids } = body;
+    const { device_id, child_id, app_ids, web_filter_config } = body;
 
-    console.log('device-postinstall: Request body parsed', { device_id, child_id, app_ids_count: app_ids?.length });
+    console.log('device-postinstall: Request body parsed', { 
+      device_id, 
+      child_id, 
+      app_ids_count: app_ids?.length,
+      web_filter_config 
+    });
 
     if (!device_id || !child_id) {
       return json({ error: "device_id and child_id required" }, { status: 400 });
@@ -124,15 +129,22 @@ serve(async (req) => {
       console.error('device-postinstall: Error fetching child', childError);
     }
 
-    // Create job payload
+    // Create job payload with web filter configuration
     const payload = { 
       child: child || { id: child_id }, 
-      apps: apps 
+      apps: apps,
+      web_filters: web_filter_config || {
+        schoolHoursEnabled: false,
+        socialMediaBlocked: true,
+        gamingBlocked: false,
+        entertainmentBlocked: false
+      }
     };
 
     console.log('device-postinstall: Creating job with payload', { 
       child_name: child?.name, 
-      apps_count: apps.length 
+      apps_count: apps.length,
+      web_filters: payload.web_filters
     });
 
     // Enqueue post-install job for device agent

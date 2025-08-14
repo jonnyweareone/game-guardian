@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -29,7 +28,7 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { action, child_id, child_name, age, school_hours_enabled } = await req.json();
+    const { action, child_id, child_name, age, school_hours_enabled, content_categories } = await req.json();
     const nextdnsApiKey = Deno.env.get("NEXTDNS_API_KEY");
 
     if (!nextdnsApiKey) {
@@ -45,6 +44,7 @@ serve(async (req) => {
           child_name, 
           age, 
           school_hours_enabled, 
+          content_categories,
           supabase, 
           nextdnsApiKey 
         });
@@ -54,6 +54,7 @@ serve(async (req) => {
           child_id, 
           age, 
           school_hours_enabled, 
+          content_categories,
           supabase, 
           nextdnsApiKey 
         });
@@ -76,14 +77,15 @@ async function createNextDNSProfile({
   child_name, 
   age, 
   school_hours_enabled, 
+  content_categories,
   supabase, 
   nextdnsApiKey 
 }: any) {
   // Create NextDNS profile
   const profileData = {
     name: `Guardian AI - ${child_name}`,
-    description: `Age-appropriate filtering for ${child_name} (Age ${age})`,
-    settings: getAgeAppropriateSettings(age, school_hours_enabled)
+    description: `Age-appropriate web filtering for ${child_name} (Age ${age})`,
+    settings: getAgeAppropriateSettings(age, school_hours_enabled, content_categories)
   };
 
   const nextdnsResponse = await fetch("https://api.nextdns.io/profiles", {
@@ -119,17 +121,17 @@ async function createNextDNSProfile({
     console.error("Database error:", dbError);
     // Try to cleanup NextDNS profile
     await cleanupNextDNSProfile(profileId, nextdnsApiKey);
-    throw new Error(`Failed to save DNS profile: ${dbError.message}`);
+    throw new Error(`Failed to save web filter profile: ${dbError.message}`);
   }
 
   return json({ 
     success: true, 
     profile_id: profileId,
-    message: `NextDNS profile created for ${child_name}`
+    message: `Web filter profile created for ${child_name}`
   });
 }
 
-async function updateNextDNSProfile({ child_id, age, school_hours_enabled, supabase, nextdnsApiKey }: any) {
+async function updateNextDNSProfile({ child_id, age, school_hours_enabled, content_categories, supabase, nextdnsApiKey }: any) {
   // Get existing profile
   const { data: dnsProfile, error: fetchError } = await supabase
     .from("child_dns_profiles")
@@ -144,7 +146,7 @@ async function updateNextDNSProfile({ child_id, age, school_hours_enabled, supab
   const profileId = dnsProfile.nextdns_config;
   
   // Update NextDNS profile settings
-  const updatedSettings = getAgeAppropriateSettings(age, school_hours_enabled);
+  const updatedSettings = getAgeAppropriateSettings(age, school_hours_enabled, content_categories);
   
   const nextdnsResponse = await fetch(`https://api.nextdns.io/profiles/${profileId}/settings`, {
     method: "PATCH",
@@ -212,12 +214,12 @@ async function cleanupNextDNSProfile(profileId: string, nextdnsApiKey: string) {
   }
 }
 
-function getAgeAppropriateSettings(age: number, schoolHoursEnabled: boolean) {
+function getAgeAppropriateSettings(age: number, schoolHoursEnabled: boolean, contentCategories: any = {}) {
   const baseSettings = {
     blockPage: {
       enabled: true,
       displayName: "Guardian AI",
-      message: "This content is blocked by your Guardian AI parental controls."
+      message: "This content is blocked by your Guardian AI web filters."
     },
     security: {
       threatIntelligenceFeeds: true,
@@ -233,24 +235,41 @@ function getAgeAppropriateSettings(age: number, schoolHoursEnabled: boolean) {
     privacy: {
       blockDisguisedTrackers: true,
       allowAffiliate: false
+    },
+    safeSearch: {
+      google: true,
+      bing: true,
+      youtube: true,
+      duckduckgo: true,
+      yandex: true
     }
   };
 
-  // Age-appropriate content filtering
-  const contentSettings = {
+  // Automatic protections (always enabled)
+  const automaticProtections = {
     categories: {
       porn: true,
       gambling: true,
-      dating: age < 16,
-      piracy: true,
       drugs: true,
-      violence: age < 13,
-      weapons: age < 13,
+      violence: true,
+      weapons: true,
       hate: true,
       suicide: true,
+      terrorism: true,
       malware: true,
       phishing: true,
       scam: true
+    }
+  };
+
+  // Configurable content categories
+  const configurableSettings = {
+    categories: {
+      ...automaticProtections.categories,
+      social: contentCategories?.social_media || false,
+      games: contentCategories?.gaming || false,
+      streaming: contentCategories?.entertainment || false,
+      dating: age < 16 // Age-based default
     }
   };
 
@@ -273,5 +292,5 @@ function getAgeAppropriateSettings(age: number, schoolHoursEnabled: boolean) {
     }]
   } : {};
 
-  return { ...baseSettings, ...contentSettings, ...scheduleSettings };
+  return { ...baseSettings, ...configurableSettings, ...scheduleSettings };
 }

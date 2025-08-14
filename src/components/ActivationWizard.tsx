@@ -7,12 +7,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, User, Smartphone, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Loader2, User, Smartphone, CheckCircle, ArrowLeft, ArrowRight, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { AvatarSelector } from './AvatarSelector';
 import { AppSelectionStep } from './AppSelectionStep';
+import { WebFiltersStep } from './WebFiltersStep';
 
 interface App {
   id: string;
@@ -24,6 +25,13 @@ interface App {
 interface Child {
   id: string;
   name: string;
+}
+
+interface WebFilterConfig {
+  schoolHoursEnabled: boolean;
+  socialMediaBlocked: boolean;
+  gamingBlocked: boolean;
+  entertainmentBlocked: boolean;
 }
 
 interface ActivationWizardProps {
@@ -44,6 +52,12 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [apps, setApps] = useState<App[]>([]);
   const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
+  const [webFilterConfig, setWebFilterConfig] = useState<WebFilterConfig>({
+    schoolHoursEnabled: false,
+    socialMediaBlocked: true, // Default to blocking social media for safety
+    gamingBlocked: false,
+    entertainmentBlocked: false
+  });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -63,6 +77,12 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
       setNewChildAge('');
       setSelectedAvatar(null);
       setSelectedApps(new Set());
+      setWebFilterConfig({
+        schoolHoursEnabled: false,
+        socialMediaBlocked: true,
+        gamingBlocked: false,
+        entertainmentBlocked: false
+      });
     }
   }, [isOpen]);
 
@@ -179,6 +199,8 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
       setStep(2);
     } else if (step === 2) {
       setStep(3);
+    } else if (step === 3) {
+      setStep(4);
     }
   };
 
@@ -193,11 +215,43 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
     setLoading(true);
     
     try {
+      // Create NextDNS profile first
+      try {
+        const { error: dnsError } = await supabase.functions.invoke('nextdns-profile-manager', {
+          body: {
+            action: 'create_profile',
+            child_id: selectedChild,
+            child_name: selectedChildName,
+            age: childAge,
+            school_hours_enabled: webFilterConfig.schoolHoursEnabled,
+            content_categories: {
+              social_media: webFilterConfig.socialMediaBlocked,
+              gaming: webFilterConfig.gamingBlocked,
+              entertainment: webFilterConfig.entertainmentBlocked
+            }
+          }
+        });
+
+        if (dnsError) {
+          console.warn('Failed to create web filter profile:', dnsError);
+          toast({
+            title: "Web Filter Setup Warning",
+            description: "Device will be activated but web filtering may need manual setup later.",
+            variant: "destructive"
+          });
+        } else {
+          console.log('Web filter profile created successfully');
+        }
+      } catch (dnsError) {
+        console.warn('Failed to create web filter profile:', dnsError);
+      }
+
       const { data, error } = await supabase.functions.invoke('device-postinstall', {
         body: {
           device_id: deviceId,
           child_id: selectedChild,
-          app_ids: Array.from(selectedApps)
+          app_ids: Array.from(selectedApps),
+          web_filter_config: webFilterConfig
         }
       });
       
@@ -208,7 +262,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
       console.log('Device activated successfully');
       toast({
         title: 'Device activated successfully!',
-        description: 'Your device is being configured and will be ready shortly.'
+        description: 'Your device is being configured with web filters and will be ready shortly.'
       });
       
       onClose();
@@ -252,7 +306,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Smartphone className="h-5 w-5" />
-            Device Activation - Step {step} of 3
+            Device Activation - Step {step} of 4
           </DialogTitle>
         </DialogHeader>
 
@@ -317,7 +371,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
                         required
                       />
                       <p className="text-xs text-muted-foreground">
-                        Age is used to show appropriate apps and configure DNS filtering
+                        Age is used to show appropriate apps and configure web filtering
                       </p>
                     </div>
                     
@@ -347,6 +401,17 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
 
           {step === 3 && (
             <div className="space-y-4">
+              <WebFiltersStep
+                webFilterConfig={webFilterConfig}
+                onWebFilterConfigChange={setWebFilterConfig}
+                childName={selectedChildName}
+                childAge={childAge}
+              />
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-4">
               <h3 className="font-medium flex items-center gap-2 text-lg">
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 Confirm Activation
@@ -355,7 +420,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">Setup Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
+                <CardContent className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Device:</span>
                     <span>{deviceCode}</span>
@@ -368,10 +433,24 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
                     <span className="text-muted-foreground">Apps:</span>
                     <span>{selectedApps.size} selected</span>
                   </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium">Web Protection Applied:</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground ml-6 space-y-1">
+                      <div>• Automatic blocking: Adult content, violence, drugs, terrorism</div>
+                      <div>• Safe Search enabled on all search engines</div>
+                      {webFilterConfig.socialMediaBlocked && <div>• Social media platforms blocked</div>}
+                      {webFilterConfig.gamingBlocked && <div>• Gaming platforms filtered</div>}
+                      {webFilterConfig.entertainmentBlocked && <div>• Entertainment content filtered</div>}
+                      {webFilterConfig.schoolHoursEnabled && <div>• Enhanced school hours protection active</div>}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
               <p className="text-sm text-muted-foreground">
-                Click "Activate Device" to begin the setup process. Your device will install the selected apps and reboot automatically.
+                Click "Activate Device" to begin the setup process. Your device will install the selected apps, configure web filters, and reboot automatically.
               </p>
             </div>
           )}
@@ -385,7 +464,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
             </Button>
           )}
           <div className="ml-auto">
-            {step < 3 ? (
+            {step < 4 ? (
               <Button onClick={handleNext}>
                 <ArrowRight className="h-4 w-4 mr-2" />
                 Next
