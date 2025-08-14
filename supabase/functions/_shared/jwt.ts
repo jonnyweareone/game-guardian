@@ -6,17 +6,24 @@ if (!secretRaw) {
 }
 const SECRET = new TextEncoder().encode(secretRaw);
 
-export function mintDeviceJWT(device_code: string, minutes = 15) {
-  const header: Header = { alg: "HS256", typ: "JWT" };
-  const payload: Payload = {
-    sub: device_code,
-    aud: "guardian-device",
-    iss: "guardian-edge",
-    iat: getNumericDate(0),
-    nbf: getNumericDate(0),
-    exp: getNumericDate(minutes * 60),
-  };
-  return create(header, payload, SECRET);
+export async function mintDeviceJWT(device_code: string, minutes = 15) {
+  try {
+    const header: Header = { alg: "HS256", typ: "JWT" };
+    const payload: Payload = {
+      sub: device_code,
+      aud: "guardian-device",
+      iss: "guardian-edge",
+      iat: getNumericDate(0),
+      nbf: getNumericDate(0),
+      exp: getNumericDate(minutes * 60),
+    };
+    return await create(header, payload, SECRET);
+  } catch (error) {
+    console.error("JWT minting error:", error);
+    console.error("SECRET length:", SECRET?.length);
+    console.error("device_code:", device_code);
+    throw new Error(`Failed to mint JWT: ${error.message}`);
+  }
 }
 
 export async function verifyDeviceJWT(jwt: string) {
