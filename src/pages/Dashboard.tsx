@@ -1,48 +1,40 @@
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, AlertTriangle, TrendingUp, Clock, MapPin, Activity, Zap } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import ActivationWizard from '@/components/ActivationWizard';
-import AIInsightCards from '@/components/AIInsightCards';
+import { 
+  Shield, 
+  Users, 
+  AlertTriangle, 
+  MessageSquare, 
+  Activity,
+  TrendingUp,
+  Clock,
+  Eye
+} from 'lucide-react';
+import { getChildren } from '@/lib/api';
+import PairDeviceDialog from '@/components/PairDeviceDialog';
+import DeviceChildAssignmentDialog from '@/components/DeviceChildAssignmentDialog';
 import AlertCard from '@/components/AlertCard';
+import AIInsightCards from '@/components/AIInsightCards';
 import ConversationViewer from '@/components/ConversationViewer';
+import { formatDistanceToNow } from 'date-fns';
 
-interface Device {
+interface Alert {
   id: string;
-  device_code: string;
-  device_name?: string;
-  is_active: boolean;
-  last_seen?: string;
-  child_id?: string;
-  children?: {
-    name: string;
-  };
-}
-
-interface Child {
-  id: string;
-  name: string;
-  age?: number;
-  avatar_url?: string;
-}
-
-interface AlertData {
-  id: string;
+  child_id: string;
   alert_type: string;
   risk_level: string;
   ai_summary: string;
-  created_at: string;
-  child_id: string;
-  children?: {
-    name: string;
-  };
+  transcript_snippet?: string;
+  confidence_score: number;
+  is_reviewed: boolean;
+  flagged_at: string;
+  child_name?: string;
 }
 
 interface ConversationData {
@@ -52,82 +44,61 @@ interface ConversationData {
   total_messages: number;
   risk_assessment: string;
   child_id: string;
-  children?: {
-    name: string;
-  };
+  child_name?: string;
 }
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [alerts, setAlerts] = useState<AlertData[]>([]);
-  const [conversations, setConversations] = useState<ConversationData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showActivationWizard, setShowActivationWizard] = useState(false);
-  const [activationDevice, setActivationDevice] = useState<{ id: string; code: string } | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
 
-  // Check for activation parameters
-  useEffect(() => {
-    const deviceId = searchParams.get('activate_device');
-    const deviceCode = searchParams.get('device_code');
-    
-    if (deviceId && deviceCode) {
-      setActivationDevice({ id: deviceId, code: deviceCode });
-      setShowActivationWizard(true);
-      // Clean up URL parameters
-      setSearchParams({});
-    }
-  }, [searchParams, setSearchParams]);
-
-  useEffect(() => {
-    if (user) {
-      loadDashboardData();
-    }
-  }, [user]);
-
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      // Load devices
-      const { data: devicesData } = await supabase
+  const { data: devices, isLoading: devicesLoading, refetch: refetchDevices } = useQuery({
+    queryKey: ['devices'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('devices')
         .select(`
-          id,
-          device_code,
-          device_name,
-          is_active,
-          last_seen,
-          child_id,
-          children (name)
+          *,
+          children (
+            id,
+            name
+          )
         `)
         .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
-      // Load children
-      const { data: childrenData } = await supabase
-        .from('children')
-        .select('id, name, age, avatar_url')
-        .order('name');
+  const { data: children = [] } = useQuery({
+    queryKey: ['children'],
+    queryFn: getChildren,
+  });
 
-      // Load recent alerts
-      const { data: alertsData } = await supabase
+  const { data: alerts = [] } = useQuery({
+    queryKey: ['alerts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('alerts')
         .select(`
-          id,
-          alert_type,
-          risk_level,
-          ai_summary,
-          created_at,
-          child_id,
-          children (name)
+          *,
+          children!inner(name)
         `)
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .order('flagged_at', { ascending: false })
+        .limit(10);
+      
+      if (error) throw error;
+      
+      return data.map(alert => ({
+        ...alert,
+        child_name: alert.children?.name
+      }));
+    },
+  });
 
-      // Load recent conversations
-      const { data: conversationsData } = await supabase
+  const { data: conversations = [], refetch: refetchConversations } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('conversations')
         .select(`
           id,
@@ -135,75 +106,105 @@ const Dashboard = () => {
           session_start,
           total_messages,
           risk_assessment,
-          child_id,
-          children (name)
+          child_id
         `)
         .order('session_start', { ascending: false })
-        .limit(5);
+        .limit(20);
+      
+      if (error) throw error;
+      
+      // Get child names separately since we have the relationship issue
+      const conversationsWithChildren = await Promise.all(
+        data.map(async (conv) => {
+          const child = children.find(c => c.id === conv.child_id);
+          return {
+            ...conv,
+            child_name: child?.name || 'Unknown Child'
+          };
+        })
+      );
+      
+      return conversationsWithChildren;
+    },
+    enabled: children.length > 0,
+  });
 
-      setDevices(devicesData || []);
-      setChildren(childrenData || []);
-      setAlerts(alertsData || []);
-      setConversations(conversationsData || []);
+  const handleDevicePaired = () => {
+    refetchDevices();
+  };
+
+  const handleAssignmentChanged = () => {
+    refetchDevices();
+  };
+
+  const handleMarkReviewed = async (alertId: string) => {
+    try {
+      const { error } = await supabase
+        .from('alerts')
+        .update({ is_reviewed: true, reviewed_at: new Date().toISOString() })
+        .eq('id', alertId);
+      
+      if (error) throw error;
+      
+      // Refetch alerts to update the UI
+      // You would need to add this query refetch here
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Failed to mark alert as reviewed:', error);
     }
   };
 
-  const handleActivationComplete = () => {
-    setShowActivationWizard(false);
-    setActivationDevice(null);
-    loadDashboardData(); // Refresh data after activation
+  // Mock insights data - in a real app, this would come from your API
+  const mockInsights = {
+    weeklyStats: {
+      totalSessions: conversations.length,
+      positiveInteractions: Math.floor(conversations.length * 0.7),
+      concerningInteractions: alerts.filter(a => a.risk_level === 'medium').length,
+      criticalAlerts: alerts.filter(a => a.risk_level === 'critical').length,
+      averageSentiment: 0.65,
+    },
+    talkingPoints: [
+      "Ask Jake about his new gaming friends from last week's Minecraft session",
+      "Discuss with Lily about the positive leadership she showed in her team games",
+      "Check in on Alex's gaming time - he's been playing longer sessions recently"
+    ],
+    emotionalTrends: [
+      {
+        child: "Jake",
+        trend: "positive",
+        description: "Showing increased confidence and making new friends"
+      },
+      {
+        child: "Lily", 
+        trend: "concerning",
+        description: "Had some negative interactions that affected her mood"
+      }
+    ],
+    onlineFriends: {
+      "Jake": ["MinecraftMaster", "BlockBuilder99", "CraftingKid"],
+      "Lily": ["GamerGirl2024", "PuzzleSolver", "TeamLeader"]
+    }
   };
-
-  const activeDevices = devices.filter(d => d.is_active);
-  const recentAlerts = alerts.filter(a => a.risk_level === 'high' || a.risk_level === 'critical');
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Activation Wizard */}
-      {activationDevice && (
-        <ActivationWizard
-          deviceId={activationDevice.id}
-          deviceCode={activationDevice.code}
-          isOpen={showActivationWizard}
-          onClose={handleActivationComplete}
-        />
-      )}
-
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's your family's digital activity overview.</p>
-        </div>
-        <Badge variant="outline" className="flex items-center gap-2">
-          <Shield className="h-4 w-4" />
-          Guardian Active
-        </Badge>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <PairDeviceDialog children={children} onDevicePaired={handleDevicePaired} />
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Quick Stats */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Devices</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeDevices.length}</div>
+            <div className="text-2xl font-bold">
+              {devices?.filter(d => d.is_active).length || 0}
+            </div>
             <p className="text-xs text-muted-foreground">
-              {devices.length} total devices
+              of {devices?.length || 0} total devices
             </p>
           </CardContent>
         </Card>
@@ -216,155 +217,243 @@ const Dashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{children.length}</div>
             <p className="text-xs text-muted-foreground">
-              Profiles created
+              profiles created
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{recentAlerts.length}</div>
+            <div className="text-2xl font-bold">
+              {alerts.filter(a => !a.is_reviewed).length}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Requiring attention
+              require attention
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversations</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Sessions Today</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{conversations.length}</div>
+            <div className="text-2xl font-bold">
+              {conversations.filter(c => {
+                const today = new Date();
+                const sessionDate = new Date(c.session_start);
+                return sessionDate.toDateString() === today.toDateString();
+              }).length}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Monitored today
+              gaming sessions
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* AI Insights */}
-      <AIInsightCards data={{
-        weeklyStats: {
-          totalSessions: conversations.length,
-          positiveInteractions: conversations.filter(c => c.risk_assessment === 'low').length,
-          concerningInteractions: conversations.filter(c => c.risk_assessment === 'medium').length,
-          criticalAlerts: alerts.filter(a => a.risk_level === 'critical').length,
-          averageSentiment: 0.7
-        },
-        talkingPoints: [
-          "Great job maintaining positive online interactions",
-          "Consider discussing online gaming etiquette",
-          "Review screen time limits for weekdays"
-        ],
-        emotionalTrends: [
-          { period: 'Week 1', positive: 85, neutral: 10, negative: 5 },
-          { period: 'Week 2', positive: 78, neutral: 15, negative: 7 },
-          { period: 'Week 3', positive: 82, neutral: 12, negative: 6 },
-          { period: 'Week 4', positive: 88, neutral: 8, negative: 4 }
-        ],
-        onlineFriends: {}
-      }} />
-
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="alerts" className="space-y-6">
+      <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="alerts">Recent Alerts</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="alerts">Alerts</TabsTrigger>
           <TabsTrigger value="conversations">Conversations</TabsTrigger>
-          <TabsTrigger value="devices">Devices</TabsTrigger>
+          <TabsTrigger value="insights">AI Insights</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="alerts" className="space-y-4">
-          {alerts.length === 0 ? (
-            <Card>
-              <CardContent className="p-6">
-                <p className="text-center text-muted-foreground">No alerts to show. Your children are staying safe online! 🎉</p>
-              </CardContent>
-            </Card>
-          ) : (
-            alerts.map(alert => (
-              <AlertCard
-                key={alert.id}
-                alert={{
-                  id: alert.id,
-                  type: alert.alert_type,
-                  severity: alert.risk_level as 'low' | 'medium' | 'high' | 'critical',
-                  message: alert.ai_summary,
-                  timestamp: alert.created_at,
-                  childName: alert.children?.name || 'Unknown'
-                }}
-              />
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="conversations" className="space-y-4">
-          {conversations.length === 0 ? (
-            <Card>
-              <CardContent className="p-6">
-                <p className="text-center text-muted-foreground">No recent conversations to display.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            conversations.map(conversation => (
-              <ConversationViewer
-                key={conversation.id}
-                conversation={{
-                  id: conversation.id,
-                  platform: conversation.platform,
-                  startTime: conversation.session_start,
-                  messageCount: conversation.total_messages,
-                  riskLevel: conversation.risk_assessment as 'low' | 'medium' | 'high',
-                  childName: conversation.children?.name || 'Unknown',
-                  participants: []
-                }}
-              />
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="devices" className="space-y-4">
-          <div className="grid gap-4">
-            {devices.map(device => (
-              <Card key={device.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`h-3 w-3 rounded-full ${device.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      <div>
-                        <h3 className="font-medium">{device.device_name || device.device_code}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {device.children?.name ? `Assigned to ${device.children.name}` : 'No child assigned'}
-                        </p>
+        <TabsContent value="overview" className="space-y-6">
+          {/* Recent Devices */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Devices</CardTitle>
+              <CardDescription>Your connected Guardian AI devices</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {devicesLoading ? (
+                <div className="space-y-3">
+                  <div className="animate-pulse h-16 bg-muted rounded"></div>
+                  <div className="animate-pulse h-16 bg-muted rounded"></div>
+                </div>
+              ) : devices && devices.length > 0 ? (
+                <div className="space-y-3">
+                  {devices.slice(0, 3).map((device) => (
+                    <div key={device.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${device.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                        <div>
+                          <p className="font-medium">{device.device_name || device.device_code}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {device.children ? `Assigned to ${device.children.name}` : 'Unassigned'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={device.is_active ? "default" : "secondary"}>
+                          {device.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                        <DeviceChildAssignmentDialog
+                          device={device}
+                          children={children}
+                          onAssignmentChanged={handleAssignmentChanged}
+                        />
                       </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant={device.is_active ? 'default' : 'secondary'}>
-                        {device.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                      {device.last_seen && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Last seen: {new Date(device.last_seen).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No devices paired yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Alerts */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Alerts</CardTitle>
+              <CardDescription>Latest AI-detected incidents requiring attention</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {alerts.length > 0 ? (
+                <div className="space-y-4">
+                  {alerts.slice(0, 3).map((alert) => (
+                    <AlertCard
+                      key={alert.id}
+                      alert={alert}
+                      onMarkReviewed={handleMarkReviewed}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No alerts to show</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="alerts" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Security Alerts</h2>
+            <Badge variant="outline">
+              {alerts.filter(a => !a.is_reviewed).length} unreviewed
+            </Badge>
+          </div>
+          
+          {alerts.length > 0 ? (
+            <div className="space-y-4">
+              {alerts.map((alert) => (
+                <AlertCard
+                  key={alert.id}
+                  alert={alert}
+                  onMarkReviewed={handleMarkReviewed}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="text-center py-8">
+                <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No alerts to show</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="conversations" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Gaming Conversations</h2>
+            <Badge variant="outline">
+              {conversations.length} total sessions
+            </Badge>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Sessions</CardTitle>
+                <CardDescription>Latest gaming conversations monitored</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {conversations.length > 0 ? (
+                  <div className="space-y-3">
+                    {conversations.slice(0, 10).map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
+                        onClick={() => setSelectedConversation(conversation)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <MessageSquare className="h-4 w-4 text-primary" />
+                          <div>
+                            <p className="font-medium">{conversation.platform}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {conversation.child_name} • {conversation.total_messages} messages
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={
+                            conversation.risk_assessment === 'critical' ? 'destructive' :
+                            conversation.risk_assessment === 'high' ? 'destructive' :
+                            conversation.risk_assessment === 'medium' ? 'secondary' : 'outline'
+                          }>
+                            {conversation.risk_assessment}
+                          </Badge>
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {formatDistanceToNow(new Date(conversation.session_start), { addSuffix: true })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-            {devices.length === 0 && (
+                ) : (
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No conversations to show</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {selectedConversation && (
               <Card>
-                <CardContent className="p-6">
-                  <p className="text-center text-muted-foreground">No devices registered yet.</p>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Conversation Details
+                  </CardTitle>
+                  <CardDescription>
+                    {selectedConversation.platform} session with {selectedConversation.child_name}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ConversationViewer conversation={selectedConversation} />
                 </CardContent>
               </Card>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="insights" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">AI Insights</h2>
+            <Badge variant="outline">
+              <TrendingUp className="h-3 w-3 mr-1" />
+              Weekly Summary
+            </Badge>
+          </div>
+          
+          <AIInsightCards insights={mockInsights} />
         </TabsContent>
       </Tabs>
     </div>

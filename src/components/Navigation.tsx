@@ -1,7 +1,9 @@
+
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
@@ -12,6 +14,7 @@ interface NavigationProps {
 const Navigation = ({ transparent = false }: NavigationProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
 
   return (
     <header className={`${transparent ? 'bg-transparent' : 'bg-card/50 backdrop-blur-sm border-b border-border'} sticky top-0 z-50`}>
@@ -59,6 +62,18 @@ const Navigation = ({ transparent = false }: NavigationProps) => {
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>Dashboard</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/security')}>Security</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/admin/ota-demo')}>OTA Demo</DropdownMenuItem>
+                  
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => navigate('/admin/devices')}>Admin Dashboard</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/admin/app-catalog')}>App Catalog</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/admin/ui-themes')}>UI Themes</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/admin/content-push')}>Content Push</DropdownMenuItem>
+                    </>
+                  )}
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
                 </DropdownMenuContent>
