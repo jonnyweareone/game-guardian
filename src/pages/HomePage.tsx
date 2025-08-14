@@ -1,3 +1,4 @@
+
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,13 +56,20 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Hero Image/Video Placeholder */}
+          {/* Hero Image/Dashboard Preview */}
           <div className="relative mx-auto max-w-5xl">
-            <div className="aspect-video rounded-xl border bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-              <div className="text-center">
-                <Monitor className="h-16 w-16 mx-auto mb-4 text-primary" />
-                <p className="text-lg font-medium text-foreground">Guardian AI™ Dashboard Preview</p>
-                <p className="text-muted-foreground">Coming Soon</p>
+            <div className="aspect-video rounded-xl border overflow-hidden shadow-2xl">
+              <img 
+                src="/lovable-uploads/67143275-f588-4d5a-b92f-dae2b71b634c.png" 
+                alt="Guardian AI™ Dashboard Preview - Real-time gaming protection interface showing child activity monitoring, alerts, and parental controls"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="bg-black/60 backdrop-blur-sm rounded-lg p-4 text-white">
+                  <h3 className="font-semibold mb-1">Guardian AI™ Dashboard V2</h3>
+                  <p className="text-sm opacity-90">Real-time monitoring • AI-powered insights • Family protection</p>
+                </div>
               </div>
             </div>
           </div>
