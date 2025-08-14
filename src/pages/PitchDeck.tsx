@@ -1,5 +1,4 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import Navigation from "@/components/Navigation";
 import SEOHead from "@/components/SEOHead";
 import EcosystemHero from "@/components/EcosystemHero";
 import { Button } from "@/components/ui/button";
@@ -40,8 +39,6 @@ const PitchDeck = () => {
         structuredData={jsonLd}
       />
 
-      <Navigation />
-
       <header className="border-b border-border bg-card/50">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex items-center gap-3">
@@ -50,7 +47,7 @@ const PitchDeck = () => {
           </div>
           <h1 className="mt-4 text-3xl md:text-5xl font-bold">Guardian – Zero‑Trust, Compliance‑First Gaming Safety for Kids</h1>
           <p className="mt-3 text-muted-foreground max-w-3xl">
-            We’re building the first zero‑trust, compliance‑first gaming and online safety ecosystem designed for children.
+            We're building the first zero‑trust, compliance‑first gaming and online safety ecosystem designed for children.
             Our mission is to protect kids everywhere they play online, starting with gaming — the largest unregulated
             playground on earth.
           </p>
@@ -162,7 +159,6 @@ const PitchDeck = () => {
           </div>
         </section>
 
-
         {/* Zero-Trust & Encryption */}
         <section aria-labelledby="zero-trust-title">
           <h2 id="zero-trust-title" className="text-2xl md:text-3xl font-semibold">Zero‑Trust Architecture & End‑to‑End Encryption</h2>
@@ -184,7 +180,7 @@ const PitchDeck = () => {
               <div className="mt-4">
                 <h3 className="sr-only">Why It Matters</h3>
                 <p className="text-muted-foreground">
-                  Zero‑trust combined with encryption ensures that even if a network is compromised, a player’s identity, communications, and safety settings remain secure. It creates an environment where parents, educators, and regulators can have complete confidence in every interaction.
+                  Zero‑trust combined with encryption ensures that even if a network is compromised, a player's identity, communications, and safety settings remain secure. It creates an environment where parents, educators, and regulators can have complete confidence in every interaction.
                 </p>
               </div>
             </div>
@@ -225,7 +221,7 @@ const PitchDeck = () => {
                 <ul className="space-y-2 text-muted-foreground">
                   <li><strong className="text-foreground">TAM:</strong> $282B (2023) → $666B (2030)</li>
                   <li><strong className="text-foreground">SAM:</strong> $16B → $64B (child‑safe gaming & edutainment)</li>
-                  <li><strong className="text-foreground">SOM:</strong> $12–$21B by 2031 (children’s safe gaming)</li>
+                  <li><strong className="text-foreground">SOM:</strong> $12–$21B by 2031 (children's safe gaming)</li>
                 </ul>
               </CardContent>
             </Card>
@@ -270,7 +266,7 @@ const PitchDeck = () => {
           <h2 id="vision-title" className="text-2xl md:text-3xl font-semibold">Vision</h2>
           <p className="mt-3 text-muted-foreground">
             Guardian will change how children experience gaming and online life — globally, safely, and compliantly. With a strong regulatory
-            position, proven build plan, and massive addressable market, we’re leading a new category: zero‑trust, compliance‑first gaming for kids.
+            position, proven build plan, and massive addressable market, we're leading a new category: zero‑trust, compliance‑first gaming for kids.
           </p>
         </section>
 
@@ -305,13 +301,13 @@ const PitchDeck = () => {
         <section aria-labelledby="founder-title">
           <h2 id="founder-title" className="text-2xl md:text-3xl font-semibold">Our Founder — Jonny Robinson</h2>
           <p className="mt-3 text-muted-foreground">
-            Jonny is a father of four boys (ages 5–13). Personal experiences with his sons’ online gaming — seeing risks firsthand and the gap in effective tools — are the reason he built Game Guardian.
+            Jonny is a father of four boys (ages 5–13). Personal experiences with his sons' online gaming — seeing risks firsthand and the gap in effective tools — are the reason he built Game Guardian.
           </p>
           <p className="mt-3 text-muted-foreground">
-            Previous experience: ZYBRE Internet — a start‑up, trend‑setting ISP focused purely on FTTP that built the UK’s first Android Operator Tier Android TV Platform with Google and SEI Robotics, the current build partner for the Game Guardian AI. ZYBRE was sold to Octoplus at the end of 2023.
+            Previous experience: ZYBRE Internet — a start‑up, trend‑setting ISP focused purely on FTTP that built the UK's first Android Operator Tier Android TV Platform with Google and SEI Robotics, the current build partner for the Game Guardian AI. ZYBRE was sold to Octoplus at the end of 2023.
           </p>
           <blockquote className="mt-4 border-l-4 border-primary/30 pl-4 italic text-muted-foreground">
-            “Every child deserves to play, learn, and compete online without fear. Guardian exists to make that non‑negotiable.”
+            "Every child deserves to play, learn, and compete online without fear. Guardian exists to make that non‑negotiable."
           </blockquote>
           <p className="mt-4">
             Read more: <a
@@ -327,7 +323,7 @@ const PitchDeck = () => {
         <section aria-labelledby="demo-title" className="border-t border-border pt-10">
           <h2 id="demo-title" className="text-2xl md:text-3xl font-semibold">Try It — Demo Login</h2>
           <p className="mt-3 text-muted-foreground max-w-3xl">
-            Jump into a demo account to explore the parent dashboard and alerts. On the next screen, use the “Demo Login” option.
+            Jump into a demo account to explore the parent dashboard and alerts. On the next screen, use the "Demo Login" option.
           </p>
           <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <Button size="lg" onClick={() => navigate('/auth')}>Go to Sign In</Button>
