@@ -32,10 +32,11 @@ export function WebFiltersStep({
   };
 
   const automaticProtections = [
-    'Adult Content',
-    'Violence & Weapons',
-    'Terrorism & Extremism', 
-    'Drugs & Alcohol'
+    '🔞 Adult Content',
+    '🔫 Violence & Weapons',
+    '💣 Terrorism & Extremism', 
+    '💊 Drugs & Alcohol',
+    '🎰 Gambling'
   ];
 
   return (
@@ -51,7 +52,7 @@ export function WebFiltersStep({
       </div>
 
       {/* Automatic Protection Box */}
-      <Card className="border-green-200 bg-green-50/50">
+      <Card className="border-green-200 bg-green-50/50 border-2 border-blue-400">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base text-green-800">
             <ShieldCheck className="h-4 w-4" />
@@ -74,7 +75,7 @@ export function WebFiltersStep({
       </Card>
 
       {/* Safe Search Information */}
-      <Card className="border-blue-200 bg-blue-50/50">
+      <Card className="border-blue-200 bg-blue-50/50 border-2 border-blue-400">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base text-blue-800">
             <CheckCircle className="h-4 w-4" />
@@ -101,7 +102,7 @@ export function WebFiltersStep({
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/5">
               <div className="space-y-1">
-                <Label htmlFor="social-media">Social Media Platforms</Label>
+                <Label htmlFor="social-media">📱 Social Media Platforms</Label>
                 <p className="text-sm text-muted-foreground">
                   Block access to social media during device use (Recommended for ages under 13)
                 </p>
@@ -115,7 +116,7 @@ export function WebFiltersStep({
 
             <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/5">
               <div className="space-y-1">
-                <Label htmlFor="gaming">Gaming Platforms</Label>
+                <Label htmlFor="gaming">🎮 Gaming Platforms</Label>
                 <p className="text-sm text-muted-foreground">
                   Block web-based gaming sites and platforms (Age-appropriate filtering applied)
                 </p>
@@ -129,7 +130,7 @@ export function WebFiltersStep({
 
             <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/5">
               <div className="space-y-1">
-                <Label htmlFor="entertainment">Entertainment & Streaming</Label>
+                <Label htmlFor="entertainment">🎬 Entertainment & Streaming</Label>
                 <p className="text-sm text-muted-foreground">
                   Filter content based on age ratings and family-friendly guidelines
                 </p>
@@ -149,7 +150,7 @@ export function WebFiltersStep({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Clock className="h-4 w-4" />
-            School Hours Protection
+            ⏰ School Hours Protection
           </CardTitle>
           <CardDescription>
             Enhanced filtering during school hours (8 AM - 3 PM, weekdays)
