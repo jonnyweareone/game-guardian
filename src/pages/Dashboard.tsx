@@ -3,9 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
-import ChildSwitcher from '@/components/ChildSwitcher';
 import DeviceList from '@/components/DeviceList';
 import AlertCard from '@/components/AlertCard';
 import ConversationViewer from '@/components/ConversationViewer';
@@ -88,7 +86,6 @@ const Dashboard = () => {
                 Monitor and manage your family's gaming safety
               </p>
             </div>
-            <ChildSwitcher />
           </div>
 
           <Tabs defaultValue="overview" className="space-y-6">
@@ -157,7 +154,7 @@ const Dashboard = () => {
                 </Card>
               </div>
 
-              <AIInsightCards />
+              <AIInsightCards insights={[]} />
             </TabsContent>
 
             <TabsContent value="devices">
@@ -181,11 +178,11 @@ const Dashboard = () => {
             </TabsContent>
 
             <TabsContent value="alerts">
-              <AlertCard />
+              <AlertCard alert={null} onMarkReviewed={() => {}} />
             </TabsContent>
 
             <TabsContent value="conversations">
-              <ConversationViewer />
+              <ConversationViewer conversation={null} childName="" onClose={() => {}} />
             </TabsContent>
           </Tabs>
         </main>
