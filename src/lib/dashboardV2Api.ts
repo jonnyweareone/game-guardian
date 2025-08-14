@@ -19,7 +19,7 @@ export async function getNotificationChannels(): Promise<NotificationChannel[]> 
     .order('created_at', { ascending: true });
   
   if (error) throw error;
-  return data || [];
+  return (data || []) as NotificationChannel[];
 }
 
 export async function addNotificationChannel(kind: 'SMS' | 'EMAIL', destination: string) {
@@ -38,7 +38,7 @@ export async function addNotificationChannel(kind: 'SMS' | 'EMAIL', destination:
     .single();
 
   if (error) throw error;
-  return data;
+  return data as NotificationChannel;
 }
 
 // Notification Preferences - Now using real database operations
@@ -72,7 +72,7 @@ export async function getNotificationPreferences(scope?: 'GLOBAL' | 'CHILD', chi
   const { data, error } = await query.order('created_at', { ascending: true });
   
   if (error) throw error;
-  return data || [];
+  return (data || []) as NotificationPreference[];
 }
 
 export async function upsertNotificationPreference(preference: Partial<NotificationPreference>) {
@@ -95,7 +95,7 @@ export async function upsertNotificationPreference(preference: Partial<Notificat
     .single();
 
   if (error) throw error;
-  return data;
+  return data as NotificationPreference;
 }
 
 // Policy Effective States - Now using real database operations
@@ -121,10 +121,10 @@ export async function getPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', s
     query = query.is('subject_id', null);
   }
 
-  const { data, error } = await query.single();
+  const { data, error } = await query.maybeSingle();
   
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
-  return data;
+  if (error) throw error;
+  return data as PolicyEffective | null;
 }
 
 export async function setPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', policyData: any, subjectId?: string) {
@@ -143,7 +143,7 @@ export async function setPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', p
     .single();
 
   if (error) throw error;
-  return data;
+  return data as PolicyEffective;
 }
 
 // Enhanced child data with avatars - using existing children table
