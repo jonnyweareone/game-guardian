@@ -10,13 +10,13 @@ import { Label } from '@/components/ui/label';
 import { Loader2, User, Smartphone, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface App {
   id: string;
   name: string;
-  type: string;
-  package: string;
-  category?: string;
+  category: string;
+  package?: string;
 }
 
 interface Child {
@@ -40,6 +40,7 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
@@ -70,18 +71,21 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
     try {
       const { data, error } = await supabase
         .from('app_catalog')
-        .select('id, name, type, package, category')
+        .select('id, name, category')
+        .eq('is_active', true)
         .order('category', { ascending: true })
         .order('name', { ascending: true });
       
       if (error) throw error;
       setApps(data || []);
       
-      // Pre-select essential apps (you can modify this logic as needed)
-      const essentialApps = (data || []).filter(app => 
-        ['Firefox', 'Chrome', 'Educational Games'].includes(app.name)
-      );
-      setSelectedApps(essentialApps.map(app => app.id));
+      // Pre-select some apps if available
+      if (data && data.length > 0) {
+        const essentialApps = data.filter(app => 
+          ['Firefox', 'Chrome', 'Educational Games'].includes(app.name)
+        );
+        setSelectedApps(essentialApps.map(app => app.id));
+      }
     } catch (error: any) {
       toast({
         title: 'Error loading apps',
@@ -92,12 +96,15 @@ const ActivationWizard = ({ deviceId, deviceCode, isOpen, onClose }: ActivationW
   };
 
   const createChild = async () => {
-    if (!newChildName.trim()) return null;
+    if (!newChildName.trim() || !user?.id) return null;
     
     try {
       const { data, error } = await supabase
         .from('children')
-        .insert({ name: newChildName.trim() })
+        .insert({ 
+          name: newChildName.trim(),
+          parent_id: user.id
+        })
         .select()
         .single();
       
