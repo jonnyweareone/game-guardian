@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,8 @@ import DeviceChildAssignmentDialog from '@/components/DeviceChildAssignmentDialo
 import AlertCard from '@/components/AlertCard';
 import AIInsightCards from '@/components/AIInsightCards';
 import ConversationViewer from '@/components/ConversationViewer';
+import ActivationWizard from '@/components/ActivationWizard';
+import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Alert {
@@ -65,8 +68,37 @@ interface Device {
 const Dashboard = () => {
   console.log('Dashboard component rendering...');
   
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [showActivationWizard, setShowActivationWizard] = useState(false);
+  const [activationDeviceId, setActivationDeviceId] = useState('');
+  const [activationDeviceCode, setActivationDeviceCode] = useState('');
+  
+  const { toast } = useToast();
+
+  // Check for activation parameters on component mount
+  useEffect(() => {
+    const shouldActivate = searchParams.get('activate') === '1';
+    const deviceId = searchParams.get('device_id');
+    const deviceCode = searchParams.get('device_code');
+    
+    if (shouldActivate && deviceId && deviceCode) {
+      console.log('Dashboard: Opening activation wizard for device:', deviceId, deviceCode);
+      setActivationDeviceId(deviceId);
+      setActivationDeviceCode(deviceCode);
+      setShowActivationWizard(true);
+      
+      // Clear the search params to avoid showing the wizard again on refresh
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.delete('activate');
+        newParams.delete('device_id');
+        newParams.delete('device_code');
+        return newParams;
+      });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Add error boundary-like logging
   useEffect(() => {
@@ -287,6 +319,20 @@ const Dashboard = () => {
     refetchDevices();
   };
 
+  const handleActivationComplete = () => {
+    setShowActivationWizard(false);
+    setActivationDeviceId('');
+    setActivationDeviceCode('');
+    
+    // Refresh dashboard data to show the newly activated device
+    refetchDevices();
+    
+    toast({
+      title: 'Device activated successfully!',
+      description: 'Your Guardian AI device is now protecting your family.'
+    });
+  };
+
   const handleMarkReviewed = async (alertId: string) => {
     try {
       console.log('Marking alert as reviewed:', alertId);
@@ -410,7 +456,6 @@ const Dashboard = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {/* Quick Stats */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Devices</CardTitle>
@@ -689,6 +734,14 @@ const Dashboard = () => {
           <AIInsightCards insights={mockInsights} />
         </TabsContent>
       </Tabs>
+
+      {/* Activation Wizard */}
+      <ActivationWizard
+        deviceId={activationDeviceId}
+        deviceCode={activationDeviceCode}
+        isOpen={showActivationWizard}
+        onClose={handleActivationComplete}
+      />
     </div>
   );
 };
