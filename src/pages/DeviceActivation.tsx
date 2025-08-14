@@ -43,20 +43,20 @@ const DeviceActivation = () => {
       setIsLoading(true);
 
       // New: delegate bind + token minting to Edge Function
-      console.log('DeviceActivation: Calling bind-device with:', { device_id: deviceId, device_name: deviceName });
+      console.log('DeviceActivation: Calling device-activate with:', { device_id: deviceId, device_name: deviceName });
       
-      const { data, error } = await supabase.functions.invoke('bind-device', {
+      const { data, error } = await supabase.functions.invoke('device-activate', {
         body: {
           device_id: deviceId,
           device_name: deviceName || undefined,
         },
       });
 
-      console.log('DeviceActivation: bind-device response:', { data, error });
+      console.log('DeviceActivation: device-activate response:', { data, error });
 
       if (error) {
-        console.error('DeviceActivation: bind-device error details:', error);
-        throw new Error(error.message || 'Failed to bind device');
+        console.error('DeviceActivation: device-activate error details:', error);
+        throw new Error(error.message || 'Failed to activate device');
       }
 
       // Handoff JWT to localhost helper if running
