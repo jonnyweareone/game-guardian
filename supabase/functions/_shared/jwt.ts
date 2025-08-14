@@ -1,16 +1,14 @@
 import { create, verify, getNumericDate, Header, Payload } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const secretRaw = Deno.env.get("DEVICE_JWT_SECRET");
-console.log("JWT Secret check:", {
-  exists: !!secretRaw,
-  length: secretRaw?.length,
-  type: typeof secretRaw
-});
-
 if (!secretRaw) {
   throw new Error("DEVICE_JWT_SECRET environment variable is not set");
 }
-const SECRET = new TextEncoder().encode(secretRaw);
+
+// Convert hex string to Uint8Array for proper HS256 signing
+const SECRET = new Uint8Array(
+  secretRaw.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+);
 
 export async function mintDeviceJWT(device_code: string, minutes = 15) {
   try {
