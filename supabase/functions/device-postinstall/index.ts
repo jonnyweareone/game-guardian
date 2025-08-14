@@ -55,22 +55,33 @@ serve(async (req) => {
 
     console.log('device-postinstall: Device verified', { device_id: device.id, parent_id: device.parent_id });
 
-    // Persist device-child link (idempotent)
-    const { error: linkError } = await supabase
-      .from('child_device_links')
-      .upsert({ device_id, child_id }, { onConflict: 'device_id' });
+    // Update device to link to child directly
+    const { error: deviceUpdateError } = await supabase
+      .from('devices')
+      .update({ 
+        child_id: child_id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', device_id);
 
-    if (linkError) {
-      console.error('device-postinstall: Error creating device link', linkError);
+    if (deviceUpdateError) {
+      console.error('device-postinstall: Error updating device', deviceUpdateError);
       return json({ error: "Failed to link device to child" }, { status: 400 });
     }
 
-    console.log('device-postinstall: Device-child link created/updated');
+    console.log('device-postinstall: Device-child link updated');
 
     // Clear existing app selections for this child and add new ones
     if (Array.isArray(app_ids) && app_ids.length > 0) {
       // First delete existing selections
-      await supabase.from('child_app_selections').delete().eq('child_id', child_id);
+      const { error: deleteError } = await supabase
+        .from('child_app_selections')
+        .delete()
+        .eq('child_id', child_id);
+
+      if (deleteError) {
+        console.log('device-postinstall: Note - could not clear existing app selections (table may not exist)', deleteError);
+      }
 
       // Insert new selections
       const appSelections = app_ids.map((app_id: string) => ({ child_id, app_id }));
