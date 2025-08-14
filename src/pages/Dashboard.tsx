@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +35,6 @@ interface Alert {
   is_reviewed: boolean;
   flagged_at: string;
   child_name?: string;
-  children?: { name: string };
 }
 
 interface ConversationData {
@@ -45,7 +45,6 @@ interface ConversationData {
   risk_assessment: string;
   child_id: string;
   child_name?: string;
-  children?: { name: string };
 }
 
 const Dashboard = () => {
@@ -75,7 +74,7 @@ const Dashboard = () => {
     queryFn: getChildren,
   });
 
-  const { data: alerts = [] } = useQuery({
+  const { data: alertsData = [] } = useQuery({
     queryKey: ['alerts'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -89,17 +88,25 @@ const Dashboard = () => {
           transcript_snippet,
           confidence_score,
           is_reviewed,
-          child_id,
-          children:children!conversations_child_id_fkey(name)
+          child_id
         `)
         .order('flagged_at', { ascending: false })
         .limit(10);
       
       if (error) throw error;
       
+      // Get child names separately to avoid join issues
+      const childIds = [...new Set(data.map(alert => alert.child_id))];
+      const { data: childrenData } = await supabase
+        .from('children')
+        .select('id, name')
+        .in('id', childIds);
+      
+      const childrenMap = new Map(childrenData?.map(child => [child.id, child.name]) || []);
+      
       return data.map(alert => ({
         ...alert,
-        child_name: alert.children?.name
+        child_name: childrenMap.get(alert.child_id)
       })) as Alert[];
     },
   });
@@ -115,17 +122,25 @@ const Dashboard = () => {
           session_start,
           total_messages,
           risk_assessment,
-          child_id,
-          children:children!conversations_child_id_fkey(name)
+          child_id
         `)
         .order('session_start', { ascending: false })
         .limit(20);
       
       if (error) throw error;
       
+      // Get child names separately to avoid join issues
+      const childIds = [...new Set(data.map(conv => conv.child_id))];
+      const { data: childrenData } = await supabase
+        .from('children')
+        .select('id, name')
+        .in('id', childIds);
+      
+      const childrenMap = new Map(childrenData?.map(child => [child.id, child.name]) || []);
+      
       return data.map(conv => ({
         ...conv,
-        child_name: conv.children?.name || 'Unknown Child'
+        child_name: childrenMap.get(conv.child_id) || 'Unknown Child'
       })) as ConversationData[];
     },
     enabled: children.length > 0,
@@ -161,7 +176,7 @@ const Dashboard = () => {
       totalSessions: conversations.length,
       positiveInteractions: conversations.filter(c => c.risk_assessment === 'low').length,
       concerningInteractions: conversations.filter(c => c.risk_assessment === 'medium').length,
-      criticalAlerts: alerts.filter(a => a.risk_level === 'critical').length,
+      criticalAlerts: alertsData.filter(a => a.risk_level === 'critical').length,
       averageSentiment: 0.65,
     },
     talkingPoints: [
@@ -231,7 +246,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {alerts.filter(a => !a.is_reviewed).length}
+              {alertsData.filter(a => !a.is_reviewed).length}
             </div>
             <p className="text-xs text-muted-foreground">
               require attention
@@ -322,23 +337,12 @@ const Dashboard = () => {
               <CardDescription>Latest AI-detected incidents requiring attention</CardDescription>
             </CardHeader>
             <CardContent>
-              {alerts.length > 0 ? (
+              {alertsData.length > 0 ? (
                 <div className="space-y-4">
-                  {alerts.slice(0, 3).map((alert) => (
+                  {alertsData.slice(0, 3).map((alert) => (
                     <AlertCard
                       key={alert.id}
-                      alert={{
-                        id: alert.id,
-                        child_id: alert.child_id,
-                        alert_type: alert.alert_type,
-                        risk_level: alert.risk_level,
-                        ai_summary: alert.ai_summary,
-                        transcript_snippet: alert.transcript_snippet ?? '',
-                        confidence_score: alert.confidence_score ?? 0.5,
-                        is_reviewed: alert.is_reviewed ?? false,
-                        flagged_at: alert.flagged_at,
-                        child_name: alert.child_name
-                      }}
+                      alert={alert}
                       onMarkReviewed={handleMarkReviewed}
                     />
                   ))}
@@ -357,27 +361,16 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold">Security Alerts</h2>
             <Badge variant="outline">
-              {alerts.filter(a => !a.is_reviewed).length} unreviewed
+              {alertsData.filter(a => !a.is_reviewed).length} unreviewed
             </Badge>
           </div>
           
-          {alerts.length > 0 ? (
+          {alertsData.length > 0 ? (
             <div className="space-y-4">
-              {alerts.map((alert) => (
+              {alertsData.map((alert) => (
                 <AlertCard
                   key={alert.id}
-                  alert={{
-                    id: alert.id,
-                    child_id: alert.child_id,
-                    alert_type: alert.alert_type,
-                    risk_level: alert.risk_level,
-                    ai_summary: alert.ai_summary,
-                    transcript_snippet: alert.transcript_snippet ?? '',
-                    confidence_score: alert.confidence_score ?? 0.5,
-                    is_reviewed: alert.is_reviewed ?? false,
-                    flagged_at: alert.flagged_at,
-                    child_name: alert.child_name
-                  }}
+                  alert={alert}
                   onMarkReviewed={handleMarkReviewed}
                 />
               ))}
