@@ -35,6 +35,7 @@ interface Alert {
   is_reviewed: boolean;
   flagged_at: string;
   child_name?: string;
+  children?: { name: string };
 }
 
 interface ConversationData {
@@ -45,6 +46,7 @@ interface ConversationData {
   risk_assessment: string;
   child_id: string;
   child_name?: string;
+  children?: { name: string };
 }
 
 const Dashboard = () => {
@@ -80,7 +82,15 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from('alerts')
         .select(`
-          *,
+          id,
+          alert_type,
+          risk_level,
+          ai_summary,
+          flagged_at,
+          transcript_snippet,
+          confidence_score,
+          is_reviewed,
+          child_id,
           children!inner(name)
         `)
         .order('flagged_at', { ascending: false })
@@ -91,7 +101,7 @@ const Dashboard = () => {
       return data.map(alert => ({
         ...alert,
         child_name: alert.children?.name
-      }));
+      })) as Alert[];
     },
   });
 
@@ -106,25 +116,18 @@ const Dashboard = () => {
           session_start,
           total_messages,
           risk_assessment,
-          child_id
+          child_id,
+          children(name)
         `)
         .order('session_start', { ascending: false })
         .limit(20);
       
       if (error) throw error;
       
-      // Get child names separately since we have the relationship issue
-      const conversationsWithChildren = await Promise.all(
-        data.map(async (conv) => {
-          const child = children.find(c => c.id === conv.child_id);
-          return {
-            ...conv,
-            child_name: child?.name || 'Unknown Child'
-          };
-        })
-      );
-      
-      return conversationsWithChildren;
+      return data.map(conv => ({
+        ...conv,
+        child_name: conv.children?.name || 'Unknown Child'
+      })) as ConversationData[];
     },
     enabled: children.length > 0,
   });
@@ -157,8 +160,8 @@ const Dashboard = () => {
   const mockInsights = {
     weeklyStats: {
       totalSessions: conversations.length,
-      positiveInteractions: Math.floor(conversations.length * 0.7),
-      concerningInteractions: alerts.filter(a => a.risk_level === 'medium').length,
+      positiveInteractions: conversations.filter(c => c.risk_assessment === 'low').length,
+      concerningInteractions: conversations.filter(c => c.risk_assessment === 'medium').length,
       criticalAlerts: alerts.filter(a => a.risk_level === 'critical').length,
       averageSentiment: 0.65,
     },
@@ -437,7 +440,22 @@ const Dashboard = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ConversationViewer conversation={selectedConversation} />
+                  <ConversationViewer 
+                    conversation={{
+                      id: selectedConversation.id,
+                      child_id: selectedConversation.child_id,
+                      session_start: selectedConversation.session_start,
+                      session_end: undefined,
+                      platform: selectedConversation.platform,
+                      participants: [],
+                      sentiment_score: 0,
+                      conversation_type: 'voice_chat',
+                      risk_assessment: selectedConversation.risk_assessment,
+                      transcript: []
+                    }}
+                    childName={selectedConversation.child_name || 'Unknown'}
+                    onClose={() => setSelectedConversation(null)}
+                  />
                 </CardContent>
               </Card>
             )}
