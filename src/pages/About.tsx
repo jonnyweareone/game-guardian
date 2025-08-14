@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +53,7 @@ const About = () => {
       description: "Breakthrough in real-time voice analysis for threat detection completed"
     },
     {
-      year: "2024",
+      year: "2025",
       title: "UK Patent Filed",
       description: "Patent pending status achieved for innovative AI voice analysis technology"
     },
@@ -236,13 +237,13 @@ const About = () => {
               <h2 className="text-3xl font-bold mb-4">Patents & Recognition</h2>
               <Badge variant="outline" className="text-lg px-4 py-2">
                 <Award className="mr-2 h-4 w-4" />
-                UK Patent Pending
+                UK Patent Pending (2025)
               </Badge>
             </div>
             <Card className="max-w-4xl mx-auto text-center p-8">
               <CardContent>
                 <p className="text-lg text-muted-foreground">
-                  Our innovative AI voice analysis technology has received UK Patent Pending status, 
+                  Our innovative AI voice analysis technology has received UK Patent Pending status in 2025, 
                   recognizing the groundbreaking nature of our approach to real-time threat detection 
                   in gaming voice communications.
                 </p>

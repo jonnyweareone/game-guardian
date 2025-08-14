@@ -8,6 +8,7 @@ import { navItems } from "./nav-items";
 import { AuthProvider } from "@/hooks/useAuth";
 import AuthGuard from "@/components/AuthGuard";
 import Navigation from "@/components/Navigation";
+import HomePage from "@/pages/HomePage";
 
 const queryClient = new QueryClient();
 
@@ -28,9 +29,9 @@ const App = () => (
                 </AuthGuard>
               } />
               
-              {/* Redirect root to dashboard */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/index" element={<Navigate to="/dashboard" replace />} />
+              {/* Home route */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/index" element={<Navigate to="/" replace />} />
               
               {/* Protected routes */}
               {navItems
@@ -54,7 +55,7 @@ const App = () => (
                 ))}
               
               {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
         </BrowserRouter>
