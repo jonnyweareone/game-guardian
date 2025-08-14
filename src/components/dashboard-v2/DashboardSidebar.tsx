@@ -52,9 +52,11 @@ const DashboardSidebar = ({
   alertCounts,
   onChildRemoved 
 }: DashboardSidebarProps) => {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
   const { signOut } = useAuth();
   const [childToRemove, setChildToRemove] = useState<Child | null>(null);
+
+  const isCollapsed = state === 'collapsed';
 
   const toggleChild = (childId: string) => {
     const newSelection = selectedChildren.includes(childId)
@@ -65,11 +67,11 @@ const DashboardSidebar = ({
 
   return (
     <>
-      <Sidebar className={collapsed ? "w-14" : "w-80"} collapsible>
+      <Sidebar className={isCollapsed ? "w-14" : "w-80"} collapsible="icon">
         <SidebarHeader className="border-b border-border p-4">
           <div className="flex items-center gap-3">
             <Shield className="h-8 w-8 text-primary flex-shrink-0" />
-            {!collapsed && (
+            {!isCollapsed && (
               <div>
                 <h1 className="text-lg font-bold text-foreground">Guardian AI™</h1>
                 <p className="text-xs text-muted-foreground">Dashboard V2</p>
@@ -87,7 +89,7 @@ const DashboardSidebar = ({
                   <SidebarMenuButton asChild>
                     <Link to="/dashboard">
                       <Home className="h-4 w-4" />
-                      {!collapsed && <span>Dashboard V1</span>}
+                      {!isCollapsed && <span>Dashboard V1</span>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -95,8 +97,8 @@ const DashboardSidebar = ({
                   <SidebarMenuButton asChild isActive>
                     <Link to="/dashboard-v2">
                       <Shield className="h-4 w-4" />
-                      {!collapsed && <span>Dashboard V2</span>}
-                      {!collapsed && <Badge variant="secondary" className="ml-auto">Beta</Badge>}
+                      {!isCollapsed && <span>Dashboard V2</span>}
+                      {!isCollapsed && <Badge variant="secondary" className="ml-auto">Beta</Badge>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -104,7 +106,7 @@ const DashboardSidebar = ({
                   <SidebarMenuButton asChild>
                     <Link to="/dashboard">
                       <Settings className="h-4 w-4" />
-                      {!collapsed && <span>Settings</span>}
+                      {!isCollapsed && <span>Settings</span>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -116,7 +118,7 @@ const DashboardSidebar = ({
             <SidebarGroupLabel>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                {!collapsed && <span>Children ({children.length})</span>}
+                {!isCollapsed && <span>Children ({children.length})</span>}
               </div>
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -137,7 +139,7 @@ const DashboardSidebar = ({
                             {child.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        {!collapsed && (
+                        {!isCollapsed && (
                           <>
                             <div className="flex-1 text-left">
                               <div className="font-medium">{child.name}</div>
@@ -186,7 +188,7 @@ const DashboardSidebar = ({
             className="w-full justify-start"
           >
             <LogOut className="h-4 w-4" />
-            {!collapsed && <span className="ml-2">Sign Out</span>}
+            {!isCollapsed && <span className="ml-2">Sign Out</span>}
           </Button>
         </div>
       </Sidebar>
