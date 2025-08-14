@@ -1,1030 +1,202 @@
+
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, AlertTriangle, Settings, Plus, MessageSquare, TrendingUp, Bell, Eye, BadgeCheck, Smartphone } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import SEOHead from '@/components/SEOHead';
-import AlertCard from '@/components/AlertCard';
+import { supabase } from '@/integrations/supabase/client';
+import Navigation from '@/components/Navigation';
 import ChildSwitcher from '@/components/ChildSwitcher';
+import DeviceList from '@/components/DeviceList';
+import AlertCard from '@/components/AlertCard';
 import ConversationViewer from '@/components/ConversationViewer';
-import AIInsightCards from '@/components/AIInsightCards';
-import { ChildAppManagement } from '@/components/ChildAppManagement';
 import NotificationHistory from '@/components/NotificationHistory';
-import AddChildDialog from '@/components/AddChildDialog';
-import PairDeviceDialog from '@/components/PairDeviceDialog';
-import { demoChildren, demoDevices, demoAlerts, demoNotifications, demoConversations, demoInsights } from '@/data/demoData';
-import { AppRailItem, DeviceAppItem, AppPolicyPatch } from '@/components/AppRailItem';
-import { listDeviceApps, upsertPolicy, listPolicies, assignChildToDevice, setActiveChild, issueCommand } from '@/lib/api';
-import ChildControls from '@/components/ChildControls';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import VerificationSection from '@/components/VerificationSection';
-
-interface DashboardAlert {
-  id: string;
-  child_id: string;
-  alert_type: string;
-  risk_level: string;
-  ai_summary: string;
-  transcript_snippet?: string;
-  confidence_score: number;
-  is_reviewed: boolean;
-  flagged_at: string;
-  child_name?: string;
-}
-
-interface Child {
-  id: string;
-  name: string;
-  age?: number;
-  avatar_url?: string;
-}
-
-interface Device {
-  id: string;
-  device_code?: string;
-  device_name?: string;
-  is_active: boolean;
-  child_id?: string | null;
-  child_name?: string;
-}
+import AIInsightCards from '@/components/AIInsightCards';
+import ActivationWizard from '@/components/ActivationWizard';
+import SEOHead from '@/components/SEOHead';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Shield, Users, AlertTriangle, MessageSquare, Activity } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
-  const [selectedConversation, setSelectedConversation] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [apps, setApps] = useState<DeviceAppItem[]>([]);
-  const [devicePolicies, setDevicePolicies] = useState<Record<string, any>>({});
-  const [childPolicies, setChildPolicies] = useState<Record<string, any>>({});
-  
-  // Demo mode is only allowed when NO authenticated user exists
-  const isDemoMode = (!authLoading && !user && (typeof window !== 'undefined') && localStorage.getItem('demo-mode') === 'true');
 
+  // Activation wizard state
+  const [showActivationWizard, setShowActivationWizard] = useState(false);
+  const [activationDeviceId, setActivationDeviceId] = useState('');
+  const [activationDeviceCode, setActivationDeviceCode] = useState('');
+
+  // Check for activation parameters on load
   useEffect(() => {
-    if (authLoading) return;
-    // Ensure demo mode is cleared when a real user is present
-    if (user) { try { localStorage.removeItem('demo-mode'); } catch {} }
-    fetchDashboardData();
-  }, [authLoading, user, isDemoMode]);
+    const activate = searchParams.get('activate');
+    const deviceId = searchParams.get('device_id');
+    const deviceCode = searchParams.get('device_code');
 
-  // Load apps and policies when devices/child selection changes
-  useEffect(() => {
-    if (isDemoMode) return;
-    const currentDevice =
-      (selectedChildId
-        ? devices.find(d => d.child_id === selectedChildId && d.is_active) || devices.find(d => d.is_active)
-        : devices.find(d => d.is_active)) || null;
-
-    const deviceCode = currentDevice?.device_code;
-    const deviceId = currentDevice?.id;
-    const childId = selectedChildId || currentDevice?.child_id || null;
-
-    const load = async () => {
-      try {
-        if (deviceCode) {
-          const appList = await listDeviceApps(deviceCode);
-          setApps(appList || []);
-        } else {
-          setApps([]);
-        }
-        if (deviceId) {
-          const dp = await listPolicies('device', deviceId);
-          const map = Object.fromEntries((dp || []).map((p: any) => [p.app_id, p]));
-          setDevicePolicies(map);
-        } else {
-          setDevicePolicies({});
-        }
-        if (childId) {
-          const cp = await listPolicies('child', childId);
-          const map = Object.fromEntries((cp || []).map((p: any) => [p.app_id, p]));
-          setChildPolicies(map);
-        } else {
-          setChildPolicies({});
-        }
-      } catch (e: any) {
-        console.error('Error loading apps/policies', e);
-      }
-    };
-    load();
-  }, [devices, selectedChildId, isDemoMode]);
-
-  const fetchDashboardData = async () => {
-    try {
-      if (isDemoMode) {
-        // Use demo data
-        setChildren(demoChildren);
-        setAlerts(demoAlerts);
-        setDevices(demoDevices);
-        setNotifications(demoNotifications);
-        setConversations(demoConversations);
-      } else {
-        // Clear any prior demo state before fetching real data
-        setChildren([]);
-        setAlerts([]);
-        setDevices([]);
-        setNotifications([]);
-        setConversations([]);
-        // Fetch real data from Supabase
-        const { data: childrenData, error: childrenError } = await supabase
-          .from('children')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (childrenError) throw childrenError;
-        
-        // Fetch alerts with child names
-        const { data: alertsData, error: alertsError } = await supabase
-          .from('alerts')
-          .select(`
-            *,
-            children!inner(name)
-          `)
-          .order('flagged_at', { ascending: false })
-          .limit(20);
-
-        if (alertsError) throw alertsError;
-
-        // Fetch devices with active child assignments
-        const { data: devicesData, error: devicesError } = await supabase
-          .from('devices')
-          .select(`
-            *,
-            device_child_assignments!left(
-              id,
-              is_active,
-              children!inner(id, name)
-            )
-          `)
-          .order('created_at', { ascending: false });
-
-        if (devicesError) throw devicesError;
-
-        // Fetch notifications
-        const { data: notificationsData, error: notificationsError } = await supabase
-          .from('parent_notifications')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-
-        if (notificationsError) throw notificationsError;
-
-        // Fetch conversations
-        const { data: conversationsData, error: conversationsError } = await supabase
-          .from('conversations')
-          .select('*')
-          .order('session_start', { ascending: false })
-          .limit(20);
-
-        if (conversationsError) throw conversationsError;
-
-        setChildren(childrenData || []);
-        setAlerts(alertsData?.map(alert => ({
-          ...alert,
-          child_name: alert.children?.name
-        })) || []);
-        setDevices(devicesData?.map(device => {
-          // Find the active child assignment
-          const activeAssignment = device.device_child_assignments?.find(assignment => assignment.is_active);
-          return {
-            ...device,
-            child_name: activeAssignment?.children?.name || undefined,
-            child_id: activeAssignment?.children?.id || device.child_id
-          };
-        }) || []);
-        setNotifications(notificationsData || []);
-        setConversations(conversationsData || []);
-      }
-
-    } catch (error: any) {
-      console.error('Error fetching dashboard data:', error);
-      toast({
-        title: "Error loading dashboard",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+    if (activate === '1' && deviceId) {
+      setActivationDeviceId(deviceId);
+      setActivationDeviceCode(deviceCode || '');
+      setShowActivationWizard(true);
+      
+      // Clear the activation parameters from URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('activate');
+      newParams.delete('device_id');
+      newParams.delete('device_code');
+      setSearchParams(newParams, { replace: true });
     }
+  }, [searchParams, setSearchParams]);
+
+  const handleWizardClose = () => {
+    setShowActivationWizard(false);
+    setActivationDeviceId('');
+    setActivationDeviceCode('');
   };
-
-  const handleMarkReviewed = async (alertId: string) => {
-    try {
-      if (isDemoMode) {
-        // Update demo data locally
-        setAlerts(prev => prev.map(alert => 
-          alert.id === alertId 
-            ? { ...alert, is_reviewed: true }
-            : alert
-        ));
-      } else {
-        const { error } = await supabase
-          .from('alerts')
-          .update({ 
-            is_reviewed: true, 
-            reviewed_at: new Date().toISOString() 
-          })
-          .eq('id', alertId);
-
-        if (error) throw error;
-
-        setAlerts(prev => prev.map(alert => 
-          alert.id === alertId 
-            ? { ...alert, is_reviewed: true }
-            : alert
-        ));
-      }
-
-      toast({
-        title: "Alert reviewed",
-        description: "The alert has been marked as reviewed."
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error updating alert",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleMarkNotificationRead = (notificationId: string) => {
-    setNotifications(prev => prev.map(notif => 
-      notif.id === notificationId 
-        ? { ...notif, is_read: true, read_at: new Date().toISOString() }
-        : notif
-    ));
-  };
-
-  const handleViewConversation = (conversationId: string) => {
-    const conversation = conversations.find(c => c.id === conversationId);
-    if (conversation) {
-      setSelectedConversation(conversation);
-      setActiveTab('conversations');
-    }
-  };
-
-  const handleAddChild = () => {
-    // This is now handled by AddChildDialog component
-    fetchDashboardData();
-  };
-
-  const handlePairDevice = () => {
-    // This is now handled by PairDeviceDialog component
-    fetchDashboardData();
-  };
-
-  const handleSettings = () => {
-    toast({
-      title: "Settings",
-      description: "Settings panel will be available soon.",
-    });
-  };
-
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(notif => ({
-      ...notif,
-      is_read: true,
-      read_at: new Date().toISOString()
-    })));
-    toast({
-      title: "All notifications marked as read",
-      description: "Your notification history has been updated.",
-    });
-  };
-
-  const handlePolicyChange = async (scope: 'device' | 'child', appId: string, patch: AppPolicyPatch) => {
-    try {
-      if (isDemoMode) {
-        if (scope === 'device') {
-          setDevicePolicies(prev => ({
-            ...prev,
-            [appId]: { ...prev[appId], ...patch }
-          }));
-        } else {
-          setChildPolicies(prev => ({
-            ...prev,
-            [appId]: { ...prev[appId], ...patch }
-          }));
-        }
-        toast({ title: 'Demo mode', description: 'Policy updated (not saved).' });
-        return;
-      }
-      const currentDevice =
-        (selectedChildId
-          ? devices.find(d => d.child_id === selectedChildId && d.is_active) || devices.find(d => d.is_active)
-          : devices.find(d => d.is_active)) || null;
-
-      const subject_id = scope === 'device' ? currentDevice?.id : (selectedChildId || currentDevice?.child_id || null);
-      if (!subject_id) return;
-
-      const updated = await upsertPolicy({
-        subject_type: scope,
-        subject_id,
-        app_id: appId,
-        allowed: patch.allowed ?? (scope === 'device'
-          ? (devicePolicies[appId]?.allowed ?? true)
-          : (childPolicies[appId]?.allowed ?? true)),
-        daily_limit_minutes: patch.daily_limit_minutes ?? (scope === 'device'
-          ? devicePolicies[appId]?.daily_limit_minutes ?? null
-          : childPolicies[appId]?.daily_limit_minutes ?? null),
-        enforced_hours: patch.enforced_hours ?? (scope === 'device'
-          ? devicePolicies[appId]?.enforced_hours ?? null
-          : childPolicies[appId]?.enforced_hours ?? null),
-      });
-
-      if (scope === 'device') {
-        setDevicePolicies(prev => ({ ...prev, [appId]: updated }));
-      } else {
-        setChildPolicies(prev => ({ ...prev, [appId]: updated }));
-      }
-    } catch (error: any) {
-      console.error('Failed to update policy', error);
-      toast({
-        title: 'Policy update failed',
-        description: error.message,
-        variant: 'destructive'
-      });
-    }
-  };
-
-  // Device management handlers
-  const handleAssignChildToDevice = async (deviceId: string, childId: string | 'none') => {
-    try {
-      if (isDemoMode) {
-        setDevices(prev => prev.map(d => d.id === deviceId ? {
-          ...d,
-          child_id: childId === 'none' ? null : (childId as string),
-          child_name: childId === 'none' ? undefined : (children.find(c => c.id === childId)?.name)
-        } : d));
-        toast({ title: 'Assigned', description: 'Device assignment updated (demo).' });
-        return;
-      }
-
-      if (childId === 'none') {
-        const { error } = await supabase.from('devices').update({ child_id: null }).eq('id', deviceId);
-        if (error) throw error;
-      } else {
-        await assignChildToDevice(deviceId, childId as string, false);
-      }
-
-      await fetchDashboardData();
-      toast({ title: 'Assigned', description: 'Device assignment updated.' });
-    } catch (error: any) {
-      toast({ title: 'Assignment failed', description: error.message, variant: 'destructive' });
-    }
-  };
-
-  const handleSetActiveChild = async (deviceId: string, childId: string | null) => {
-    try {
-      if (isDemoMode) {
-        toast({ title: 'Demo mode', description: 'Active child change simulated.' });
-        return;
-      }
-      if (!childId) {
-        toast({ title: 'Select a child', description: 'Assign a child first.', variant: 'destructive' });
-        return;
-      }
-      await setActiveChild(deviceId, childId);
-      await fetchDashboardData();
-      toast({ title: 'Active child set', description: 'Device active profile updated.' });
-    } catch (error: any) {
-      toast({ title: 'Failed to set active', description: error.message, variant: 'destructive' });
-    }
-  };
-
-  const handleLockdown = async (deviceId: string) => {
-    try {
-      if (isDemoMode) {
-        toast({ title: 'Lockdown (demo)', description: 'Simulated lockdown command sent.' });
-        return;
-      }
-      await issueCommand(deviceId, 'lockdown', { enabled: true });
-      toast({ title: 'Lockdown issued', description: 'The device was locked down.' });
-    } catch (error: any) {
-      toast({ title: 'Lockdown failed', description: error.message, variant: 'destructive' });
-    }
-  };
-
-  if (loading || authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const activeDevices = devices.filter(d => d.is_active).length;
-  const unreviewedAlerts = alerts.filter(a => !a.is_reviewed).length;
-  const criticalAlerts = alerts.filter(a => a.risk_level === 'critical' && !a.is_reviewed).length;
-  const unreadNotifications = notifications.filter(n => !n.is_read).length;
-  
-  // Filter data based on selected child
-  const filteredAlerts = selectedChildId 
-    ? alerts.filter(a => a.child_id === selectedChildId)
-    : alerts;
-  
-  const filteredConversations = selectedChildId 
-    ? conversations.filter(c => c.child_id === selectedChildId)
-    : conversations;
-  
-  const filteredNotifications = selectedChildId 
-    ? notifications.filter(n => n.child_id === selectedChildId)
-    : notifications;
-
-  // Calculate alert counts per child for switcher
-  const alertCounts = children.reduce((acc, child) => {
-    const childAlerts = alerts.filter(a => a.child_id === child.id);
-    acc[child.id] = {
-      total: childAlerts.length,
-      critical: childAlerts.filter(a => a.risk_level === 'critical' && !a.is_reviewed).length
-    };
-    return acc;
-  }, {} as Record<string, { total: number; critical: number }>);
 
   const dashboardStructuredData = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "Game Guardian AI Dashboard",
-    "description": "Parent dashboard for monitoring children's gaming safety with AI-powered alerts and insights.",
-    "url": "https://gameguardianai.com/dashboard",
-    "applicationCategory": "ParentalControlSoftware"
-  };
-
-  // Resolve current device and names for the Apps tab
-  const currentDevice = (selectedChildId
-    ? devices.find(d => d.child_id === selectedChildId && d.is_active) || devices.find(d => d.is_active)
-    : devices.find(d => d.is_active)) || null;
-  const currentDeviceName = currentDevice?.device_name || currentDevice?.device_code || 'Device';
-  const selectedChildName = selectedChildId
-    ? (children.find(c => c.id === selectedChildId)?.name || 'Child')
-    : (currentDevice?.child_name || 'Child');
-
-  // When the user selects a child in the switcher, land on Child Controls by default
-  const handleChildSelect = (childId: string | null) => {
-    setSelectedChildId(childId);
-    if (childId) setActiveTab('child-controls');
+    "name": "Guardian AI Dashboard",
+    "description": "Monitor and manage your family's gaming safety with AI-powered insights.",
+    "applicationCategory": "SecurityApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
   };
 
   return (
     <>
       <SEOHead
-        title={`Dashboard - Game Guardian AI™ ${selectedChildId ? `| ${children.find(c => c.id === selectedChildId)?.name || 'Child'} Monitoring` : '| Parent Control Center'}`}
-        description="Monitor your child's gaming safety with real-time AI alerts, conversation analysis, and comprehensive safety insights from Game Guardian AI."
-        keywords="gaming safety dashboard, parental controls, child monitoring, AI safety alerts, gaming conversation analysis"
+        title="Dashboard - Game Guardian AI™"
+        description="Monitor your family's gaming activity, manage devices, and review AI-powered safety insights from your Guardian AI dashboard."
+        keywords="gaming safety dashboard, parental controls, AI monitoring, family protection"
         canonicalUrl="https://gameguardianai.com/dashboard"
         structuredData={dashboardStructuredData}
       />
+      
       <div className="min-h-screen bg-background">
-        {/* Header */}
-        <header className="bg-card border-b border-border shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-3">
-                <Shield className="h-8 w-8 text-primary" aria-label="Game Guardian AI logo" />
-                <div>
-                  <h1 className="text-xl font-bold text-foreground">Game Guardian AI™</h1>
-                  <p className="text-sm text-muted-foreground">Parent Dashboard</p>
-                </div>
-              </div>
-              <nav className="flex items-center gap-4" aria-label="User navigation">
-                <span className="text-sm text-muted-foreground">
-                  Welcome, {user?.email?.split('@')[0]}
-                </span>
-                <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sign out of dashboard">
-                  Sign Out
-                </Button>
-              </nav>
+        <Navigation />
+        
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Family Dashboard</h1>
+              <p className="text-muted-foreground mt-2">
+                Monitor and manage your family's gaming safety
+              </p>
             </div>
+            <ChildSwitcher />
           </div>
-        </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Child Switcher */}
-        <ChildSwitcher
-          children={children}
-          selectedChildId={selectedChildId}
-          onChildSelect={handleChildSelect}
-          alertCounts={alertCounts}
-        />
-
-        {/* Conversation Viewer Modal */}
-        {selectedConversation && (
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <ConversationViewer
-              conversation={selectedConversation}
-              childName={children.find(c => c.id === selectedConversation.child_id)?.name || 'Unknown'}
-              onClose={() => setSelectedConversation(null)}
-            />
-          </div>
-        )}
-
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6" aria-label="Dashboard sections">
-          <TabsList className="grid w-full grid-cols-10">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="child-controls" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Child Controls
-            </TabsTrigger>
-            <TabsTrigger value="child-apps" className="flex items-center gap-2">
-              <Smartphone className="h-4 w-4" />
-              Apps
-            </TabsTrigger>
-            <TabsTrigger value="alerts" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Alerts
-              {unreviewedAlerts > 0 && (
-                <Badge variant="destructive" className="ml-1">{unreviewedAlerts}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="conversations" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Conversations
-            </TabsTrigger>
-            <TabsTrigger value="insights" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              AI Insights
-            </TabsTrigger>
-            <TabsTrigger value="apps" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Apps
-            </TabsTrigger>
-            <TabsTrigger value="devices" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Devices
-            </TabsTrigger>
-            <TabsTrigger value="verification" className="flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4" />
-              Verification
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              History
-              {unreadNotifications > 0 && (
-                <Badge variant="destructive" className="ml-1">{unreadNotifications}</Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Children Protected</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{children.length}</div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Devices</CardTitle>
-                  <Shield className="h-4 w-4 text-safe" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{activeDevices}</div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Unreviewed Alerts</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-warning" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{unreviewedAlerts}</div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Critical Alerts</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-critical" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{criticalAlerts}</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {isDemoMode ? (
-                <Button className="h-16 flex flex-col gap-2" onClick={handleAddChild}>
-                  <Plus className="h-5 w-5" />
-                  Add Child Profile
-                </Button>
-              ) : (
-                <AddChildDialog onChildAdded={handleAddChild} />
-              )}
-              
-              {isDemoMode ? (
-                <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handlePairDevice}>
-                  <Shield className="h-5 w-5" />
-                  Pair New Device
-                </Button>
-              ) : (
-                <PairDeviceDialog children={children} onDevicePaired={handlePairDevice} />
-              )}
-              
-              <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleSettings}>
-                <Settings className="h-5 w-5" />
-                Settings
-              </Button>
-            </div>
-
-            {/* Recent Activity Summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Alerts</CardTitle>
-                  <CardDescription>Latest safety concerns and highlights</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {filteredAlerts.slice(0, 3).length === 0 ? (
-                    <div className="text-center py-8">
-                      <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-foreground mb-2">All Clear!</h3>
-                      <p className="text-muted-foreground">
-                        No concerning activity detected.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredAlerts.slice(0, 3).map((alert) => (
-                        <div key={alert.id} className="flex items-start gap-3 p-3 border rounded-md">
-                          <AlertTriangle className={`h-4 w-4 mt-0.5 ${
-                            alert.risk_level === 'critical' ? 'text-critical' : 
-                            alert.risk_level === 'high' ? 'text-warning' : 'text-safe'
-                          }`} />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{alert.child_name}</p>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {alert.ai_summary}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setActiveTab('alerts')}
-                        className="w-full"
-                      >
-                        View All Alerts
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Conversations</CardTitle>
-                  <CardDescription>Latest gaming interactions</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {filteredConversations.slice(0, 3).map((conversation) => (
-                      <div key={conversation.id} className="flex items-start gap-3 p-3 border rounded-md">
-                        <div className="text-lg">
-                          {conversation.sentiment_score > 0.3 ? '😊' : 
-                           conversation.sentiment_score > 0 ? '😐' : 
-                           conversation.sentiment_score > -0.3 ? '😟' : '😡'}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">
-                            {children.find(c => c.id === conversation.child_id)?.name} - {conversation.platform}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {conversation.participants.length} participants • 
-                            {conversation.risk_assessment} risk
-                          </p>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedConversation(conversation);
-                          }}
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setActiveTab('conversations')}
-                      className="w-full"
-                    >
-                      View All Conversations
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Empty States for New Users */}
-            {children.length === 0 && (
-              <Alert className="mt-8">
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="devices" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Devices
+              </TabsTrigger>
+              <TabsTrigger value="children" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Children
+              </TabsTrigger>
+              <TabsTrigger value="alerts" className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Get started:</strong> Add your first child profile and pair a Game Guardian device to begin monitoring.
-                </AlertDescription>
-              </Alert>
-            )}
-          </TabsContent>
+                Alerts
+              </TabsTrigger>
+              <TabsTrigger value="conversations" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Conversations
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Child Controls Tab */}
-          <TabsContent value="child-controls" className="space-y-6">
-            {!selectedChildId ? (
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Devices</CardTitle>
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">
+                      Guardian AI devices protecting your family
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Recent Alerts</CardTitle>
+                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">
+                      Safety alerts in the last 24 hours
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Gaming Sessions</CardTitle>
+                    <Activity className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">
+                      Monitored sessions today
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <AIInsightCards />
+            </TabsContent>
+
+            <TabsContent value="devices">
+              <DeviceList />
+            </TabsContent>
+
+            <TabsContent value="children">
               <Card>
-                <CardContent className="py-12 text-center">
-                  <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Select a child</h3>
-                  <p className="text-muted-foreground">Choose a child to manage time, games, and apps.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <ChildControls
-                childId={selectedChildId}
-                childName={selectedChildName}
-                isDemoMode={isDemoMode}
-                childPolicies={childPolicies}
-                onPolicyChange={(appId, patch) => handlePolicyChange('child', appId, patch)}
-              />
-            )}
-          </TabsContent>
-
-          {/* Child Apps Tab */}
-          <TabsContent value="child-apps" className="space-y-6">
-            {!selectedChildId ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Smartphone className="h-12 w-12 text-safe mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Select a child</h3>
-                  <p className="text-muted-foreground">Choose a child profile above to manage their app access.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <ChildAppManagement
-                childId={selectedChildId}
-                childName={selectedChildName}
-                isDemoMode={isDemoMode}
-              />
-            )}
-          </TabsContent>
-
-          {/* Alerts Tab */}
-          <TabsContent value="alerts" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">
-                {selectedChildId ? `${children.find(c => c.id === selectedChildId)?.name}'s Alerts` : 'All Alerts'}
-              </h2>
-              {criticalAlerts > 0 && (
-                <Badge variant="destructive" className="animate-pulse">
-                  {criticalAlerts} Critical Alert{criticalAlerts > 1 ? 's' : ''}
-                </Badge>
-              )}
-            </div>
-
-            {filteredAlerts.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">All Clear!</h3>
+                <CardHeader>
+                  <CardTitle>Children Management</CardTitle>
+                  <CardDescription>
+                    Manage your children's profiles and gaming preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <p className="text-muted-foreground">
-                    No concerning activity detected. Your children are gaming safely.
+                    Child management features coming soon. Use the device section to assign children to devices.
                   </p>
                 </CardContent>
               </Card>
-            ) : (
-              <div className="space-y-4">
-                {filteredAlerts.map((alert) => (
-                  <AlertCard
-                    key={alert.id}
-                    alert={alert}
-                    onMarkReviewed={handleMarkReviewed}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
+            </TabsContent>
 
-          {/* Conversations Tab */}
-          <TabsContent value="conversations" className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">
-              {selectedChildId ? `${children.find(c => c.id === selectedChildId)?.name}'s Conversations` : 'All Conversations'}
-            </h2>
-            
-            <div className="grid gap-4">
-              {filteredConversations.map((conversation) => (
-                <Card key={conversation.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedConversation(conversation)}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className="text-2xl">
-                          {conversation.sentiment_score > 0.3 ? '😊' : 
-                           conversation.sentiment_score > 0 ? '😐' : 
-                           conversation.sentiment_score > -0.3 ? '😟' : '😡'}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">
-                            {children.find(c => c.id === conversation.child_id)?.name} - {conversation.platform}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {conversation.participants.length} participants • 
-                            {conversation.risk_assessment} risk • 
-                            {conversation.conversation_type.replace('_', ' ')}
-                          </p>
-                          <div className="flex gap-2">
-                            <Badge variant={conversation.risk_assessment === 'critical' ? 'destructive' : 'outline'}>
-                              {conversation.risk_assessment}
-                            </Badge>
-                            <Badge variant="outline">
-                              Sentiment: {(conversation.sentiment_score * 100).toFixed(0)}%
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Transcript
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+            <TabsContent value="alerts">
+              <AlertCard />
+            </TabsContent>
 
-          {/* Devices Tab */}
-          <TabsContent value="devices" className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">Devices</h2>
-
-            {devices.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No devices paired</h3>
-                  <p className="text-muted-foreground">Pair a device to manage assignments and controls.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {devices.map((d) => (
-                  <Card key={d.id}>
-                    <CardContent className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <div className="font-medium">{d.device_name || d.device_code}</div>
-                        {d.device_code && (
-                          <div className="text-sm text-muted-foreground">Code: {d.device_code}</div>
-                        )}
-                        {d.child_name && (
-                          <div className="text-sm text-muted-foreground">Assigned to: {d.child_name}</div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="min-w-[220px]">
-                          <Select value={d.child_id || 'none'} onValueChange={(v) => handleAssignChildToDevice(d.id, v as any)}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Assign to child" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">Unassigned</SelectItem>
-                              {children.map((c) => (
-                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Button variant="outline" disabled={!d.child_id} onClick={() => handleSetActiveChild(d.id, d.child_id || null)}>Set Active</Button>
-                        <Button variant="destructive" onClick={() => handleLockdown(d.id)}>Lockdown</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Apps Tab */}
-          <TabsContent value="apps" className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">App Controls</h2>
-
-            {!currentDevice ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No active device</h3>
-                  <p className="text-muted-foreground">Pair a device to manage app policies.</p>
-                </CardContent>
-              </Card>
-            ) : apps.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Shield className="h-12 w-12 text-safe mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No apps reported yet</h3>
-                  <p className="text-muted-foreground">Once {currentDeviceName} reports installed apps, they'll appear here.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-8">
-                <div>
-                  <div className="mb-3">
-                    <h3 className="text-xl font-semibold">Device-level policies</h3>
-                    <p className="text-sm text-muted-foreground">Rules applied to {currentDeviceName}.</p>
-                  </div>
-                  <div className="space-y-3">
-                    {apps.map((app: any) => (
-                      <AppRailItem
-                        key={`dev-${app.app_id}`}
-                        app={app}
-                        policy={devicePolicies[app.app_id]}
-                        onChange={(patch) => handlePolicyChange('device', app.app_id, patch)}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-3">
-                    <h3 className="text-xl font-semibold">Child-level policies</h3>
-                    <p className="text-sm text-muted-foreground">Rules applied to {selectedChildName} regardless of device.</p>
-                  </div>
-                  <div className="space-y-3">
-                    {apps.map((app: any) => (
-                      <AppRailItem
-                        key={`child-${app.app_id}`}
-                        app={app}
-                        policy={childPolicies[app.app_id]}
-                        onChange={(patch) => handlePolicyChange('child', app.app_id, patch)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* AI Insights Tab */}
-          <TabsContent value="insights" className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">AI Insights & Recommendations</h2>
-            {isDemoMode ? (
-              <AIInsightCards insights={demoInsights} />
-            ) : (
-              <Alert>
-                <AlertDescription>Insights will appear once your devices send data.</AlertDescription>
-              </Alert>
-            )}
-          </TabsContent>
-
-          {/* Verification Tab */}
-          <TabsContent value="verification" className="space-y-6">
-            <VerificationSection />
-          </TabsContent>
-
-          {/* Notification History Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Notification History</h2>
-              {unreadNotifications > 0 && (
-                <Button variant="outline" onClick={handleMarkAllRead}>
-                  Mark All Read
-                </Button>
-              )}
-            </div>
-            <NotificationHistory
-              notifications={filteredNotifications}
-              onMarkAsRead={handleMarkNotificationRead}
-              onViewConversation={handleViewConversation}
-            />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="conversations">
+              <ConversationViewer />
+            </TabsContent>
+          </Tabs>
         </main>
+
+        {/* Activation Wizard */}
+        <ActivationWizard
+          deviceId={activationDeviceId}
+          deviceCode={activationDeviceCode}
+          isOpen={showActivationWizard}
+          onClose={handleWizardClose}
+        />
       </div>
     </>
   );

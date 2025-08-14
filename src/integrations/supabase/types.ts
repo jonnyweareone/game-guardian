@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
@@ -1768,8 +1768,8 @@ export type Database = {
     Functions: {
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -1782,7 +1782,7 @@ export type Database = {
         Returns: boolean
       }
       rpc_assign_child_to_device: {
-        Args: { _device: string; _child: string; _is_active?: boolean }
+        Args: { _child: string; _device: string; _is_active?: boolean }
         Returns: {
           child_id: string
           created_at: string | null
@@ -1793,7 +1793,7 @@ export type Database = {
         }
       }
       rpc_issue_command: {
-        Args: { _device: string; _cmd: string; _payload?: Json }
+        Args: { _cmd: string; _device: string; _payload?: Json }
         Returns: {
           cmd: string
           created_at: string
@@ -1805,7 +1805,7 @@ export type Database = {
         }
       }
       rpc_set_active_child: {
-        Args: { _device: string; _child: string }
+        Args: { _child: string; _device: string }
         Returns: boolean
       }
     }

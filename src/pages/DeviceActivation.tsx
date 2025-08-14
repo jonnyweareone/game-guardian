@@ -24,6 +24,7 @@ const DeviceActivation = () => {
   const [error, setError] = useState('');
   const [isActivated, setIsActivated] = useState(false);
   const [deviceName, setDeviceName] = useState('');
+  const [deviceCode, setDeviceCode] = useState('');
   
   const { signIn, signUp, user, session } = useAuth();
   const { toast } = useToast();
@@ -58,9 +59,6 @@ const DeviceActivation = () => {
 
       console.log('DeviceActivation: Session validated, access_token exists:', !!sessionData.session.access_token);
 
-      // The supabase.functions.invoke() method automatically includes:
-      // - apikey header with the anon key from client configuration
-      // - authorization header with the user's access token
       const { data, error } = await supabase.functions.invoke('bind-device', {
         body: {
           device_id: deviceId,
@@ -73,6 +71,11 @@ const DeviceActivation = () => {
       if (error) {
         console.error('DeviceActivation: bind-device error details:', error);
         throw new Error(error.message || 'Failed to bind device');
+      }
+
+      // Store device code for redirect
+      if (data?.device?.device_code) {
+        setDeviceCode(data.device.device_code);
       }
 
       // Handoff JWT to localhost helper if running
@@ -91,13 +94,15 @@ const DeviceActivation = () => {
       setIsActivated(true);
       toast({
         title: "Device activated successfully!",
-        description: "Your Guardian AI device is now protecting your family."
+        description: "Starting activation wizard..."
       });
 
-      // Redirect to dashboard after 3 seconds
+      // Redirect to dashboard with activation parameters
       setTimeout(() => {
-        navigate('/dashboard');
-      }, 3000);
+        navigate(
+          `/dashboard?activate=1&device_id=${encodeURIComponent(data.device_id || deviceId)}&device_code=${encodeURIComponent(data?.device?.device_code || deviceCode || '')}`
+        );
+      }, 2000);
 
     } catch (error: any) {
       console.error('DeviceActivation: Device pairing error:', error);
@@ -175,7 +180,7 @@ const DeviceActivation = () => {
               </div>
               <CardTitle className="text-2xl text-safe">Guardian Activated!</CardTitle>
               <CardDescription>
-                Your Guardian AI device is now protecting your family's gaming experience.
+                Starting activation wizard...
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -185,12 +190,9 @@ const DeviceActivation = () => {
                     <strong>Device ID:</strong> {deviceId}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Your device is online and monitoring
+                    Redirecting to setup wizard...
                   </p>
                 </div>
-                <Button onClick={() => navigate('/dashboard')} className="w-full">
-                  Go to Dashboard
-                </Button>
               </div>
             </CardContent>
           </Card>
