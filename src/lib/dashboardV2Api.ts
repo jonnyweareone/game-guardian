@@ -41,6 +41,33 @@ export async function addNotificationChannel(kind: 'SMS' | 'EMAIL', destination:
   return data as NotificationChannel;
 }
 
+export async function deleteNotificationChannel(channelId: string) {
+  const { error } = await supabase
+    .from('notification_channels')
+    .delete()
+    .eq('id', channelId);
+
+  if (error) throw error;
+}
+
+export async function sendVerificationCode(channelId: string) {
+  const { data, error } = await supabase.functions.invoke('send-verification-code', {
+    body: { channelId }
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function verifyNotificationChannel(channelId: string, code: string) {
+  const { data, error } = await supabase.functions.invoke('verify-notification-channel', {
+    body: { channelId, code }
+  });
+
+  if (error) throw error;
+  return data;
+}
+
 // Notification Preferences - Now using real database operations
 export interface NotificationPreference {
   id: string;

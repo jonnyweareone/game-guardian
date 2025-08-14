@@ -4,11 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Bell, Shield, MessageSquare, AlertTriangle, Settings } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Bell, Shield, MessageSquare, AlertTriangle, Settings, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import SeveritySelect from './SeveritySelect';
 import DigestSelect from './DigestSelect';
-import { getNotificationPreferences, upsertNotificationPreference, NotificationPreference } from '@/lib/dashboardV2Api';
+import { 
+  getNotificationPreferences, 
+  upsertNotificationPreference, 
+  NotificationPreference,
+  getNotificationChannels,
+  NotificationChannel
+} from '@/lib/dashboardV2Api';
 
 interface Child {
   id: string;
@@ -31,22 +40,28 @@ const alertTypes = [
 
 export default function NotificationsPanel({ scope, child, className }: NotificationsPanelProps) {
   const [preferences, setPreferences] = useState<NotificationPreference[]>([]);
+  const [channels, setChannels] = useState<NotificationChannel[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
-    loadPreferences();
+    loadData();
   }, [scope, child?.id]);
 
-  const loadPreferences = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const prefs = await getNotificationPreferences(scope, child?.id);
+      const [prefs, channelData] = await Promise.all([
+        getNotificationPreferences(scope, child?.id),
+        getNotificationChannels()
+      ]);
       setPreferences(prefs);
+      setChannels(channelData);
       console.log('Loaded preferences:', prefs);
+      console.log('Loaded channels:', channelData);
     } catch (error) {
-      console.error('Failed to load notification preferences:', error);
-      toast.error('Failed to load notification preferences');
+      console.error('Failed to load notification data:', error);
+      toast.error('Failed to load notification data');
     } finally {
       setLoading(false);
     }
@@ -54,6 +69,10 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
 
   const getPreference = (alertType: 'BULLYING' | 'GROOMING' | 'PROFANITY' | 'LOGIN' | 'SYSTEM'): NotificationPreference | undefined => {
     return preferences.find(p => p.alert_type === alertType && p.scope === scope && p.child_id === child?.id);
+  };
+
+  const getVerifiedChannels = () => {
+    return channels.filter(c => c.is_verified);
   };
 
   const updatePreference = async (alertType: 'BULLYING' | 'GROOMING' | 'PROFANITY' | 'LOGIN' | 'SYSTEM', updates: Partial<NotificationPreference>) => {
@@ -73,7 +92,7 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
 
       console.log('Updating preference:', preference);
       await upsertNotificationPreference(preference);
-      await loadPreferences();
+      await loadData();
       
       toast.success(`${alertType.toLowerCase()} notification updated`);
     } catch (error) {
@@ -83,6 +102,9 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
       setUpdating(null);
     }
   };
+
+  const verifiedChannels = getVerifiedChannels();
+  const hasNoVerifiedChannels = verifiedChannels.length === 0;
 
   if (loading) {
     return (
@@ -121,6 +143,21 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {hasNoVerifiedChannels && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>No verified notification channels. Add email or SMS channels to receive alerts.</span>
+              <Button size="sm" variant="outline" asChild>
+                <a href="/account">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Manage Channels
+                </a>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {alertTypes.map((alertType) => {
           const preference = getPreference(alertType.type);
           const isEnabled = preference !== undefined && preference.min_severity < 10;
@@ -142,12 +179,12 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
                     </div>
                     <Switch
                       checked={isEnabled}
-                      disabled={isUpdating}
+                      disabled={isUpdating || hasNoVerifiedChannels}
                       onCheckedChange={(enabled) => {
                         if (enabled) {
                           updatePreference(alertType.type, {
                             min_severity: 2,
-                            channel_ids: [],
+                            channel_ids: verifiedChannels.map(c => c.id),
                             digest: 'NONE'
                           });
                         } else {
@@ -162,7 +199,7 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
                   </div>
                   
                   {isEnabled && preference && (
-                    <div className="grid grid-cols-2 gap-3 ml-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 ml-0">
                       <div className="space-y-1">
                         <Label className="text-xs">Minimum Severity</Label>
                         <SeveritySelect
@@ -181,6 +218,27 @@ export default function NotificationsPanel({ scope, child, className }: Notifica
                             updatePreference(alertType.type, { digest });
                           }}
                         />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs">Channels</Label>
+                        <Select
+                          value={preference.channel_ids.length === verifiedChannels.length ? 'all' : 'custom'}
+                          onValueChange={(value) => {
+                            const channelIds = value === 'all' 
+                              ? verifiedChannels.map(c => c.id)
+                              : [];
+                            updatePreference(alertType.type, { channel_ids: channelIds });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Channels ({verifiedChannels.length})</SelectItem>
+                            <SelectItem value="custom">Custom Selection</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   )}

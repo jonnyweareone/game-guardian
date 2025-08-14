@@ -1302,6 +1302,44 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_channel_verifications: {
+        Row: {
+          attempts: number
+          channel_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          max_attempts: number
+          verification_code: string
+        }
+        Insert: {
+          attempts?: number
+          channel_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          max_attempts?: number
+          verification_code: string
+        }
+        Update: {
+          attempts?: number
+          channel_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          max_attempts?: number
+          verification_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_channel_verifications_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "notification_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_channels: {
         Row: {
           created_at: string
@@ -1901,6 +1939,10 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_expired_verification_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
