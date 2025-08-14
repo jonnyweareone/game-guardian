@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Notification Channels - Temporary stubs until database migration is applied
+// Notification Channels - Now using real database operations
 export interface NotificationChannel {
   id: string;
   user_id: string;
@@ -13,18 +13,35 @@ export interface NotificationChannel {
 }
 
 export async function getNotificationChannels(): Promise<NotificationChannel[]> {
-  // TODO: Implement after database migration is applied
-  console.warn('getNotificationChannels is stubbed - database migration needed');
-  return [];
+  const { data, error } = await supabase
+    .from('notification_channels')
+    .select('*')
+    .order('created_at', { ascending: true });
+  
+  if (error) throw error;
+  return data || [];
 }
 
 export async function addNotificationChannel(kind: 'SMS' | 'EMAIL', destination: string) {
-  // TODO: Implement after database migration is applied
-  console.warn('addNotificationChannel is stubbed - database migration needed');
-  return { id: 'stub', user_id: 'stub', kind, destination, is_verified: false, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('notification_channels')
+    .insert({
+      user_id: user.id,
+      kind,
+      destination,
+      is_verified: false
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
-// Notification Preferences - Temporary stubs until database migration is applied
+// Notification Preferences - Now using real database operations
 export interface NotificationPreference {
   id: string;
   user_id: string;
@@ -40,30 +57,48 @@ export interface NotificationPreference {
 }
 
 export async function getNotificationPreferences(scope?: 'GLOBAL' | 'CHILD', childId?: string): Promise<NotificationPreference[]> {
-  // TODO: Implement after database migration is applied
-  console.warn('getNotificationPreferences is stubbed - database migration needed');
-  return [];
+  let query = supabase
+    .from('notification_preferences')
+    .select('*');
+
+  if (scope) {
+    query = query.eq('scope', scope);
+  }
+
+  if (childId) {
+    query = query.eq('child_id', childId);
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: true });
+  
+  if (error) throw error;
+  return data || [];
 }
 
 export async function upsertNotificationPreference(preference: Partial<NotificationPreference>) {
-  // TODO: Implement after database migration is applied
-  console.warn('upsertNotificationPreference is stubbed - database migration needed');
-  return {
-    id: 'stub',
-    user_id: 'stub',
-    scope: preference.scope!,
-    child_id: preference.child_id,
-    alert_type: preference.alert_type!,
-    min_severity: preference.min_severity!,
-    channel_ids: preference.channel_ids || [],
-    digest: preference.digest!,
-    quiet_hours: preference.quiet_hours,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('notification_preferences')
+    .upsert({
+      user_id: user.id,
+      scope: preference.scope!,
+      child_id: preference.child_id,
+      alert_type: preference.alert_type!,
+      min_severity: preference.min_severity!,
+      channel_ids: preference.channel_ids || [],
+      digest: preference.digest!,
+      quiet_hours: preference.quiet_hours,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
-// Policy Effective States - Temporary stubs until database migration is applied
+// Policy Effective States - Now using real database operations
 export interface PolicyEffective {
   id: string;
   user_id: string;
@@ -75,23 +110,40 @@ export interface PolicyEffective {
 }
 
 export async function getPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', subjectId?: string): Promise<PolicyEffective | null> {
-  // TODO: Implement after database migration is applied
-  console.warn('getPolicyEffective is stubbed - database migration needed');
-  return null;
+  let query = supabase
+    .from('policy_effective')
+    .select('*')
+    .eq('scope', scope);
+
+  if (subjectId) {
+    query = query.eq('subject_id', subjectId);
+  } else {
+    query = query.is('subject_id', null);
+  }
+
+  const { data, error } = await query.single();
+  
+  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
+  return data;
 }
 
 export async function setPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', policyData: any, subjectId?: string) {
-  // TODO: Implement after database migration is applied
-  console.warn('setPolicyEffective is stubbed - database migration needed');
-  return {
-    id: 'stub',
-    user_id: 'stub',
-    scope,
-    subject_id: subjectId,
-    policy_data: policyData,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('policy_effective')
+    .upsert({
+      user_id: user.id,
+      scope,
+      subject_id: subjectId,
+      policy_data: policyData,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 // Enhanced child data with avatars - using existing children table

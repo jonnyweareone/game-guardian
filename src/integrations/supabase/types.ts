@@ -1302,6 +1302,93 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_channels: {
+        Row: {
+          created_at: string
+          destination: string
+          id: string
+          is_verified: boolean
+          kind: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination: string
+          id?: string
+          is_verified?: boolean
+          kind: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          id?: string
+          is_verified?: boolean
+          kind?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          alert_type: string
+          channel_ids: string[]
+          child_id: string | null
+          created_at: string
+          digest: string
+          id: string
+          min_severity: number
+          quiet_hours: Json | null
+          scope: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          channel_ids?: string[]
+          child_id?: string | null
+          created_at?: string
+          digest?: string
+          id?: string
+          min_severity?: number
+          quiet_hours?: Json | null
+          scope: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          channel_ids?: string[]
+          child_id?: string | null
+          created_at?: string
+          digest?: string
+          id?: string
+          min_severity?: number
+          quiet_hours?: Json | null
+          scope?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       parent_notifications: {
         Row: {
           action_required: boolean | null
@@ -1350,6 +1437,36 @@ export type Database = {
           related_alert_id?: string | null
           related_conversation_id?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      policy_effective: {
+        Row: {
+          created_at: string
+          id: string
+          policy_data: Json
+          scope: string
+          subject_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          policy_data?: Json
+          scope: string
+          subject_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          policy_data?: Json
+          scope?: string
+          subject_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
