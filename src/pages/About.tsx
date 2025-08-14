@@ -16,7 +16,7 @@ const About = () => {
     },
     {
       icon: Users,
-      title: "Privacy Focused",
+      title: "Privacy Focused", 
       description: "We believe in strong privacy protections and giving families control over their data"
     },
     {
@@ -33,27 +33,9 @@ const About = () => {
 
   const team = [
     {
-      name: "Dr. Sarah Mitchell",
-      role: "CEO & Co-Founder",
-      background: "Former child psychologist with 15 years of experience in digital safety research",
-      image: "/api/placeholder/150/150"
-    },
-    {
-      name: "James Rodriguez",
-      role: "CTO & Co-Founder", 
-      background: "AI researcher with expertise in natural language processing and real-time audio analysis",
-      image: "/api/placeholder/150/150"
-    },
-    {
-      name: "Dr. Emily Chen",
-      role: "Head of AI Ethics",
-      background: "PhD in Computer Ethics, specializing in responsible AI development for child protection",
-      image: "/api/placeholder/150/150"
-    },
-    {
-      name: "Michael Thompson",
-      role: "Head of Product",
-      background: "Former gaming industry executive with deep understanding of online gaming ecosystems",
+      name: "Jonny Robinson",
+      role: "Founder & CEO",
+      background: "Father of 4 children, passionate about protecting families in the digital age",
       image: "/api/placeholder/150/150"
     }
   ];
@@ -91,11 +73,7 @@ const About = () => {
     "founder": [
       {
         "@type": "Person",
-        "name": "Dr. Sarah Mitchell"
-      },
-      {
-        "@type": "Person", 
-        "name": "James Rodriguez"
+        "name": "Jonny Robinson"
       }
     ]
   };
@@ -145,12 +123,12 @@ const About = () => {
                 <h2 className="text-3xl font-bold mb-6">Our Story</h2>
                 <div className="space-y-4 text-muted-foreground">
                   <p>
-                    Game Guardian AI was founded in 2023 by a team of parents, researchers, and technologists who recognized 
+                    Game Guardian AI was founded in 2023 by Jonny Robinson, a father of 4 who recognized 
                     that existing online safety tools weren't designed for the unique challenges of gaming environments.
                   </p>
                   <p>
-                    After witnessing firsthand how children were being exposed to cyberbullying, grooming attempts, and 
-                    inappropriate content during gaming sessions, our founders set out to create a solution that could 
+                    As a parent witnessing firsthand how children were being exposed to cyberbullying, grooming attempts, and 
+                    inappropriate content during gaming sessions, Jonny set out to create a solution that could 
                     protect kids without destroying the social and educational benefits of online gaming.
                   </p>
                   <p>
@@ -210,22 +188,20 @@ const About = () => {
 
           {/* Team */}
           <section className="mb-20">
-            <h2 className="text-3xl font-bold text-center mb-12">Leadership Team</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {team.map((member, index) => (
-                <Card key={index} className="text-center hover:border-primary/50 transition-colors">
-                  <CardHeader>
-                    <div className="mx-auto w-24 h-24 rounded-full bg-muted mb-4 flex items-center justify-center">
-                      <Users className="h-10 w-10 text-muted-foreground" />
-                    </div>
-                    <CardTitle className="text-lg">{member.name}</CardTitle>
-                    <Badge variant="outline">{member.role}</Badge>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{member.background}</p>
-                  </CardContent>
-                </Card>
-              ))}
+            <h2 className="text-3xl font-bold text-center mb-12">Founder</h2>
+            <div className="flex justify-center">
+              <Card className="text-center hover:border-primary/50 transition-colors max-w-md">
+                <CardHeader>
+                  <div className="mx-auto w-24 h-24 rounded-full bg-muted mb-4 flex items-center justify-center">
+                    <Users className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                  <CardTitle className="text-lg">{team[0].name}</CardTitle>
+                  <Badge variant="outline">{team[0].role}</Badge>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{team[0].background}</p>
+                </CardContent>
+              </Card>
             </div>
           </section>
 
