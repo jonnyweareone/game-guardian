@@ -1,124 +1,172 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
+import { Menu, Shield, User, LogOut, Settings, Home, BookOpen, Package, Zap } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const Navigation = () => {
-  const { user, signOut } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const [isDemoMode, setIsDemoMode] = useState(false);
-  const { toast } = useToast()
-
-  useEffect(() => {
-    // Check for demo mode on component mount
-    const demoMode = localStorage.getItem('demo-mode') === 'true';
-    setIsDemoMode(demoMode);
-  }, []);
+  const { user } = useAuth();
 
   const handleSignOut = async () => {
-    await signOut();
-    // Redirect to auth page after sign out
-    navigate('/auth');
+    await supabase.auth.signOut();
+    navigate('/');
   };
 
-  const handleToggleDemoMode = () => {
-    if (isDemoMode) {
-      localStorage.removeItem('demo-mode');
-      setIsDemoMode(false);
-      toast({
-        title: "Demo mode disabled",
-        description: "You're back to the real world!",
-      })
-    } else {
-      localStorage.setItem('demo-mode', 'true');
-      setIsDemoMode(true);
-      toast({
-        title: "Demo mode enabled",
-        description: "Welcome to the demo! All changes are temporary.",
-      })
-    }
-  };
+  const isActive = (path: string) => location.pathname === path;
+
+  const publicNavItems = [
+    { href: '/', label: 'Home', icon: Home },
+    { href: '/products', label: 'Products', icon: Package },
+    { href: '/how-to-guide', label: 'How-to Guide', icon: BookOpen },
+    { href: '/blog', label: 'Blog', icon: BookOpen },
+    { href: '/about', label: 'About', icon: Settings },
+  ];
+
+  const protectedNavItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: Settings },
+    { href: '/dashboard-v2', label: 'Dashboard V2', icon: Zap, badge: 'New' },
+  ];
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
+    <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center space-x-8">
-            <Link to="/" className="flex items-center space-x-2">
-              <img 
-                src="/lovable-uploads/guardian-logo-transparent.png" 
-                alt="Guardian AI" 
-                className="h-8 w-auto"
-              />
-              <span className="font-bold text-xl text-gray-900">Guardian AI</span>
-            </Link>
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3">
+            <Shield className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Game Guardian AI™</h1>
+              <p className="text-xs text-muted-foreground">Intelligent Gaming Protection</p>
+            </div>
+          </Link>
 
-            {user && (
-              <div className="hidden md:flex items-center space-x-6">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-6">
+            {publicNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
                 <Link
-                  to="/dashboard"
-                  className="text-gray-700 hover:text-primary transition-colors"
+                  key={item.href}
+                  to={item.href}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive(item.href)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
                 >
-                  Dashboard
+                  <Icon className="h-4 w-4" />
+                  {item.label}
                 </Link>
+              );
+            })}
+
+            {user && protectedNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
                 <Link
-                  to="/dashboard-v2"
-                  className="text-gray-700 hover:text-primary transition-colors flex items-center gap-1"
+                  key={item.href}
+                  to={item.href}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive(item.href)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
                 >
-                  Dashboard V2
-                  <Badge variant="secondary" className="text-xs">New</Badge>
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                  {item.badge && (
+                    <Badge variant="secondary" className="text-xs">
+                      {item.badge}
+                    </Badge>
+                  )}
                 </Link>
-                {isDemoMode && (
-                  <Badge variant="destructive">Demo Mode</Badge>
-                )}
-              </div>
-            )}
+              );
+            })}
           </div>
 
-          <div className="flex items-center ml-4 md:ml-6">
+          {/* Auth Buttons */}
+          <div className="flex items-center gap-4">
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name} />
-                      <AvatarFallback>{user.user_metadata?.full_name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel>
-                    {user.user_metadata?.full_name}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleToggleDemoMode}>
-                    {isDemoMode ? 'Disable Demo Mode' : 'Enable Demo Mode'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm">
+                  <User className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             ) : (
-              location.pathname !== '/auth' && (
-                <Link to="/auth">
-                  <Button>Sign In</Button>
-                </Link>
-              )
+              <>
+                <Button variant="ghost" onClick={() => navigate('/auth')}>
+                  Sign In
+                </Button>
+                <Button onClick={() => navigate('/auth')}>
+                  Get Started
+                </Button>
+              </>
             )}
+
+            {/* Mobile Menu */}
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <div className="flex flex-col gap-4 mt-8">
+                  {publicNavItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                          isActive(item.href)
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+
+                  {user && protectedNavItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                          isActive(item.href)
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                        {item.badge && (
+                          <Badge variant="secondary" className="text-xs ml-auto">
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>

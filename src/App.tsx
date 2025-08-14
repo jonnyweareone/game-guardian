@@ -4,11 +4,20 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth, AuthProvider } from '@/hooks/useAuth';
 import { useEffect } from 'react';
-import Index from '@/pages/Index';
+import HomePage from '@/pages/HomePage';
 import Auth from '@/pages/Auth';
 import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
 import DashboardV2 from '@/pages/DashboardV2';
+import About from '@/pages/About';
+import Blog from '@/pages/Blog';
+import HowToGuide from '@/pages/HowToGuide';
+import Products from '@/pages/Products';
+import ProductDevice from '@/pages/ProductDevice';
+import ProductOSFull from '@/pages/ProductOSFull';
+import ProductReceiver from '@/pages/ProductReceiver';
+import CreatorMode from '@/pages/CreatorMode';
+import PressReleases from '@/pages/PressReleases';
 import Navigation from '@/components/Navigation';
 
 const queryClient = new QueryClient();
@@ -43,9 +52,18 @@ function App() {
           <div className="min-h-screen bg-background">
             <Navigation />
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/how-to-guide" element={<HowToGuide />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/products/device" element={<ProductDevice />} />
+              <Route path="/products/os-full" element={<ProductOSFull />} />
+              <Route path="/products/receiver" element={<ProductReceiver />} />
+              <Route path="/creator-mode" element={<CreatorMode />} />
+              <Route path="/press-releases" element={<PressReleases />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Dashboard />
