@@ -79,9 +79,14 @@ const Dashboard = () => {
 
   // Check for activation parameters on component mount
   useEffect(() => {
+    console.log('Dashboard: Checking URL parameters...');
+    console.log('Current search params:', Object.fromEntries(searchParams.entries()));
+    
     const shouldActivate = searchParams.get('activate') === '1';
     const deviceId = searchParams.get('device_id');
     const deviceCode = searchParams.get('device_code');
+    
+    console.log('Activation check:', { shouldActivate, deviceId, deviceCode });
     
     if (shouldActivate && deviceId && deviceCode) {
       console.log('Dashboard: Opening activation wizard for device:', deviceId, deviceCode);
@@ -95,10 +100,22 @@ const Dashboard = () => {
         newParams.delete('activate');
         newParams.delete('device_id');
         newParams.delete('device_code');
+        console.log('Clearing URL parameters...');
         return newParams;
       });
+    } else {
+      console.log('Dashboard: Activation conditions not met');
     }
   }, [searchParams, setSearchParams]);
+
+  // Debug effect to log wizard state changes
+  useEffect(() => {
+    console.log('Activation wizard state changed:', {
+      showActivationWizard,
+      activationDeviceId,
+      activationDeviceCode
+    });
+  }, [showActivationWizard, activationDeviceId, activationDeviceCode]);
 
   // Add error boundary-like logging
   useEffect(() => {
@@ -320,6 +337,7 @@ const Dashboard = () => {
   };
 
   const handleActivationComplete = () => {
+    console.log('Activation wizard completed');
     setShowActivationWizard(false);
     setActivationDeviceId('');
     setActivationDeviceCode('');
@@ -742,6 +760,16 @@ const Dashboard = () => {
         isOpen={showActivationWizard}
         onClose={handleActivationComplete}
       />
+      
+      {/* Debug info - remove this after testing */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 right-4 bg-black text-white p-2 rounded text-xs">
+          <div>Wizard Open: {showActivationWizard.toString()}</div>
+          <div>Device ID: {activationDeviceId}</div>
+          <div>Device Code: {activationDeviceCode}</div>
+          <div>URL Params: {JSON.stringify(Object.fromEntries(searchParams.entries()))}</div>
+        </div>
+      )}
     </div>
   );
 };
