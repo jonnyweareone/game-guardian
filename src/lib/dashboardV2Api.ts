@@ -13,7 +13,10 @@ export interface NotificationChannel {
 }
 
 export async function getNotificationChannels(): Promise<NotificationChannel[]> {
-  const { data, error } = await supabase.rpc('rpc_get_notification_channels');
+  const { data, error } = await supabase
+    .from('notification_channels')
+    .select('*')
+    .order('created_at', { ascending: false });
   
   if (error) {
     console.error('Failed to fetch notification channels:', error);
@@ -24,10 +27,15 @@ export async function getNotificationChannels(): Promise<NotificationChannel[]> 
 }
 
 export async function addNotificationChannel(kind: 'SMS' | 'EMAIL', destination: string) {
-  const { data, error } = await supabase.rpc('rpc_add_notification_channel', {
-    _kind: kind,
-    _destination: destination
-  });
+  const { data, error } = await supabase
+    .from('notification_channels')
+    .insert({
+      kind,
+      destination,
+      user_id: (await supabase.auth.getUser()).data.user?.id
+    })
+    .select()
+    .single();
   
   if (error) {
     console.error('Failed to add notification channel:', error);
@@ -37,7 +45,7 @@ export async function addNotificationChannel(kind: 'SMS' | 'EMAIL', destination:
   return data;
 }
 
-// Notification Preferences - Real implementation using RPC functions
+// Notification Preferences - Real implementation using direct table access
 export interface NotificationPreference {
   id: string;
   user_id: string;
@@ -53,10 +61,19 @@ export interface NotificationPreference {
 }
 
 export async function getNotificationPreferences(scope?: 'GLOBAL' | 'CHILD', childId?: string): Promise<NotificationPreference[]> {
-  const { data, error } = await supabase.rpc('rpc_get_notification_preferences', {
-    _scope: scope || null,
-    _child_id: childId || null
-  });
+  let query = supabase
+    .from('notification_preferences')
+    .select('*');
+  
+  if (scope) {
+    query = query.eq('scope', scope);
+  }
+  
+  if (childId) {
+    query = query.eq('child_id', childId);
+  }
+  
+  const { data, error } = await query.order('created_at', { ascending: false });
   
   if (error) {
     console.error('Failed to fetch notification preferences:', error);
@@ -67,15 +84,26 @@ export async function getNotificationPreferences(scope?: 'GLOBAL' | 'CHILD', chi
 }
 
 export async function upsertNotificationPreference(preference: Partial<NotificationPreference>) {
-  const { data, error } = await supabase.rpc('rpc_upsert_notification_preference', {
-    _scope: preference.scope!,
-    _child_id: preference.child_id || null,
-    _alert_type: preference.alert_type!,
-    _min_severity: preference.min_severity!,
-    _channel_ids: preference.channel_ids || [],
-    _digest: preference.digest!,
-    _quiet_hours: preference.quiet_hours || null
-  });
+  const user = await supabase.auth.getUser();
+  if (!user.data.user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('notification_preferences')
+    .upsert({
+      user_id: user.data.user.id,
+      scope: preference.scope!,
+      child_id: preference.child_id || null,
+      alert_type: preference.alert_type!,
+      min_severity: preference.min_severity!,
+      channel_ids: preference.channel_ids || [],
+      digest: preference.digest!,
+      quiet_hours: preference.quiet_hours || null
+    }, {
+      onConflict: 'user_id,scope,child_id,alert_type',
+      ignoreDuplicates: false
+    })
+    .select()
+    .single();
   
   if (error) {
     console.error('Failed to upsert notification preference:', error);
@@ -85,7 +113,7 @@ export async function upsertNotificationPreference(preference: Partial<Notificat
   return data;
 }
 
-// Policy Effective States - Real implementation using RPC functions
+// Policy Effective States - Real implementation using direct table access
 export interface PolicyEffective {
   id: string;
   user_id: string;
@@ -97,12 +125,20 @@ export interface PolicyEffective {
 }
 
 export async function getPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', subjectId?: string): Promise<PolicyEffective | null> {
-  const { data, error } = await supabase.rpc('rpc_get_policy_effective', {
-    _scope: scope,
-    _subject_id: subjectId || null
-  });
+  let query = supabase
+    .from('policy_effective')
+    .select('*')
+    .eq('scope', scope);
   
-  if (error) {
+  if (subjectId) {
+    query = query.eq('subject_id', subjectId);
+  } else {
+    query = query.is('subject_id', null);
+  }
+  
+  const { data, error } = await query.single();
+  
+  if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
     console.error('Failed to fetch policy effective:', error);
     throw error;
   }
@@ -111,11 +147,22 @@ export async function getPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', s
 }
 
 export async function setPolicyEffective(scope: 'GLOBAL' | 'CHILD' | 'DEVICE', policyData: any, subjectId?: string) {
-  const { data, error } = await supabase.rpc('rpc_set_policy_effective', {
-    _scope: scope,
-    _policy_data: policyData,
-    _subject_id: subjectId || null
-  });
+  const user = await supabase.auth.getUser();
+  if (!user.data.user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('policy_effective')
+    .upsert({
+      user_id: user.data.user.id,
+      scope,
+      subject_id: subjectId || null,
+      policy_data: policyData
+    }, {
+      onConflict: 'user_id,scope,subject_id',
+      ignoreDuplicates: false
+    })
+    .select()
+    .single();
   
   if (error) {
     console.error('Failed to set policy effective:', error);
