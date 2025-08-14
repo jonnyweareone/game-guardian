@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Filter, Upload, Settings, Power, AlertTriangle } from 'lucide-react';
@@ -21,17 +22,47 @@ export default function AdminDevices() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['admin-devices', search, statusFilter, page],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('admin-list-devices', {
-        body: {
-          q: search,
-          status: statusFilter === 'all' ? '' : statusFilter,
-          page,
-          page_size: pageSize,
-        }
+      // Get the current session to access the JWT token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No authentication token available');
+      }
+
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: page.toString(),
+        page_size: pageSize.toString(),
       });
 
-      if (error) throw error;
-      return data;
+      if (search.trim()) {
+        params.append('q', search.trim());
+      }
+
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+
+      // Make direct fetch request to the Edge Function
+      const response = await fetch(
+        `https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/admin-list-devices?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Admin devices fetch error:', response.status, errorText);
+        throw new Error(`Failed to fetch devices: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Admin devices response:', result);
+      return result;
     },
   });
 
