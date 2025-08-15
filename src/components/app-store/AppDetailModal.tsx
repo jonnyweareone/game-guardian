@@ -70,7 +70,7 @@ export default function AppDetailModal({
         {requiresApproval ? (
           <>
             <Lock className="w-4 h-4 mr-2" />
-            Request Install
+            Install
           </>
         ) : (
           <>
@@ -139,14 +139,17 @@ export default function AppDetailModal({
             <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center shrink-0">
               {app.icon_url ? (
                 <img 
-                  src={app.icon_url.startsWith('/') ? app.icon_url : `/${app.icon_url}`}
+                  src={app.icon_url}
                   alt={app.name}
                   className="w-full h-full rounded-lg object-cover"
                   onError={(e) => {
                     // Fallback to placeholder if image fails to load
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
-                    target.parentElement!.innerHTML = '<div class="w-10 h-10 bg-primary/20 rounded flex items-center justify-center text-primary font-semibold">' + app.name.charAt(0) + '</div>';
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'w-10 h-10 bg-primary/20 rounded flex items-center justify-center text-primary font-semibold';
+                    placeholder.textContent = app.name.charAt(0);
+                    target.parentElement!.appendChild(placeholder);
                   }}
                 />
               ) : (

@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,13 +56,13 @@ export default function AppGrid({
     }
     
     if (!isAuthenticated) {
-      return { type: "auth-required", label: "Request Install", icon: Lock };
+      return { type: "auth-required", label: "Install", icon: Lock };
     }
     
     // For demo purposes, assume some apps require approval
     const requiresApproval = app.pegi_rating && app.pegi_rating >= 12;
     if (requiresApproval) {
-      return { type: "approval-required", label: "Request Install", icon: Lock };
+      return { type: "approval-required", label: "Install", icon: Lock };
     }
     
     return { type: "installable", label: "Install", icon: Download };
@@ -122,14 +123,17 @@ export default function AppGrid({
                   <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
                     {app.icon_url ? (
                       <img 
-                        src={app.icon_url.startsWith('/') ? app.icon_url : `/${app.icon_url}`} 
+                        src={app.icon_url}
                         alt={app.name}
                         className="w-full h-full rounded-lg object-cover"
                         onError={(e) => {
                           // Fallback to placeholder if image fails to load
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
-                          target.parentElement!.innerHTML = '<div class="w-8 h-8 bg-primary/20 rounded flex items-center justify-center text-primary font-semibold text-sm">' + app.name.charAt(0) + '</div>';
+                          const placeholder = document.createElement('div');
+                          placeholder.className = 'w-8 h-8 bg-primary/20 rounded flex items-center justify-center text-primary font-semibold text-sm';
+                          placeholder.textContent = app.name.charAt(0);
+                          target.parentElement!.appendChild(placeholder);
                         }}
                       />
                     ) : (
