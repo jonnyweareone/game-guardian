@@ -36,7 +36,7 @@ const App = () => (
               
               {/* Home route - now properly mapped to / */}
               <Route path="/" element={
-                {navItems.find(item => item.to === "/")?.page}
+                navItems.find(item => item.to === "/")?.page
               } />
               
               {/* Index redirect */}
@@ -44,7 +44,7 @@ const App = () => (
               
               {/* App Store - accessible to both authenticated and public users */}
               <Route path="/app-store" element={
-                {navItems.find(item => item.to === "/app-store")?.page}
+                navItems.find(item => item.to === "/app-store")?.page
               } />
               
               {/* Protected routes */}
