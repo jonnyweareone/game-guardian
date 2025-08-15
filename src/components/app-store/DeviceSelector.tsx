@@ -20,10 +20,11 @@ export default function DeviceSelector({ deviceContext, onDeviceChange }: Device
             Desktop Apps
           </div>
         </SelectItem>
-        <SelectItem value="mobile">
-          <div className="flex items-center gap-2">
+        <SelectItem value="mobile" disabled>
+          <div className="flex items-center gap-2 opacity-50">
             <Smartphone className="w-4 h-4" />
             Mobile Apps
+            <span className="text-xs text-muted-foreground ml-1">(Coming Soon)</span>
           </div>
         </SelectItem>
       </SelectContent>

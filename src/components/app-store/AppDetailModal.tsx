@@ -1,9 +1,9 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Check, Lock, Download, Star, Shield, Gamepad2, Palette } from "lucide-react";
+import { getAgeGroup } from "@/lib/ageHelpers";
 
 interface App {
   id: string;
@@ -42,6 +42,8 @@ export default function AppDetailModal({
   deviceContext,
   onAction
 }: AppDetailModalProps) {
+  const ageGroup = getAgeGroup(app.age_min, app.age_max);
+
   const getActionButton = () => {
     if (isInstalled) {
       return (
@@ -137,19 +139,27 @@ export default function AppDetailModal({
             <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center shrink-0">
               {app.icon_url ? (
                 <img 
-                  src={app.icon_url} 
+                  src={app.icon_url.startsWith('/') ? app.icon_url : `/${app.icon_url}`}
                   alt={app.name}
                   className="w-full h-full rounded-lg object-cover"
+                  onError={(e) => {
+                    // Fallback to placeholder if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.parentElement!.innerHTML = '<div class="w-10 h-10 bg-primary/20 rounded flex items-center justify-center text-primary font-semibold">' + app.name.charAt(0) + '</div>';
+                  }}
                 />
               ) : (
-                <div className="w-10 h-10 bg-primary/20 rounded" />
+                <div className="w-10 h-10 bg-primary/20 rounded flex items-center justify-center text-primary font-semibold">
+                  {app.name.charAt(0)}
+                </div>
               )}
             </div>
             
             <div className="flex-1">
               <div className="flex flex-wrap gap-2 mb-3">
                 <Badge variant="secondary">
-                  Ages {app.age_min}-{app.age_max}
+                  Ages {ageGroup}
                 </Badge>
                 {app.pegi_rating && (
                   <Badge variant="outline">

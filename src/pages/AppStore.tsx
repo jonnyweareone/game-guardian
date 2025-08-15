@@ -16,15 +16,17 @@ export default function AppStore() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [deviceContext, setDeviceContext] = useState(searchParams.get("device") || "desktop");
+  const [deviceContext, setDeviceContext] = useState("desktop"); // Default to desktop
 
-  // Detect device context from user agent if not specified
+  // Set device context from URL params or default to desktop
   useEffect(() => {
-    if (!searchParams.get("device")) {
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const detectedDevice = isMobile ? "mobile" : "desktop";
-      setDeviceContext(detectedDevice);
-      setSearchParams({ device: detectedDevice });
+    const deviceParam = searchParams.get("device");
+    if (deviceParam && (deviceParam === "desktop" || deviceParam === "mobile")) {
+      setDeviceContext(deviceParam);
+    } else {
+      // Default to desktop and update URL
+      setDeviceContext("desktop");
+      setSearchParams({ device: "desktop" });
     }
   }, [searchParams, setSearchParams]);
 
@@ -72,6 +74,11 @@ export default function AppStore() {
 
   const categories = ["All", "Games", "Education", "Creativity", "Utilities", "Communication", "Entertainment"];
 
+  const handleDeviceChange = (device: string) => {
+    setDeviceContext(device);
+    setSearchParams({ device });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -98,7 +105,7 @@ export default function AppStore() {
               </div>
               <DeviceSelector 
                 deviceContext={deviceContext}
-                onDeviceChange={setDeviceContext}
+                onDeviceChange={handleDeviceChange}
               />
             </div>
             

@@ -1,10 +1,10 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check, Lock, Download, Star } from "lucide-react";
 import { useState } from "react";
 import AppDetailModal from "./AppDetailModal";
+import { getAgeGroup } from "@/lib/ageHelpers";
 
 interface App {
   id: string;
@@ -112,6 +112,7 @@ export default function AppGrid({
         {apps.map((app) => {
           const status = getAppStatus(app);
           const StatusIcon = status.icon;
+          const ageGroup = getAgeGroup(app.age_min, app.age_max);
 
           return (
             <Card key={app.id} className="group hover:shadow-lg transition-shadow cursor-pointer">
@@ -121,12 +122,20 @@ export default function AppGrid({
                   <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
                     {app.icon_url ? (
                       <img 
-                        src={app.icon_url} 
+                        src={app.icon_url.startsWith('/') ? app.icon_url : `/${app.icon_url}`} 
                         alt={app.name}
                         className="w-full h-full rounded-lg object-cover"
+                        onError={(e) => {
+                          // Fallback to placeholder if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.parentElement!.innerHTML = '<div class="w-8 h-8 bg-primary/20 rounded flex items-center justify-center text-primary font-semibold text-sm">' + app.name.charAt(0) + '</div>';
+                        }}
                       />
                     ) : (
-                      <div className="w-8 h-8 bg-primary/20 rounded" />
+                      <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center text-primary font-semibold text-sm">
+                        {app.name.charAt(0)}
+                      </div>
                     )}
                   </div>
                   
@@ -141,7 +150,7 @@ export default function AppGrid({
                     {/* Badges */}
                     <div className="flex flex-wrap gap-1">
                       <Badge variant="secondary" className="text-xs">
-                        Ages {app.age_min}-{app.age_max}
+                        Ages {ageGroup}
                       </Badge>
                       {app.pegi_rating && (
                         <Badge variant="outline" className="text-xs">
