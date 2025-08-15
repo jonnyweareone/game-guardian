@@ -267,3 +267,108 @@ export async function bulkUpsertChildAppSelections(childId: string, selections: 
   if (error) throw error;
   return data;
 }
+
+// New: App Store specific API functions
+export async function getInstalledApps(deviceId: string) {
+  const { data, error } = await supabase
+    .from('installed_apps')
+    .select('*')
+    .eq('device_id', deviceId);
+  if (error) throw error;
+  return data;
+}
+
+export async function installApp(deviceId: string, appId: string, platform: string, version: string) {
+  const { data, error } = await supabase
+    .from('installed_apps')
+    .upsert({
+      device_id: deviceId,
+      app_id: appId,
+      platform,
+      version,
+      installed_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function requestAppInstall(childId: string, appId: string, platform: string) {
+  const { data, error } = await supabase
+    .from('pending_requests')
+    .insert({
+      child_id: childId,
+      app_id: appId,
+      platform,
+      status: 'pending'
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getPendingRequests(childId?: string) {
+  let query = supabase
+    .from('pending_requests')
+    .select(`
+      *,
+      app_catalog!inner(name, icon_url, description),
+      children!inner(name)
+    `)
+    .eq('status', 'pending');
+    
+  if (childId) {
+    query = query.eq('child_id', childId);
+  }
+  
+  const { data, error } = await query.order('requested_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function approveAppRequest(requestId: string) {
+  const { data, error } = await supabase
+    .from('pending_requests')
+    .update({
+      status: 'approved',
+      processed_at: new Date().toISOString(),
+      processed_by: (await supabase.auth.getUser()).data.user?.id
+    })
+    .eq('id', requestId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function denyAppRequest(requestId: string) {
+  const { data, error } = await supabase
+    .from('pending_requests')
+    .update({
+      status: 'denied',
+      processed_at: new Date().toISOString(),
+      processed_by: (await supabase.auth.getUser()).data.user?.id
+    })
+    .eq('id', requestId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getAppVersions(appId: string, platform?: string) {
+  let query = supabase
+    .from('app_versions')
+    .select('*')
+    .eq('app_id', appId);
+    
+  if (platform) {
+    query = query.eq('platform', platform);
+  }
+  
+  const { data, error } = await query.order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}

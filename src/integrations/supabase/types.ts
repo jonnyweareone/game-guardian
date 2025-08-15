@@ -197,11 +197,17 @@ export type Database = {
           age_min: number | null
           category: string
           created_at: string
+          cross_platform_progress: string | null
           description: string | null
+          description_long: string | null
+          hero_url: string | null
           icon_url: string | null
           id: string
+          install_path_desktop: string | null
+          install_path_mobile: string | null
           is_active: boolean | null
           is_essential: boolean | null
+          is_mobile_compatible: boolean | null
           name: string
           pegi_descriptors: string[] | null
           pegi_rating: number | null
@@ -216,11 +222,17 @@ export type Database = {
           age_min?: number | null
           category: string
           created_at?: string
+          cross_platform_progress?: string | null
           description?: string | null
+          description_long?: string | null
+          hero_url?: string | null
           icon_url?: string | null
           id: string
+          install_path_desktop?: string | null
+          install_path_mobile?: string | null
           is_active?: boolean | null
           is_essential?: boolean | null
+          is_mobile_compatible?: boolean | null
           name: string
           pegi_descriptors?: string[] | null
           pegi_rating?: number | null
@@ -235,11 +247,17 @@ export type Database = {
           age_min?: number | null
           category?: string
           created_at?: string
+          cross_platform_progress?: string | null
           description?: string | null
+          description_long?: string | null
+          hero_url?: string | null
           icon_url?: string | null
           id?: string
+          install_path_desktop?: string | null
+          install_path_mobile?: string | null
           is_active?: boolean | null
           is_essential?: boolean | null
+          is_mobile_compatible?: boolean | null
           name?: string
           pegi_descriptors?: string[] | null
           pegi_rating?: number | null
@@ -340,6 +358,69 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      app_versions: {
+        Row: {
+          app_id: string
+          created_at: string | null
+          id: string
+          max_os: string | null
+          min_os: string | null
+          package_hash_sha256: string | null
+          package_url: string | null
+          platform: Database["public"]["Enums"]["platform_type"]
+          release_channel:
+            | Database["public"]["Enums"]["release_channel_type"]
+            | null
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          app_id: string
+          created_at?: string | null
+          id?: string
+          max_os?: string | null
+          min_os?: string | null
+          package_hash_sha256?: string | null
+          package_url?: string | null
+          platform: Database["public"]["Enums"]["platform_type"]
+          release_channel?:
+            | Database["public"]["Enums"]["release_channel_type"]
+            | null
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          app_id?: string
+          created_at?: string | null
+          id?: string
+          max_os?: string | null
+          min_os?: string | null
+          package_hash_sha256?: string | null
+          package_url?: string | null
+          platform?: Database["public"]["Enums"]["platform_type"]
+          release_channel?:
+            | Database["public"]["Enums"]["release_channel_type"]
+            | null
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_versions_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_versions_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_app_selections"
+            referencedColumns: ["app_id"]
+          },
+        ]
       }
       audit_log: {
         Row: {
@@ -1272,6 +1353,83 @@ export type Database = {
         }
         Relationships: []
       }
+      installed_apps: {
+        Row: {
+          app_id: string
+          child_id: string | null
+          device_id: string
+          installed_at: string | null
+          platform: Database["public"]["Enums"]["platform_type"]
+          version: string
+        }
+        Insert: {
+          app_id: string
+          child_id?: string | null
+          device_id: string
+          installed_at?: string | null
+          platform: Database["public"]["Enums"]["platform_type"]
+          version: string
+        }
+        Update: {
+          app_id?: string
+          child_id?: string | null
+          device_id?: string
+          installed_at?: string | null
+          platform?: Database["public"]["Enums"]["platform_type"]
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installed_apps_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installed_apps_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_app_selections"
+            referencedColumns: ["app_id"]
+          },
+          {
+            foreignKeyName: "installed_apps_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installed_apps_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "installed_apps_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installed_apps_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "installed_apps_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "vw_admin_devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_match_results: {
         Row: {
           created_at: string
@@ -1477,6 +1635,68 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      pending_requests: {
+        Row: {
+          app_id: string
+          child_id: string
+          id: string
+          platform: Database["public"]["Enums"]["platform_type"]
+          processed_at: string | null
+          processed_by: string | null
+          requested_at: string | null
+          status: string | null
+        }
+        Insert: {
+          app_id: string
+          child_id: string
+          id?: string
+          platform: Database["public"]["Enums"]["platform_type"]
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          app_id?: string
+          child_id?: string
+          id?: string
+          platform?: Database["public"]["Enums"]["platform_type"]
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_requests_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_requests_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_app_selections"
+            referencedColumns: ["app_id"]
+          },
+          {
+            foreignKeyName: "pending_requests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_requests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
       }
       policy_effective: {
         Row: {
@@ -2006,6 +2226,8 @@ export type Database = {
         | "uploading"
         | "uploaded"
         | "failed"
+      platform_type: "linux-desktop" | "linux-mobile" | "android" | "web-pwa"
+      release_channel_type: "stable" | "beta" | "alpha" | "nightly"
       risk_level: "low" | "medium" | "high" | "critical"
       rule_action: "allow" | "block" | "timebox"
     }
@@ -2152,6 +2374,8 @@ export const Constants = {
         "uploaded",
         "failed",
       ],
+      platform_type: ["linux-desktop", "linux-mobile", "android", "web-pwa"],
+      release_channel_type: ["stable", "beta", "alpha", "nightly"],
       risk_level: ["low", "medium", "high", "critical"],
       rule_action: ["allow", "block", "timebox"],
     },
