@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { navItems } from "./nav-items";
 import { AuthProvider } from "@/hooks/useAuth";
 import AuthGuard from "@/components/AuthGuard";
-import Navigation from "@/components/Navigation";
 
 // Import product detail pages
 import ProductDevice from "./pages/ProductDevice";
@@ -25,7 +24,6 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <div className="min-h-screen bg-background">
-            <Navigation />
             <Routes>
               {/* Public routes */}
               <Route path="/auth" element={
