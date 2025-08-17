@@ -3,25 +3,27 @@ import SEOHead from "@/components/SEOHead";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Copy, Check, Shield } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
+import html2canvas from "html2canvas";
 
-// Use the original brand assets from public/branding folder
-const logoTransparent = "/branding/logo-transparent.png";
-const splashScreen = "/branding/splash-screen.png";
-const wallpaperDesktop = "/branding/wallpaper-desktop.png";
-const wallpaperMobile = "/branding/wallpaper-mobile.png";
+// Use the correct brand assets from public/lovable-uploads folder
+const logoTransparent = "/lovable-uploads/guardian-logo-transparent.png";
+const splashScreen = "/lovable-uploads/guardian-splash-screen.png";
+const wallpaperDesktop = "/lovable-uploads/guardian-wallpaper-desktop.png";
+const wallpaperMobile = "/lovable-uploads/guardian-wallpaper-mobile.png";
 
 const BrandAssets = () => {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
 
   // Component for the new logo2
   const Logo2Component = () => (
-    <div className="flex items-center gap-3 bg-background p-8 rounded-lg">
-      <Shield className="h-16 w-16 text-primary" />
+    <div ref={logoRef} className="flex items-center gap-3 bg-white p-8 rounded-lg shadow-sm">
+      <Shield className="h-16 w-16 text-blue-600" />
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Game Guardian AI™</h1>
-        <p className="text-lg text-muted-foreground">Intelligent Gaming Protection</p>
+        <h1 className="text-3xl font-bold text-gray-900">Game Guardian AI™</h1>
+        <p className="text-lg text-gray-600">Intelligent Gaming Protection</p>
       </div>
     </div>
   );
@@ -32,14 +34,15 @@ const BrandAssets = () => {
       description: "High-resolution logo with transparent background",
       image: logoTransparent,
       filename: "game-guardian-logo-transparent.png",
-      dimensions: "1024×512"
+      dimensions: "1024×512",
+      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo-transparent.png"
     },
     {
       title: "Logo 2 (Shield + Text)",
       description: "Complete brand logo with shield icon and text layout",
       component: <Logo2Component />,
       filename: "game-guardian-logo2.png",
-      dimensions: "Custom",
+      dimensions: "800×200",
       isComponent: true
     },
     {
@@ -47,21 +50,24 @@ const BrandAssets = () => {
       description: "Loading screen design with dark gradient background",
       image: splashScreen,
       filename: "game-guardian-splash.png",
-      dimensions: "1920×1080"
+      dimensions: "1920×1080",
+      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-splash-screen.png"
     },
     {
       title: "Desktop Wallpaper",
       description: "Desktop background with gaming aesthetic",
       image: wallpaperDesktop,
       filename: "game-guardian-wallpaper-desktop.png",
-      dimensions: "1920×1080"
+      dimensions: "1920×1080",
+      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-wallpaper-desktop.png"
     },
     {
       title: "Mobile Wallpaper",
       description: "Vertical wallpaper optimized for mobile devices",
       image: wallpaperMobile,
       filename: "game-guardian-wallpaper-mobile.png",
-      dimensions: "1080×1920"
+      dimensions: "1080×1920",
+      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-wallpaper-mobile.png"
     }
   ];
 
@@ -90,21 +96,28 @@ const BrandAssets = () => {
     document.body.removeChild(link);
   };
 
-  const downloadComponent = (filename: string) => {
-    // Create a canvas to convert the component to an image
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  const downloadComponent = async (filename: string) => {
+    if (!logoRef.current) return;
     
-    canvas.width = 800;
-    canvas.height = 200;
-    
-    // Fill background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Note: This is a simplified version. For production, you'd want to use html2canvas or similar
-    toast.info("Component download feature coming soon!");
+    try {
+      const canvas = await html2canvas(logoRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        width: 800,
+        height: 200,
+        useCORS: true
+      });
+      
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+      toast.success("Logo downloaded successfully!");
+    } catch (error) {
+      console.error('Error generating image:', error);
+      toast.error("Failed to download logo");
+    }
   };
 
   return (
@@ -176,17 +189,18 @@ const BrandAssets = () => {
                         </Button>
                       )}
                     </div>
-                    {!asset.isComponent && (
+                    {!asset.isComponent && asset.wgetUrl && (
                       <div className="bg-muted p-3 rounded-md">
-                        <p className="text-sm text-muted-foreground break-all">
-                          {getFullUrl(asset.image!)}
+                        <p className="text-xs text-muted-foreground mb-1">wget URL:</p>
+                        <p className="text-sm text-muted-foreground break-all font-mono">
+                          {asset.wgetUrl}
                         </p>
                       </div>
                     )}
                     {asset.isComponent && (
                       <div className="bg-muted p-3 rounded-md">
                         <p className="text-sm text-muted-foreground">
-                          React component - Shield icon with brand text layout
+                          React component - Downloads as PNG image (800×200)
                         </p>
                       </div>
                     )}
@@ -196,15 +210,26 @@ const BrandAssets = () => {
             </div>
 
             <div className="mt-12 p-6 bg-muted rounded-lg">
-              <h2 className="text-xl font-semibold mb-4">Usage Guidelines</h2>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• These assets are official Game Guardian AI™ brand materials</li>
-                <li>• Use the transparent logo for overlay on various backgrounds</li>
-                <li>• Logo 2 provides the complete brand identity with shield and text</li>
-                <li>• Splash screen is optimized for app loading screens</li>
-                <li>• Wallpapers are available in both desktop and mobile formats</li>
-                <li>• Maintain aspect ratios when resizing images</li>
-              </ul>
+              <h2 className="text-xl font-semibold mb-4">Usage Guidelines & wget URLs</h2>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium mb-2">Direct wget URLs:</h3>
+                  <div className="space-y-1 text-sm text-muted-foreground font-mono">
+                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo-transparent.png</div>
+                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-splash-screen.png</div>
+                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-wallpaper-desktop.png</div>
+                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-wallpaper-mobile.png</div>
+                  </div>
+                </div>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• These assets are official Game Guardian AI™ brand materials</li>
+                  <li>• Use the transparent logo for overlay on various backgrounds</li>
+                  <li>• Logo 2 provides the complete brand identity with shield and text</li>
+                  <li>• Splash screen is optimized for app loading screens</li>
+                  <li>• Wallpapers are available in both desktop and mobile formats</li>
+                  <li>• Maintain aspect ratios when resizing images</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
