@@ -1,7 +1,8 @@
+
 import SEOHead from "@/components/SEOHead";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Copy, Check } from "lucide-react";
+import { Download, Copy, Check, Shield } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -14,6 +15,17 @@ const wallpaperMobile = "/branding/wallpaper-mobile.png";
 const BrandAssets = () => {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
+  // Component for the new logo2
+  const Logo2Component = () => (
+    <div className="flex items-center gap-3 bg-background p-8 rounded-lg">
+      <Shield className="h-16 w-16 text-primary" />
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Game Guardian AI™</h1>
+        <p className="text-lg text-muted-foreground">Intelligent Gaming Protection</p>
+      </div>
+    </div>
+  );
+
   const assets = [
     {
       title: "Logo (Transparent)",
@@ -21,6 +33,14 @@ const BrandAssets = () => {
       image: logoTransparent,
       filename: "game-guardian-logo-transparent.png",
       dimensions: "1024×512"
+    },
+    {
+      title: "Logo 2 (Shield + Text)",
+      description: "Complete brand logo with shield icon and text layout",
+      component: <Logo2Component />,
+      filename: "game-guardian-logo2.png",
+      dimensions: "Custom",
+      isComponent: true
     },
     {
       title: "Splash Screen",
@@ -70,6 +90,23 @@ const BrandAssets = () => {
     document.body.removeChild(link);
   };
 
+  const downloadComponent = (filename: string) => {
+    // Create a canvas to convert the component to an image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    canvas.width = 800;
+    canvas.height = 200;
+    
+    // Fill background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Note: This is a simplified version. For production, you'd want to use html2canvas or similar
+    toast.info("Component download feature coming soon!");
+  };
+
   return (
     <>
       <SEOHead 
@@ -93,11 +130,15 @@ const BrandAssets = () => {
               {assets.map((asset, index) => (
                 <Card key={index} className="overflow-hidden">
                   <div className="aspect-video bg-muted flex items-center justify-center p-4">
-                    <img 
-                      src={asset.image} 
-                      alt={asset.title}
-                      className="max-w-full max-h-full object-contain"
-                    />
+                    {asset.isComponent ? (
+                      asset.component
+                    ) : (
+                      <img 
+                        src={asset.image} 
+                        alt={asset.title}
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    )}
                   </div>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
@@ -111,30 +152,44 @@ const BrandAssets = () => {
                   <CardContent className="space-y-3">
                     <div className="flex gap-2">
                       <Button
-                        onClick={() => downloadImage(asset.image, asset.filename)}
+                        onClick={() => asset.isComponent 
+                          ? downloadComponent(asset.filename) 
+                          : downloadImage(asset.image!, asset.filename)
+                        }
                         className="flex-1"
                       >
                         <Download className="w-4 h-4 mr-2" />
                         Download
                       </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => copyToClipboard(getFullUrl(asset.image))}
-                        className="flex-1"
-                      >
-                        {copiedUrl === getFullUrl(asset.image) ? (
-                          <Check className="w-4 h-4 mr-2" />
-                        ) : (
-                          <Copy className="w-4 h-4 mr-2" />
-                        )}
-                        Copy URL
-                      </Button>
+                      {!asset.isComponent && (
+                        <Button
+                          variant="outline"
+                          onClick={() => copyToClipboard(getFullUrl(asset.image!))}
+                          className="flex-1"
+                        >
+                          {copiedUrl === getFullUrl(asset.image!) ? (
+                            <Check className="w-4 h-4 mr-2" />
+                          ) : (
+                            <Copy className="w-4 h-4 mr-2" />
+                          )}
+                          Copy URL
+                        </Button>
+                      )}
                     </div>
-                    <div className="bg-muted p-3 rounded-md">
-                      <p className="text-sm text-muted-foreground break-all">
-                        {getFullUrl(asset.image)}
-                      </p>
-                    </div>
+                    {!asset.isComponent && (
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="text-sm text-muted-foreground break-all">
+                          {getFullUrl(asset.image!)}
+                        </p>
+                      </div>
+                    )}
+                    {asset.isComponent && (
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="text-sm text-muted-foreground">
+                          React component - Shield icon with brand text layout
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -145,6 +200,7 @@ const BrandAssets = () => {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• These assets are official Game Guardian AI™ brand materials</li>
                 <li>• Use the transparent logo for overlay on various backgrounds</li>
+                <li>• Logo 2 provides the complete brand identity with shield and text</li>
                 <li>• Splash screen is optimized for app loading screens</li>
                 <li>• Wallpapers are available in both desktop and mobile formats</li>
                 <li>• Maintain aspect ratios when resizing images</li>
