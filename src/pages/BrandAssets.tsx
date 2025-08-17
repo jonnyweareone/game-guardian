@@ -9,6 +9,7 @@ import html2canvas from "html2canvas";
 
 // Use the correct brand assets from public/lovable-uploads folder
 const logoTransparent = "/lovable-uploads/guardian-logo-transparent.png";
+const logo2Transparent = "/lovable-uploads/guardian-logo2-transparent.png";
 const splashScreen = "/lovable-uploads/guardian-splash-screen.png";
 const wallpaperDesktop = "/lovable-uploads/guardian-wallpaper-desktop.png";
 const wallpaperMobile = "/lovable-uploads/guardian-wallpaper-mobile.png";
@@ -19,7 +20,7 @@ const BrandAssets = () => {
 
   // Component for the new logo2
   const Logo2Component = () => (
-    <div ref={logoRef} className="flex items-center gap-3 bg-white p-8 rounded-lg shadow-sm">
+    <div ref={logoRef} className="flex items-center gap-3 bg-transparent p-8 rounded-lg">
       <Shield className="h-16 w-16 text-blue-600" />
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Game Guardian AI™</h1>
@@ -39,9 +40,17 @@ const BrandAssets = () => {
     },
     {
       title: "Logo 2 (Shield + Text)",
-      description: "Complete brand logo with shield icon and text layout",
+      description: "Complete brand logo with shield icon and text layout - transparent background",
+      image: logo2Transparent,
+      filename: "game-guardian-logo2-transparent.png",
+      dimensions: "800×200",
+      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo2-transparent.png"
+    },
+    {
+      title: "Logo 2 (Interactive)",
+      description: "Interactive React component version - downloads as PNG with transparent background",
       component: <Logo2Component />,
-      filename: "game-guardian-logo2.png",
+      filename: "game-guardian-logo2-component.png",
       dimensions: "800×200",
       isComponent: true
     },
@@ -101,7 +110,7 @@ const BrandAssets = () => {
     
     try {
       const canvas = await html2canvas(logoRef.current, {
-        backgroundColor: '#ffffff',
+        backgroundColor: null, // transparent background
         scale: 2,
         width: 800,
         height: 200,
@@ -200,7 +209,7 @@ const BrandAssets = () => {
                     {asset.isComponent && (
                       <div className="bg-muted p-3 rounded-md">
                         <p className="text-sm text-muted-foreground">
-                          React component - Downloads as PNG image (800×200)
+                          Interactive component - Downloads as PNG with transparent background (800×200)
                         </p>
                       </div>
                     )}
@@ -216,6 +225,7 @@ const BrandAssets = () => {
                   <h3 className="font-medium mb-2">Direct wget URLs:</h3>
                   <div className="space-y-1 text-sm text-muted-foreground font-mono">
                     <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo-transparent.png</div>
+                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo2-transparent.png</div>
                     <div>wget https://gameguardian.ai/lovable-uploads/guardian-splash-screen.png</div>
                     <div>wget https://gameguardian.ai/lovable-uploads/guardian-wallpaper-desktop.png</div>
                     <div>wget https://gameguardian.ai/lovable-uploads/guardian-wallpaper-mobile.png</div>
@@ -224,7 +234,8 @@ const BrandAssets = () => {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• These assets are official Game Guardian AI™ brand materials</li>
                   <li>• Use the transparent logo for overlay on various backgrounds</li>
-                  <li>• Logo 2 provides the complete brand identity with shield and text</li>
+                  <li>• Logo 2 is available both as a static PNG and interactive component</li>
+                  <li>• All logos have transparent backgrounds for versatile use</li>
                   <li>• Splash screen is optimized for app loading screens</li>
                   <li>• Wallpapers are available in both desktop and mobile formats</li>
                   <li>• Maintain aspect ratios when resizing images</li>
