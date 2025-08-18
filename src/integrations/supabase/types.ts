@@ -1190,8 +1190,57 @@ export type Database = {
         }
         Relationships: []
       }
+      device_pair_tokens: {
+        Row: {
+          child_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          kind: Database["public"]["Enums"]["device_kind"]
+          platform: string | null
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          kind?: Database["public"]["Enums"]["device_kind"]
+          platform?: string | null
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["device_kind"]
+          platform?: string | null
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_pair_tokens_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_pair_tokens_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       devices: {
         Row: {
+          battery: number | null
           build_id: string | null
           child_id: string | null
           created_at: string
@@ -1199,24 +1248,31 @@ export type Database = {
           device_jwt: string | null
           device_name: string | null
           firmware_version: string | null
+          iccid: string | null
           id: string
           is_active: boolean | null
           kernel_version: string | null
+          kind: Database["public"]["Enums"]["device_kind"]
           last_ip: unknown | null
           last_refresh_ip: unknown | null
           last_seen: string | null
           last_token_issued_at: string | null
           location: Json | null
+          mdm_enrolled: boolean | null
           model: string | null
+          nextdns_profile_id: string | null
           os_version: string | null
           paired_at: string | null
           parent_id: string
+          platform: string | null
           refresh_secret_hash: string | null
           status: string | null
           ui_version: string | null
           updated_at: string
+          vpn_active: boolean | null
         }
         Insert: {
+          battery?: number | null
           build_id?: string | null
           child_id?: string | null
           created_at?: string
@@ -1224,24 +1280,31 @@ export type Database = {
           device_jwt?: string | null
           device_name?: string | null
           firmware_version?: string | null
+          iccid?: string | null
           id?: string
           is_active?: boolean | null
           kernel_version?: string | null
+          kind?: Database["public"]["Enums"]["device_kind"]
           last_ip?: unknown | null
           last_refresh_ip?: unknown | null
           last_seen?: string | null
           last_token_issued_at?: string | null
           location?: Json | null
+          mdm_enrolled?: boolean | null
           model?: string | null
+          nextdns_profile_id?: string | null
           os_version?: string | null
           paired_at?: string | null
           parent_id: string
+          platform?: string | null
           refresh_secret_hash?: string | null
           status?: string | null
           ui_version?: string | null
           updated_at?: string
+          vpn_active?: boolean | null
         }
         Update: {
+          battery?: number | null
           build_id?: string | null
           child_id?: string | null
           created_at?: string
@@ -1249,22 +1312,28 @@ export type Database = {
           device_jwt?: string | null
           device_name?: string | null
           firmware_version?: string | null
+          iccid?: string | null
           id?: string
           is_active?: boolean | null
           kernel_version?: string | null
+          kind?: Database["public"]["Enums"]["device_kind"]
           last_ip?: unknown | null
           last_refresh_ip?: unknown | null
           last_seen?: string | null
           last_token_issued_at?: string | null
           location?: Json | null
+          mdm_enrolled?: boolean | null
           model?: string | null
+          nextdns_profile_id?: string | null
           os_version?: string | null
           paired_at?: string | null
           parent_id?: string
+          platform?: string | null
           refresh_secret_hash?: string | null
           status?: string | null
           ui_version?: string | null
           updated_at?: string
+          vpn_active?: boolean | null
         }
         Relationships: [
           {
@@ -2226,6 +2295,7 @@ export type Database = {
         | "uploading"
         | "uploaded"
         | "failed"
+      device_kind: "os" | "mobile"
       platform_type: "linux-desktop" | "linux-mobile" | "android" | "web-pwa"
       release_channel_type: "stable" | "beta" | "alpha" | "nightly"
       risk_level: "low" | "medium" | "high" | "critical"
@@ -2374,6 +2444,7 @@ export const Constants = {
         "uploaded",
         "failed",
       ],
+      device_kind: ["os", "mobile"],
       platform_type: ["linux-desktop", "linux-mobile", "android", "web-pwa"],
       release_channel_type: ["stable", "beta", "alpha", "nightly"],
       risk_level: ["low", "medium", "high", "critical"],
