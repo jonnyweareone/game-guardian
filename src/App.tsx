@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { navItems } from "./nav-items";
 import { AuthProvider } from "@/hooks/useAuth";
 import AuthGuard from "@/components/AuthGuard";
+import DocsRoutes from "@/pages/docs/routes";
 
 // Import product detail pages
 import ProductDevice from "./pages/ProductDevice";
@@ -39,6 +40,9 @@ const App = () => (
               
               {/* Index redirect */}
               <Route path="/index" element={<Navigate to="/" replace />} />
+              
+              {/* Docs section - public access */}
+              <Route path="/docs/*" element={<DocsRoutes />} />
               
               {/* App Store - accessible to both authenticated and public users */}
               <Route path="/app-store" element={
