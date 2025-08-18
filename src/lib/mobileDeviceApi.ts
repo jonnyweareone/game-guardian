@@ -1,16 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-
-export interface PairingToken {
-  id: string;
-  child_id: string;
-  token: string;
-  kind: 'mobile';
-  platform: 'ios' | 'android';
-  expires_at: string;
-  used_at?: string;
-  created_at: string;
-}
+import type { PairingToken, MobilePlatform } from '@/types/pairing';
 
 export interface MobileDeviceStatus {
   id: string;
@@ -25,7 +15,10 @@ export interface MobileDeviceStatus {
   activation_status: 'pending' | 'enrolled' | 'supervised';
 }
 
-export const generatePairingToken = async (childId: string, platform: 'ios' | 'android'): Promise<string> => {
+const isMobilePlatform = (p: unknown): p is MobilePlatform =>
+  p === 'ios' || p === 'android';
+
+export const generatePairingToken = async (childId: string, platform: MobilePlatform): Promise<string> => {
   const token = Math.random().toString(36).substr(2, 8).toUpperCase();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
 
@@ -51,7 +44,31 @@ export const getPairingTokens = async (): Promise<PairingToken[]> => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+
+  // Defensive mapping with strict narrowing
+  const tokens: PairingToken[] = (data || []).flatMap((t) => {
+    // Hard narrow the kind field
+    if (t.kind !== 'mobile') return [];
+    
+    // Validate platform is mobile-compatible
+    if (!isMobilePlatform(t.platform)) return [];
+    
+    // Ensure required fields exist
+    if (!t.token || !t.expires_at || !t.created_at) return [];
+
+    return [{
+      id: t.id,
+      child_id: t.child_id,
+      token: t.token,
+      kind: 'mobile' as const,        // literal type
+      platform: t.platform,           // now 'ios' | 'android'
+      expires_at: t.expires_at,
+      used_at: t.used_at || undefined,
+      created_at: t.created_at,
+    }];
+  });
+
+  return tokens;
 };
 
 export const getMobileDeviceStatus = async (deviceId: string): Promise<MobileDeviceStatus> => {

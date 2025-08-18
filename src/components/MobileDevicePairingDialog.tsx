@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Smartphone, QrCode, Copy, CheckCircle, AlertCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { generatePairingToken } from '@/lib/mobileDeviceApi';
+import type { MobilePlatform } from '@/types/pairing';
 
 interface Child {
   id: string;
@@ -26,13 +27,13 @@ export default function MobileDevicePairingDialog({
   onDevicePaired 
 }: MobileDevicePairingDialogProps) {
   const [selectedChildId, setSelectedChildId] = useState(preselectedChildId || '');
-  const [platform, setPlatform] = useState<'ios' | 'android' | ''>('');
+  const [platform, setPlatform] = useState<MobilePlatform | ''>('');
   const [pairingToken, setPairingToken] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  const generatePairingToken = async () => {
+  const handleGeneratePairingToken = async () => {
     if (!selectedChildId || !platform) {
       toast.error('Please select a child and platform');
       return;
@@ -40,24 +41,10 @@ export default function MobileDevicePairingDialog({
 
     setIsGenerating(true);
     try {
-      const token = Math.random().toString(36).substr(2, 8).toUpperCase();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
-
-      const { error } = await supabase
-        .from('device_pair_tokens')
-        .insert({
-          child_id: selectedChildId,
-          token,
-          kind: 'mobile',
-          platform,
-          expires_at: expiresAt
-        });
-
-      if (error) throw error;
-
+      const token = await generatePairingToken(selectedChildId, platform as MobilePlatform);
       setPairingToken(token);
       
-      // Generate QR code URL (you might want to use a QR code library here)
+      // Generate QR code URL with the token and platform info
       const qrData = JSON.stringify({ token, platform, action: 'pair_device' });
       setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`);
       
@@ -125,7 +112,7 @@ export default function MobileDevicePairingDialog({
 
                 <div>
                   <label className="text-sm font-medium">Platform</label>
-                  <Select value={platform} onValueChange={(value) => setPlatform(value as 'ios' | 'android')}>
+                  <Select value={platform} onValueChange={(value) => setPlatform(value as MobilePlatform)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select device platform" />
                     </SelectTrigger>
@@ -138,7 +125,7 @@ export default function MobileDevicePairingDialog({
               </div>
 
               <Button 
-                onClick={generatePairingToken} 
+                onClick={handleGeneratePairingToken} 
                 disabled={!selectedChildId || !platform || isGenerating}
                 className="w-full"
               >
