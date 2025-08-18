@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { getChildren } from '@/lib/api';
 import DeviceChildAssignmentDialog from '@/components/DeviceChildAssignmentDialog';
 import PairDeviceDialog from '@/components/PairDeviceDialog';
+import MobileDevicePairingDialog from '@/components/MobileDevicePairingDialog';
 
 interface Device {
   id: string;
@@ -163,6 +163,7 @@ const DevicesPage = () => {
             Refresh
           </Button>
           <PairDeviceDialog children={children} onDevicePaired={handleDevicePaired} />
+          <MobileDevicePairingDialog children={children} onDevicePaired={handleDevicePaired} />
         </div>
       </div>
 
@@ -230,7 +231,10 @@ const DevicesPage = () => {
             <p className="text-muted-foreground text-center mb-6 max-w-md">
               Get started by pairing your first Guardian AI device to begin monitoring and protecting your family.
             </p>
-            <PairDeviceDialog children={children} onDevicePaired={handleDevicePaired} />
+            <div className="flex gap-2">
+              <PairDeviceDialog children={children} onDevicePaired={handleDevicePaired} />
+              <MobileDevicePairingDialog children={children} onDevicePaired={handleDevicePaired} />
+            </div>
           </CardContent>
         </Card>
       )}

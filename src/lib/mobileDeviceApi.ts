@@ -47,6 +47,7 @@ export const getPairingTokens = async (): Promise<PairingToken[]> => {
   const { data, error } = await supabase
     .from('device_pair_tokens')
     .select('*')
+    .eq('kind', 'mobile')
     .order('created_at', { ascending: false });
 
   if (error) throw error;

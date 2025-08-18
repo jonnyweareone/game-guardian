@@ -18,8 +18,16 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const url = new URL(req.url);
-    const deviceId = url.searchParams.get("device_id");
+    let deviceId: string | null = null;
+
+    // Support both GET and POST requests
+    if (req.method === "GET") {
+      const url = new URL(req.url);
+      deviceId = url.searchParams.get("device_id");
+    } else if (req.method === "POST") {
+      const body = await req.json();
+      deviceId = body.device_id;
+    }
 
     if (!deviceId) {
       return json({ error: "device_id required" }, { status: 400 });
@@ -40,11 +48,11 @@ serve(async (req) => {
       return json({ error: "device_not_found" }, { status: 404 });
     }
 
-    const status = device.mdm_enrolled ? "supervised" : device.is_active ? "enrolled" : "pending";
+    const activation_status = device.mdm_enrolled ? "supervised" : device.is_active ? "enrolled" : "pending";
 
     return json({
       ...device,
-      activation_status: status
+      activation_status
     });
 
   } catch (error) {
