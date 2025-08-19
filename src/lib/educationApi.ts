@@ -48,7 +48,13 @@ export const edu = {
   },
   
   getInterests: async (childId: string) => {
-    return apiCall(`/interests?child_id=${childId}`);
+    const r = await apiCall(`/interests?child_id=${childId}`);
+    // normalize to array of { id, code, name, category }
+    const items = (r.interests ?? []).map((row:any) => {
+      const i = row.interests || row; // support both shapes
+      return { id: i.id, code: i.code, name: i.name, category: i.category };
+    });
+    return { interests: items };
   },
   
   setInterests: async (childId: string, interest_ids: string[]) => {

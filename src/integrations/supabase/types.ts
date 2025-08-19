@@ -723,6 +723,7 @@ export type Database = {
           age: number | null
           avatar_url: string | null
           created_at: string
+          dob: string | null
           id: string
           name: string
           parent_id: string
@@ -732,6 +733,7 @@ export type Database = {
           age?: number | null
           avatar_url?: string | null
           created_at?: string
+          dob?: string | null
           id?: string
           name: string
           parent_id: string
@@ -741,6 +743,7 @@ export type Database = {
           age?: number | null
           avatar_url?: string | null
           created_at?: string
+          dob?: string | null
           id?: string
           name?: string
           parent_id?: string
@@ -2439,6 +2442,13 @@ export type Database = {
       rpc_set_active_child: {
         Args: { _child: string; _device: string }
         Returns: boolean
+      }
+      uk_year_and_key_stage: {
+        Args: { p_dob: string; p_ref?: string }
+        Returns: {
+          key_stage: string
+          year_group: string
+        }[]
       }
     }
     Enums: {

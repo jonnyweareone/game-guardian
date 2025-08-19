@@ -207,15 +207,23 @@ export async function getChildrenWithParentAddr() {
     .select('*')
     .order('child_id', { ascending: true });
   if (error) throw error;
-  return (data ?? []).map((r: any) => ({
-    id: r.child_id, 
-    name: r.full_name, 
-    age: r.age, 
+  // fetch DOB+birthday flag from children (view doesn't have it)
+  const ids = (data ?? []).map((r:any)=>r.child_id);
+  const { data: kids } = await supabase.from('children').select('id, dob').in('id', ids);
+
+  const dobMap = new Map(kids?.map((k:any)=>[k.id, { dob: k.dob }]) ?? []);
+
+  return (data ?? []).map((r:any)=>({
+    id: r.child_id,
+    name: r.full_name,
+    age: r.age,
     avatar_url: r.avatar_url,
-    parent_id: r.parent_id, 
-    postcode: r.postcode, 
-    city: r.city, 
-    country: r.country
+    parent_user_id: r.parent_user_id,
+    postcode: r.postcode,
+    city: r.city,
+    country: r.country,
+    dob: dobMap.get(r.child_id)?.dob,
+    birthday_today: false // computed client-side with helper
   }));
 }
 
