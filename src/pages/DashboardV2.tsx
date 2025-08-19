@@ -303,10 +303,11 @@ export default function DashboardPage() {
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem>Block Account</DropdownMenuItem>
-                          <DropdownMenuItem>Review Activity</DropdownMenuContent>
+                         <DropdownMenuContent align="end">
+                           <DropdownMenuItem>View Profile</DropdownMenuItem>
+                           <DropdownMenuItem>Block Account</DropdownMenuItem>
+                           <DropdownMenuItem>Review Activity</DropdownMenuItem>
+                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                     <div className="text-sm text-muted-foreground">Excessive use during school hours</div>
