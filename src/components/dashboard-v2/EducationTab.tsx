@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
-export default function EducationTab({ childId, childAge = 7 }: { childId: string; childAge?: number }) {
+export default function EducationTab({ childId, childAge = 7, hint = '' }: { childId: string; childAge?: number; hint?: string }) {
   const qc = useQueryClient();
 
   const profileQ = useQuery({ 
@@ -38,8 +38,8 @@ export default function EducationTab({ childId, childAge = 7 }: { childId: strin
 
   const [schoolQuery, setSchoolQuery] = useState('');
   const schoolsQ = useQuery({
-    queryKey: ['edu-schools', childAge, schoolQuery],
-    queryFn: async () => (await edu.listSchools(childAge, schoolQuery)).schools,
+    queryKey: ['edu-schools', childAge, schoolQuery, hint],
+    queryFn: async () => (await edu.listSchools(childAge, schoolQuery, hint)).schools,
     enabled: schoolQuery.length > 2 || childAge > 0,
   });
 

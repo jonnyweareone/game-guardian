@@ -24,10 +24,11 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
 }
 
 export const edu = {
-  listSchools: async (age: number, q = '') => {
+  listSchools: async (age: number, q = '', hint = '') => {
     const params = new URLSearchParams();
     if (age) params.set('age', String(age));
-    if (q) params.set('q', q);
+    const query = q || hint || '';
+    if (query) params.set('q', query);
     return apiCall(`/schools?${params}`);
   },
   

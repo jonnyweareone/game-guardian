@@ -184,6 +184,41 @@ export async function getChildrenWithAvatars() {
   return data || [];
 }
 
+// Basic children list
+export async function getChildrenBasics() {
+  const { data, error } = await supabase
+    .from('children')
+    .select('id, name, age, avatar_url, parent_id')
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data?.map((c: any) => ({
+    id: c.id, 
+    name: c.name, 
+    age: c.age, 
+    avatar_url: c.avatar_url, 
+    parent_id: c.parent_id
+  })) as any[];
+}
+
+// Children with parent address data
+export async function getChildrenWithParentAddr() {
+  const { data, error } = await supabase
+    .from('v_children_with_parent')
+    .select('*')
+    .order('child_id', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    id: r.child_id, 
+    name: r.full_name, 
+    age: r.age, 
+    avatar_url: r.avatar_url,
+    parent_id: r.parent_id, 
+    postcode: r.postcode, 
+    city: r.city, 
+    country: r.country
+  }));
+}
+
 // App catalog with icons - using existing app_catalog table
 export async function getAppCatalogWithIcons() {
   const { data, error } = await supabase

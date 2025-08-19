@@ -23,6 +23,7 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AppStore from "./pages/AppStore";
 import HomeworkHelper from "./pages/HomeworkHelper";
 import GuardianNova from "./pages/GuardianNova";
+import Education from "./pages/Education";
 
 export interface NavItem {
   title: string;
@@ -70,10 +71,17 @@ export const navItems: NavItem[] = [
     requiresAuth: true,
   },
   {
-    title: "Dashboard V2",
+    title: "Monitoring",
     to: "/dashboard-v2",
     icon: <ShieldIcon className="h-4 w-4" />,
     page: <DashboardV2 />,
+    requiresAuth: true,
+  },
+  {
+    title: "Education",
+    to: "/education",
+    icon: <GraduationCap className="h-4 w-4" />,
+    page: <Education />,
     requiresAuth: true,
   },
   {
