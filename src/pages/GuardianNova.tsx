@@ -111,11 +111,11 @@ const GuardianNova = () => {
                   The world's first safe AI learning companion that grows with your child. From storytelling to VR exploration — Nova adapts, guides, and rewards every journey.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" className="text-lg px-8" onClick={() => navigate("/auth")}>
+                  <Button size="lg" className="text-lg px-8" onClick={() => navigate("/about")}>
                     <Rocket className="h-5 w-5 mr-2" />
                     For Schools & EdTech
                   </Button>
-                  <Button variant="outline" size="lg" className="text-lg px-8" onClick={() => navigate("/auth")}>
+                  <Button variant="outline" size="lg" className="text-lg px-8" onClick={() => navigate("/how-to-guide")}>
                     <Star className="h-5 w-5 mr-2" />
                     For Parents
                   </Button>
@@ -373,7 +373,7 @@ const GuardianNova = () => {
                   </Card>
                 </div>
                 <div className="mt-8">
-                  <Button size="lg" className="text-lg px-8" onClick={() => navigate("/auth")}>
+                  <Button size="lg" className="text-lg px-8" onClick={() => navigate("/about")}>
                     <Globe className="h-5 w-5 mr-2" />
                     Partner with Guardian Nova
                   </Button>
@@ -446,7 +446,7 @@ const GuardianNova = () => {
               Be part of the learning revolution. Bring adaptive AI and immersive experiences to your school or home.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-lg px-8" onClick={() => navigate("/auth")}>
+              <Button size="lg" className="text-lg px-8" onClick={() => navigate("/about")}>
                 <Rocket className="h-5 w-5 mr-2" />
                 Talk to Sales
               </Button>
