@@ -30,13 +30,15 @@ import {
 import { MoreHorizontal } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import EducationTab from '@/components/dashboard-v2/EducationTab';
+import EnhancedChildCard from '@/components/dashboard-v2/EnhancedChildCard';
 
 interface Child {
   id: string;
   name: string;
   age?: number;
   avatar_url?: string;
+  parent_id: string;
+  created_at: string;
 }
 
 const ChildSwitcher = ({ children, selectedChild, onChildSelect }: {
@@ -75,6 +77,7 @@ const ChildSwitcher = ({ children, selectedChild, onChildSelect }: {
 export default function DashboardPage() {
   const { user } = useAuth();
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const { data: children, isLoading: childrenLoading } = useQuery({
     queryKey: ['children', user?.id],
@@ -94,6 +97,32 @@ export default function DashboardPage() {
       setSelectedChild(children[0]);
     }
   }, [children]);
+
+  const handleToggleExpanded = (childId: string) => {
+    const newExpanded = new Set(expandedCards);
+    if (newExpanded.has(childId)) {
+      newExpanded.delete(childId);
+    } else {
+      newExpanded.add(childId);
+    }
+    setExpandedCards(newExpanded);
+  };
+
+  const handleRemoveChild = (child: Child) => {
+    console.log('Remove child:', child.name);
+  };
+
+  const handleAddTime = (childId: string) => {
+    console.log('Add time for child:', childId);
+  };
+
+  const handlePauseDevice = (childId: string) => {
+    console.log('Pause device for child:', childId);
+  };
+
+  const handleViewFullActivity = (childId: string) => {
+    console.log('View full activity for child:', childId);
+  };
 
       
 
@@ -120,7 +149,7 @@ export default function DashboardPage() {
             <TabsTrigger value="conversations">Conversations</TabsTrigger>
             <TabsTrigger value="apps">Apps & Games</TabsTrigger>
             <TabsTrigger value="social-media">Social Media</TabsTrigger>
-            <TabsTrigger value="education">Education</TabsTrigger>
+            <TabsTrigger value="children">Children</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -317,13 +346,32 @@ export default function DashboardPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="education">
+          <TabsContent value="children" className="space-y-4">
             {children && children.length > 0 ? (
-              <EducationTab childId={children[0].id} childAge={children[0].age ?? 7} />
-            ) : (
-              <div className="text-sm text-muted-foreground p-4 text-center">
-                Add a child to configure education settings.
+              <div className="space-y-4">
+                {children.map((child) => (
+                  <EnhancedChildCard
+                    key={child.id}
+                    child={child}
+                    sessions={[]} // Mock empty sessions for now
+                    totalTodayMinutes={0} // Mock data
+                    unreadAlerts={0} // Mock data
+                    isExpanded={expandedCards.has(child.id)}
+                    onToggleExpanded={handleToggleExpanded}
+                    onRemoveChild={handleRemoveChild}
+                    onAddTime={handleAddTime}
+                    onPauseDevice={handlePauseDevice}
+                    onViewFullActivity={handleViewFullActivity}
+                  />
+                ))}
               </div>
+            ) : (
+              <Card className="p-6">
+                <div className="text-center text-muted-foreground">
+                  <p>No children profiles found.</p>
+                  <p className="text-sm mt-2">Add a child profile to get started with monitoring and controls.</p>
+                </div>
+              </Card>
             )}
           </TabsContent>
         </Tabs>

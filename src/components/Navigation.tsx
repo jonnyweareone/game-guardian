@@ -31,7 +31,8 @@ const Navigation = () => {
 
   const protectedNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Settings },
-    { href: '/dashboard-v2', label: 'Dashboard V2', icon: Zap, badge: 'New' },
+    { href: '/dashboard-v2', label: 'Monitoring', icon: Zap },
+    { href: '/education', label: 'Education', icon: BookOpen },
   ];
 
   return (
@@ -78,15 +79,10 @@ const Navigation = () => {
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                  {item.badge && (
-                    <Badge variant="secondary" className="text-xs">
-                      {item.badge}
-                    </Badge>
-                  )}
-                </Link>
+                 >
+                   <Icon className="h-4 w-4" />
+                   {item.label}
+                 </Link>
               );
             })}
           </div>
@@ -155,15 +151,10 @@ const Navigation = () => {
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {item.label}
-                        {item.badge && (
-                          <Badge variant="secondary" className="text-xs ml-auto">
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </Link>
+                       >
+                         <Icon className="h-4 w-4" />
+                         {item.label}
+                       </Link>
                     );
                   })}
                 </div>
