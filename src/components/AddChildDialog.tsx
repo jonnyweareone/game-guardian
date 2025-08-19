@@ -4,13 +4,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Users, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, Users, ArrowLeft, ArrowRight, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from './AvatarSelector';
 import { AppSelectionStep } from './AppSelectionStep';
 import { WebFiltersStep } from './WebFiltersStep';
 import { bulkUpsertChildAppSelections } from '@/lib/api';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface WebFilterConfig {
   schoolHoursEnabled: boolean;
@@ -33,7 +37,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'basic' | 'apps' | 'webfilters'>('basic');
   const [name, setName] = useState('');
-  const [age, setAge] = useState('');
+  const [dob, setDob] = useState<Date | undefined>(undefined);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
   const [webFilterConfig, setWebFilterConfig] = useState<WebFilterConfig>({
@@ -44,13 +48,24 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
   });
   const { toast } = useToast();
 
-  const childAge = age ? parseInt(age) : undefined;
+  // Calculate age from DOB
+  const calculateAge = (birthDate: Date): number => {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const childAge = dob ? calculateAge(dob) : undefined;
 
   // Initialize form with editing child data
   useEffect(() => {
     if (editingChild) {
       setName(editingChild.name || '');
-      setAge(editingChild.age?.toString() || '');
+      setDob(editingChild.dob ? new Date(editingChild.dob) : undefined);
       setSelectedAvatar(editingChild.avatar_url || null);
     } else {
       resetForm();
@@ -67,10 +82,10 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
         });
         return;
       }
-      if (!age) {
+      if (!dob) {
         toast({
-          title: "Age required",
-          description: "Please enter your child's age to show appropriate apps.",
+          title: "Date of birth required",
+          description: "Please select your child's date of birth to show appropriate apps.",
           variant: "destructive"
         });
         return;
@@ -119,6 +134,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
           .from('children')
           .update({
             name: name.trim(),
+            dob: dob?.toISOString().split('T')[0], // Save as YYYY-MM-DD
             age: childAge,
             avatar_url: selectedAvatar,
           })
@@ -134,6 +150,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
           .from('children')
           .insert({
             name: name.trim(),
+            dob: dob?.toISOString().split('T')[0], // Save as YYYY-MM-DD
             age: childAge,
             avatar_url: selectedAvatar,
             parent_id: (await supabase.auth.getUser()).data.user?.id
@@ -217,7 +234,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
   const resetForm = () => {
     setStep('basic');
     setName('');
-    setAge('');
+    setDob(undefined);
     setSelectedAvatar(null);
     setSelectedApps(new Set());
     setWebFilterConfig({
@@ -247,7 +264,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
   const getStepDescription = () => {
     switch (step) {
       case 'basic': return editingChild ? 'Update your child\'s profile information and avatar.' : 'Set up your child\'s profile with basic information and avatar.';
-      case 'apps': return `Choose age-appropriate apps for ${name} (Age ${age}).`;
+      case 'apps': return `Choose age-appropriate apps for ${name} (Age ${childAge}).`;
       case 'webfilters': return `Configure web filtering and parental controls for ${name}.`;
       default: return editingChild ? 'Edit your child\'s profile information.' : 'Add a new child to your Game Guardian AI monitoring dashboard.';
     }
@@ -290,20 +307,38 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="child-age">Age *</Label>
-                <Input
-                  id="child-age"
-                  type="number"
-                  min="3"
-                  max="18"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  placeholder="Enter age (used for app recommendations)"
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Age is used to show appropriate apps and configure DNS filtering
-                </p>
+                <Label htmlFor="child-dob">Date of Birth *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dob && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dob ? format(dob, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dob}
+                      onSelect={setDob}
+                      disabled={(date) => 
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {dob && (
+                  <p className="text-xs text-muted-foreground">
+                    Age: {childAge} years old (used for app recommendations and DNS filtering)
+                  </p>
+                )}
               </div>
               
               <div className="space-y-2">
