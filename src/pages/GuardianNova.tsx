@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -124,7 +123,7 @@ const GuardianNova = () => {
               </div>
               <div className="relative">
                 <img 
-                  src="/lovable-uploads/67143275-f588-4d5a-b92f-dae2b71b634c.png"
+                  src="/lovable-uploads/d517d7c2-5de6-40a5-a7c8-2a1d1c65916d.png"
                   alt="VR student exploring Ancient Rome timeline in immersive 3D environment with Guardian Nova AI guide"
                   className="w-full rounded-lg shadow-2xl"
                   loading="eager"
@@ -196,7 +195,7 @@ const GuardianNova = () => {
               </div>
               <div>
                 <img 
-                  src="/lovable-uploads/67143275-f588-4d5a-b92f-dae2b71b634c.png"
+                  src="/lovable-uploads/d517d7c2-5de6-40a5-a7c8-2a1d1c65916d.png"
                   alt="VR student exploring Ancient Rome timeline in immersive 3D environment with Guardian Nova AI guide"
                   className="w-full rounded-lg shadow-xl"
                   loading="lazy"
