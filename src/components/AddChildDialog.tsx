@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +46,17 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
 
   const childAge = age ? parseInt(age) : undefined;
 
+  // Initialize form with editing child data
+  useEffect(() => {
+    if (editingChild) {
+      setName(editingChild.name || '');
+      setAge(editingChild.age?.toString() || '');
+      setSelectedAvatar(editingChild.avatar_url || null);
+    } else {
+      resetForm();
+    }
+  }, [editingChild]);
+
   const handleNext = () => {
     if (step === 'basic') {
       if (!name.trim()) {
@@ -62,6 +73,11 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
           description: "Please enter your child's age to show appropriate apps.",
           variant: "destructive"
         });
+        return;
+      }
+      // If editing, skip to final step (basic info only)
+      if (editingChild) {
+        handleSubmit({ preventDefault: () => {} } as React.FormEvent);
         return;
       }
       setStep('apps');
@@ -95,22 +111,42 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
     
     setLoading(true);
     try {
-      // Create child profile
-      const { data: childData, error: childError } = await supabase
-        .from('children')
-        .insert({
-          name: name.trim(),
-          age: childAge,
-          avatar_url: selectedAvatar,
-          parent_id: (await supabase.auth.getUser()).data.user?.id
-        })
-        .select()
-        .single();
+      let childData;
+      
+      if (editingChild) {
+        // Update existing child profile
+        const { data: updatedChild, error: childError } = await supabase
+          .from('children')
+          .update({
+            name: name.trim(),
+            age: childAge,
+            avatar_url: selectedAvatar,
+          })
+          .eq('id', editingChild.id)
+          .select()
+          .single();
 
-      if (childError) throw childError;
+        if (childError) throw childError;
+        childData = updatedChild;
+      } else {
+        // Create new child profile
+        const { data: newChild, error: childError } = await supabase
+          .from('children')
+          .insert({
+            name: name.trim(),
+            age: childAge,
+            avatar_url: selectedAvatar,
+            parent_id: (await supabase.auth.getUser()).data.user?.id
+          })
+          .select()
+          .single();
 
-      // Save app selections
-      if (selectedApps.size > 0) {
+        if (childError) throw childError;
+        childData = newChild;
+      }
+
+      // Save app selections (only for new children or if apps were modified)
+      if (!editingChild && selectedApps.size > 0) {
         const selections = Array.from(selectedApps).map(appId => ({
           app_id: appId,
           selected: true
@@ -123,40 +159,44 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
         }
       }
 
-      // Create web filter profile automatically
-      try {
-        const { error: webFilterError } = await supabase.functions.invoke('nextdns-profile-manager', {
-          body: {
-            action: 'create_profile',
-            child_id: childData.id,
-            child_name: name.trim(),
-            age: childAge,
-            school_hours_enabled: webFilterConfig.schoolHoursEnabled,
-            content_categories: {
-              social_media: webFilterConfig.socialMediaBlocked,
-              gaming: webFilterConfig.gamingBlocked,
-              entertainment: webFilterConfig.entertainmentBlocked
+      // Create web filter profile automatically (only for new children)
+      if (!editingChild) {
+        try {
+          const { error: webFilterError } = await supabase.functions.invoke('nextdns-profile-manager', {
+            body: {
+              action: 'create_profile',
+              child_id: childData.id,
+              child_name: name.trim(),
+              age: childAge,
+              school_hours_enabled: webFilterConfig.schoolHoursEnabled,
+              content_categories: {
+                social_media: webFilterConfig.socialMediaBlocked,
+                gaming: webFilterConfig.gamingBlocked,
+                entertainment: webFilterConfig.entertainmentBlocked
+              }
             }
-          }
-        });
-
-        if (webFilterError) {
-          console.warn('Failed to create web filter profile:', webFilterError);
-          toast({
-            title: "Web Filter Setup Warning",
-            description: "Child profile created but web filtering could not be configured automatically. You can set this up manually later.",
-            variant: "destructive"
           });
-        } else {
-          console.log('Web filter profile created successfully');
+
+          if (webFilterError) {
+            console.warn('Failed to create web filter profile:', webFilterError);
+            toast({
+              title: "Web Filter Setup Warning",
+              description: "Child profile created but web filtering could not be configured automatically. You can set this up manually later.",
+              variant: "destructive"
+            });
+          } else {
+            console.log('Web filter profile created successfully');
+          }
+        } catch (webFilterError) {
+          console.warn('Failed to create web filter profile:', webFilterError);
         }
-      } catch (webFilterError) {
-        console.warn('Failed to create web filter profile:', webFilterError);
       }
 
       toast({
-        title: "Child profile created",
-        description: `${name} has been added to your family dashboard with age-appropriate app selections and web filtering.`
+        title: editingChild ? "Child profile updated" : "Child profile created",
+        description: editingChild 
+          ? `${name}'s profile has been updated successfully.`
+          : `${name} has been added to your family dashboard with age-appropriate app selections and web filtering.`
       });
 
       // Reset form
@@ -165,7 +205,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
       onChildAdded();
     } catch (error: any) {
       toast({
-        title: "Error creating profile",
+        title: editingChild ? "Error updating profile" : "Error creating profile",
         description: error.message,
         variant: "destructive"
       });
@@ -197,19 +237,19 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
 
   const getStepTitle = () => {
     switch (step) {
-      case 'basic': return 'Basic Information';
+      case 'basic': return editingChild ? 'Edit Basic Information' : 'Basic Information';
       case 'apps': return 'App Selection';
       case 'webfilters': return 'Web Filters';
-      default: return 'Add Child Profile';
+      default: return editingChild ? 'Edit Child Profile' : 'Add Child Profile';
     }
   };
 
   const getStepDescription = () => {
     switch (step) {
-      case 'basic': return 'Set up your child\'s profile with basic information and avatar.';
+      case 'basic': return editingChild ? 'Update your child\'s profile information and avatar.' : 'Set up your child\'s profile with basic information and avatar.';
       case 'apps': return `Choose age-appropriate apps for ${name} (Age ${age}).`;
       case 'webfilters': return `Configure web filtering and parental controls for ${name}.`;
-      default: return 'Add a new child to your Game Guardian AI monitoring dashboard.';
+      default: return editingChild ? 'Edit your child\'s profile information.' : 'Add a new child to your Game Guardian AI monitoring dashboard.';
     }
   };
 
@@ -279,8 +319,14 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
                   Cancel
                 </Button>
                 <Button type="submit" className="flex-1">
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                  Next: Choose Apps
+                  {editingChild ? (
+                    loading ? 'Updating Profile...' : 'Update Profile'
+                  ) : (
+                    <>
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Next: Choose Apps
+                    </>
+                  )}
                 </Button>
               </div>
             </form>
@@ -318,7 +364,10 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
                   Back
                 </Button>
                 <Button type="submit" disabled={loading} className="flex-1">
-                  {loading ? 'Creating Profile & Web Filters...' : 'Create Profile'}
+                  {loading 
+                    ? (editingChild ? 'Updating Profile...' : 'Creating Profile & Web Filters...') 
+                    : (editingChild ? 'Update Profile' : 'Create Profile')
+                  }
                 </Button>
               </div>
             </form>
