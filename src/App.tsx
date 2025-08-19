@@ -43,6 +43,11 @@ const App = () => (
               {/* Index redirect */}
               <Route path="/index" element={<Navigate to="/" replace />} />
               
+              {/* Guardian Nova - public access */}
+              <Route path="/guardian-nova" element={
+                navItems.find(item => item.to === "/guardian-nova")?.page
+              } />
+              
               {/* Homework Helper - public access */}
               <Route path="/homework-helper" element={
                 navItems.find(item => item.to === "/homework-helper")?.page
@@ -58,7 +63,7 @@ const App = () => (
               
               {/* Protected routes */}
               {navItems
-                .filter(item => !["/auth", "/", "/app-store", "/homework-helper"].includes(item.to))
+                .filter(item => !["/auth", "/", "/app-store", "/homework-helper", "/guardian-nova"].includes(item.to))
                 .map(({ to, page, title, requiresAuth = true, requiresAdmin = false }) => (
                   <Route
                     key={to}
