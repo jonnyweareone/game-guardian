@@ -648,6 +648,111 @@ export type Database = {
         }
         Relationships: []
       }
+      child_homework_links: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          due_date: string | null
+          id: string
+          subject: string | null
+          title: string
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          subject?: string | null
+          title: string
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          subject?: string | null
+          title?: string
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_homework_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_homework_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_homework_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
+      child_interests: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          id: string
+          interest_id: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          id?: string
+          interest_id: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          id?: string
+          interest_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_interests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_interests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_interests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_interests_interest_id_fkey"
+            columns: ["interest_id"]
+            isOneToOne: false
+            referencedRelation: "interests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       child_time_policies: {
         Row: {
           bedtime: unknown | null
@@ -1418,6 +1523,55 @@ export type Database = {
           },
         ]
       }
+      education_profiles: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          key_stage: string | null
+          school_id: string | null
+          updated_at: string | null
+          year_group: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          key_stage?: string | null
+          school_id?: string | null
+          updated_at?: string | null
+          year_group?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          key_stage?: string | null
+          school_id?: string | null
+          updated_at?: string | null
+          year_group?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_profiles_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "education_profiles_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "education_profiles_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       identity_verifications: {
         Row: {
           address_lat: number | null
@@ -1564,6 +1718,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      interests: {
+        Row: {
+          category: string
+          code: string
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       location_match_results: {
         Row: {
@@ -1943,6 +2121,42 @@ export type Database = {
           stripe_customer_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      schools: {
+        Row: {
+          address: string | null
+          age_range_max: number | null
+          age_range_min: number | null
+          created_at: string | null
+          id: string
+          name: string
+          postcode: string | null
+          school_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          age_range_max?: number | null
+          age_range_min?: number | null
+          created_at?: string | null
+          id?: string
+          name: string
+          postcode?: string | null
+          school_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          age_range_max?: number | null
+          age_range_min?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          postcode?: string | null
+          school_type?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
