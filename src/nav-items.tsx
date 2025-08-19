@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/Dashboard";
 import DashboardV2 from "./pages/DashboardV2";
 import DevicesPage from "./pages/DevicesPage";
+import Children from "./pages/Children";
 import Account from "./pages/Account";
 import Products from "./pages/Products";
 import About from "./pages/About";
@@ -82,6 +83,13 @@ export const navItems: NavItem[] = [
     to: "/education",
     icon: <GraduationCap className="h-4 w-4" />,
     page: <Education />,
+    requiresAuth: true,
+  },
+  {
+    title: "Children",
+    to: "/children",
+    icon: <Users className="h-4 w-4" />,
+    page: <Children />,
     requiresAuth: true,
   },
   {

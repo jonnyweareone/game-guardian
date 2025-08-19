@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   ChevronDown, 
@@ -11,7 +11,11 @@ import {
   Activity,
   AlertTriangle,
   Trash2,
-  Settings
+  Settings,
+  MessageSquare,
+  Gamepad2,
+  Share2,
+  BarChart3
 } from 'lucide-react';
 import SessionTimeline from './SessionTimeline';
 import FilterPresetPicker from './FilterPresetPicker';
@@ -69,11 +73,10 @@ const EnhancedChildCard = ({
 
   return (
     <Card className="overflow-hidden">
-      <Collapsible>
+      <Collapsible open={isExpanded} onOpenChange={() => onToggleExpanded(child.id)}>
         <CollapsibleTrigger asChild>
           <CardHeader 
             className="cursor-pointer hover:bg-muted/50 transition-colors pb-4"
-            onClick={() => onToggleExpanded(child.id)}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -138,72 +141,171 @@ const EnhancedChildCard = ({
         </CollapsibleTrigger>
         
         <CollapsibleContent>
-          <CardContent className="space-y-6 border-t bg-muted/20 pt-6">
-            {/* Session Timeline */}
-            <div className="space-y-3">
-              <h3 className="font-medium flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                Activity Timeline
-              </h3>
-              <SessionTimeline
-                childId={child.id}
-                childName={child.name}
-                sessions={sessions}
-                totalTodayMinutes={totalTodayMinutes}
-                onAddTime={onAddTime}
-                onPauseDevice={onPauseDevice}
-                onViewFullActivity={onViewFullActivity}
-              />
-            </div>
-            
-            {/* Apps & Controls */}
-            <div className="space-y-3">
-              <h3 className="font-medium flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                App Controls
-              </h3>
-              
-              <div className="grid md:grid-cols-2 gap-4">
-                <AppChooser
-                  selectedApps={selectedApps}
-                  onSelectionChange={setSelectedApps}
-                >
-                  <Button variant="outline" className="w-full justify-start">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Manage Apps ({selectedApps.length} selected)
-                  </Button>
-                </AppChooser>
+          <CardContent className="border-t bg-muted/20 pt-6">
+            <Tabs defaultValue="overview" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview" className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="conversations" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Conversations
+                </TabsTrigger>
+                <TabsTrigger value="apps" className="flex items-center gap-2">
+                  <Gamepad2 className="h-4 w-4" />
+                  Apps & Games
+                </TabsTrigger>
+                <TabsTrigger value="social" className="flex items-center gap-2">
+                  <Share2 className="h-4 w-4" />
+                  Social Media
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-6">
+                {/* Activity Timeline */}
+                <div className="space-y-3">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    Activity Timeline
+                  </h3>
+                  <SessionTimeline
+                    childId={child.id}
+                    childName={child.name}
+                    sessions={sessions}
+                    totalTodayMinutes={totalTodayMinutes}
+                    onAddTime={onAddTime}
+                    onPauseDevice={onPauseDevice}
+                    onViewFullActivity={onViewFullActivity}
+                  />
+                </div>
                 
-                <BedtimePicker
-                  onValueChange={(value) => {
-                    console.log(`${child.name} bedtime:`, value);
+                {/* Controls */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <BedtimePicker
+                    onValueChange={(value) => {
+                      console.log(`${child.name} bedtime:`, value);
+                    }}
+                  />
+                  
+                  <FilterPresetPicker
+                    selectedPreset="child"
+                    onPresetChange={(preset) => {
+                      console.log(`${child.name} preset:`, preset);
+                    }}
+                    childName={child.name}
+                    childAvatar={child.avatar_url}
+                  />
+                </div>
+
+                <NotificationsPanel 
+                  scope="CHILD" 
+                  child={{
+                    id: child.id,
+                    name: child.name,
+                    avatar_url: child.avatar_url
                   }}
                 />
-              </div>
-            </div>
-            
-            {/* Policy Settings */}
-            <div className="space-y-3">
-              <h3 className="font-medium">Content Filter Settings</h3>
-              <FilterPresetPicker
-                selectedPreset="child"
-                onPresetChange={(preset) => {
-                  console.log(`${child.name} preset:`, preset);
-                }}
-                childName={child.name}
-                childAvatar={child.avatar_url}
-              />
-            </div>
-            
-            {/* Notifications */}
-            <NotificationsPanel 
-              scope="CHILD" 
-              child={{
-                id: child.id,
-                name: child.name,
-                avatar_url: child.avatar_url
-              }}
-            />
+              </TabsContent>
+
+              <TabsContent value="conversations" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Recent Conversations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="p-3 border rounded-md">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium">Discord Chat</span>
+                          <Badge variant="outline">2h ago</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Conversation flagged for potential cyberbullying content
+                        </p>
+                      </div>
+                      <div className="p-3 border rounded-md">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium">Xbox Live</span>
+                          <Badge variant="outline">4h ago</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Inappropriate language detected in voice chat
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="apps" className="space-y-4">
+                <div className="space-y-4">
+                  <AppChooser
+                    selectedApps={selectedApps}
+                    onSelectionChange={setSelectedApps}
+                  >
+                    <Button variant="outline" className="w-full justify-start">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Manage Apps ({selectedApps.length} selected)
+                    </Button>
+                  </AppChooser>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Most Used Apps</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-3 border rounded-md">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-red-500 rounded"></div>
+                            <span className="font-medium">YouTube</span>
+                          </div>
+                          <span className="text-sm text-muted-foreground">2h 15m today</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 border rounded-md">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-purple-500 rounded"></div>
+                            <span className="font-medium">Roblox</span>
+                          </div>
+                          <span className="text-sm text-muted-foreground">1h 45m today</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="social" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Social Media Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="p-3 border rounded-md">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium">Instagram</span>
+                          <Badge variant="destructive">High Risk</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Potential stranger contact detected
+                        </p>
+                      </div>
+                      <div className="p-3 border rounded-md">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium">TikTok</span>
+                          <Badge variant="secondary">Medium Risk</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Excessive use during school hours
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </CollapsibleContent>
       </Collapsible>

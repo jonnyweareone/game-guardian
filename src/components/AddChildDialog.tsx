@@ -20,11 +20,16 @@ interface WebFilterConfig {
 }
 
 interface AddChildDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  editingChild?: any;
   onChildAdded: () => void;
 }
 
-const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
-  const [open, setOpen] = useState(false);
+const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenChange, editingChild, onChildAdded }: AddChildDialogProps) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'basic' | 'apps' | 'webfilters'>('basic');
   const [name, setName] = useState('');
@@ -210,12 +215,14 @@ const AddChildDialog = ({ onChildAdded }: AddChildDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
-      <DialogTrigger asChild>
-        <Button className="h-16 flex flex-col gap-2">
-          <Plus className="h-5 w-5" />
-          Add Child Profile
-        </Button>
-      </DialogTrigger>
+      {!controlledOpen && (
+        <DialogTrigger asChild>
+          <Button className="h-16 flex flex-col gap-2">
+            <Plus className="h-5 w-5" />
+            Add Child Profile
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
