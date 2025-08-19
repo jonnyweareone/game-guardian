@@ -281,8 +281,13 @@ export default function Children() {
         )}
 
         <AddChildDialog
-          open={showAddDialog}
-          onOpenChange={setShowAddDialog}
+          open={showAddDialog || !!editingChild}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowAddDialog(false);
+              setEditingChild(null);
+            }
+          }}
           editingChild={editingChild}
           onChildAdded={() => {
             queryClient.invalidateQueries({ queryKey: ['children-with-devices'] });
