@@ -27,9 +27,13 @@ import AdminBooksIngest from "./pages/admin/AdminBooksIngest";
 import OtaDemoLayout from "./pages/admin/ota-demo/OtaDemoLayout";
 import OtaUpdateManager from "./pages/admin/ota-demo/OtaUpdateManager";
 import OtaReports from "./pages/admin/ota-demo/OtaReports";
-import TuxMathGame from "@/pages/games/TuxMath";
-import BlocklyMazeGame from "@/pages/games/BlocklyMaze";
-import TurtlestitchActivity from "@/pages/activities/Turtlestitch";
+import TuxMathGame from './pages/games/TuxMath';
+import BlocklyMazeGame from './pages/games/BlocklyMaze';
+import TurtlestitchActivity from './pages/activities/Turtlestitch';
+import BlocklyMaze from './pages/play/BlocklyMaze';
+import Turtlestitch from './pages/play/Turtlestitch';
+import TuxMath from './pages/play/TuxMath';
+import Antura from './pages/play/Antura';
 
 const queryClient = new QueryClient();
 
@@ -141,6 +145,12 @@ const App = () => (
               <Route path="/games/tuxmath" element={<TuxMathGame />} />
               <Route path="/games/blockly/maze" element={<BlocklyMazeGame />} />
               <Route path="/activities/turtlestitch" element={<TurtlestitchActivity />} />
+              
+              {/* New play routes for same-origin hosted games */}
+              <Route path="/play/blockly/maze" element={<BlocklyMaze />} />
+              <Route path="/play/turtlestitch" element={<Turtlestitch />} />
+              <Route path="/play/tuxmath" element={<TuxMath />} />
+              <Route path="/play/antura" element={<Antura />} />
               
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />

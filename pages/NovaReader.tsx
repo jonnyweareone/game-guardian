@@ -15,7 +15,7 @@ export default function NovaReader() {
   const navigate = useNavigate();
   const { bookId } = useParams();
   const [searchParams] = useSearchParams();
-  const childId = searchParams.get('child') || 'demo-child-1';
+  const childId = searchParams.get('child') || sessionStorage.getItem('nova_active_child') || 'demo-child-1';
   const [selectedBookId, setSelectedBookId] = useState<string | null>(bookId || null);
   const [showIngestor, setShowIngestor] = useState(false);
 

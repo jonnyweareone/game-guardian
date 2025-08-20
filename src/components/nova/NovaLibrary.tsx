@@ -182,8 +182,8 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
       // Set active child in sessionStorage
       sessionStorage.setItem('nova_active_child', childId);
       
-      // Navigate to reader
-      navigate(`/novalearning/reading/${book.id}`);
+      // Navigate to reader with child ID
+      navigate(`/novalearning/reading/${book.id}?child=${childId}`);
     } catch (error) {
       console.error('Error starting reading:', error);
     }

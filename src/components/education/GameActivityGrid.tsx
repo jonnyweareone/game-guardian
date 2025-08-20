@@ -28,7 +28,7 @@ const GAME_ACTIVITIES: GameActivityItem[] = [
     difficulty: 'Easy',
     estimatedTime: '10-15 min',
     xpReward: '15-35 XP',
-    launchUrl: '/games/tuxmath'
+    launchUrl: '/play/tuxmath'
   },
   {
     id: 'blockly-maze',
@@ -40,7 +40,7 @@ const GAME_ACTIVITIES: GameActivityItem[] = [
     difficulty: 'Medium',
     estimatedTime: '15-20 min', 
     xpReward: '20-35 XP',
-    launchUrl: '/games/blockly/maze'
+    launchUrl: '/play/blockly/maze'
   },
   {
     id: 'turtlestitch',
@@ -52,7 +52,19 @@ const GAME_ACTIVITIES: GameActivityItem[] = [
     difficulty: 'Medium',
     estimatedTime: '20-30 min',
     xpReward: '25-35 XP', 
-    launchUrl: '/activities/turtlestitch'
+    launchUrl: '/play/turtlestitch'
+  },
+  {
+    id: 'antura',
+    title: 'Antura',
+    kind: 'game',
+    subject: 'Language',
+    description: 'Learn Arabic letters and vocabulary with Antura the dog in this Unity game.',
+    icon: '🦁',
+    difficulty: 'Easy',
+    estimatedTime: '15-25 min',
+    xpReward: '20-40 XP',
+    launchUrl: '/play/antura'
   },
   {
     id: 'novabooks',

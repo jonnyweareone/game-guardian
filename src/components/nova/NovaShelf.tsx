@@ -64,7 +64,7 @@ export function NovaShelf({ childId }: NovaShelfProps) {
     // Set active child in sessionStorage
     sessionStorage.setItem('nova_active_child', childId);
     
-    navigate(`/novalearning/reading/${item.books?.id || item.book_id}`);
+    navigate(`/novalearning/reading/${item.books?.id || item.book_id}?child=${childId}`);
   };
 
   if (isLoading) {

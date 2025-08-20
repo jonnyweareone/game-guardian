@@ -27,7 +27,7 @@
       }
 
       try {
-        const response = await fetch('/api/nova-game-event', {
+        const response = await fetch('https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/nova-game-event', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
