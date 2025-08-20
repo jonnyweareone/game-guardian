@@ -78,16 +78,19 @@ const DeviceActivation = () => {
         setDeviceCode(data.device.device_code);
       }
 
-      // Handoff JWT to localhost helper if running
+      // Handoff JWT to localhost helper if running (desktop app only)
       if (data?.device_jwt) {
-        try {
-          await fetch("http://127.0.0.1:8719/token", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ device_jwt: data.device_jwt })
-          });
-        } catch { 
-          // Ignore if helper not running
+        const { isDesktopApp, getLocalAgentBase } = await import('@/lib/env');
+        if (isDesktopApp()) {
+          try {
+            await fetch(`${getLocalAgentBase()}/token`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ device_jwt: data.device_jwt })
+            });
+          } catch { 
+            // Ignore if helper not running
+          }
         }
       }
 

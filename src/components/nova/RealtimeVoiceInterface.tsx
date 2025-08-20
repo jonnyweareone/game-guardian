@@ -220,7 +220,16 @@ const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
       await initializeAudio();
       
       // Connect to our Nova realtime chat WebSocket
-      const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host.replace(/:[0-9]+/, '')}.functions.supabase.co/functions/v1/nova-realtime-chat`;
+      const { isDesktopApp, getFunctionsBase, getLocalAgentBase } = await import('@/lib/env');
+      
+      const base = isDesktopApp()
+        ? getLocalAgentBase().replace(/^http/i, 'ws')
+        : getFunctionsBase().replace(/^https/i, 'wss');
+      const wsUrl = isDesktopApp()
+        ? `${base}/nova-realtime-chat`
+        : `${base}/functions/v1/nova-realtime-chat`;
+      
+      console.log('Connecting to Nova realtime chat:', wsUrl);
       wsRef.current = new WebSocket(wsUrl);
       
       wsRef.current.onopen = () => {

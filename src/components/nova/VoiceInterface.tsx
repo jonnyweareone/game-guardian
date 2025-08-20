@@ -53,9 +53,16 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
       if (!audioReady) return;
 
       // Connect to WebSocket
-      const wsUrl = `wss://xzxjwuzwltoapifcyzww.functions.supabase.co/realtime-chat`;
-      console.log('Connecting to:', wsUrl);
+      const { isDesktopApp, getFunctionsBase, getLocalAgentBase } = await import('@/lib/env');
       
+      const base = isDesktopApp()
+        ? getLocalAgentBase().replace(/^http/i, 'ws')
+        : getFunctionsBase().replace(/^https/i, 'wss');
+      const wsUrl = isDesktopApp()
+        ? `${base}/realtime-chat`
+        : `${base}/functions/v1/realtime-chat`;
+      
+      console.log('Connecting to:', wsUrl);
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
