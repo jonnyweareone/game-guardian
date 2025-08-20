@@ -222,23 +222,55 @@ async function processIngestJob(supabase: any, job: any) {
   
   console.log(`Split into ${pages.length} pages`);
   
+  // Preserve existing images by backing them up first
+  const { data: existingPages } = await supabase
+    .from('book_pages')
+    .select('page_index, illustration_url, illustration_caption, illustration_prompt')
+    .eq('book_id', job.book_id)
+    .not('illustration_url', 'is', null);
+  
+  const imageBackup = new Map();
+  existingPages?.forEach(page => {
+    imageBackup.set(page.page_index, {
+      illustration_url: page.illustration_url,
+      illustration_caption: page.illustration_caption,
+      illustration_prompt: page.illustration_prompt
+    });
+  });
+  
   // Clear existing pages
   await supabase.from('book_pages').delete().eq('book_id', job.book_id);
   
-  // Insert new pages with enhanced metadata
+  // Insert new pages with enhanced metadata and preserved images
   const batchSize = 20;
   for (let i = 0; i < pages.length; i += batchSize) {
-    const batch = pages.slice(i, i + batchSize).map((page, idx) => ({
-      book_id: job.book_id,
-      page_index: i + idx,
-      content: page.content,
-      tokens: page.tokens,
-      illustration_caption: page.illustration_caption,
-      illustration_inline_at: page.illustration_inline_at,
-      is_front_matter: page.is_front_matter,
-      chapter_index: page.chapter_index,
-      chapter_title: page.chapter_title
-    }));
+    const batch = pages.slice(i, i + batchSize).map((page, idx) => {
+      const pageIndex = i + idx;
+      const pageData = {
+        book_id: job.book_id,
+        page_index: pageIndex,
+        content: page.content,
+        tokens: page.tokens,
+        illustration_caption: page.illustration_caption,
+        illustration_inline_at: page.illustration_inline_at,
+        is_front_matter: page.is_front_matter,
+        chapter_index: page.chapter_index,
+        chapter_title: page.chapter_title
+      };
+      
+      // Reattach existing image if available
+      const backup = imageBackup.get(pageIndex);
+      if (backup) {
+        pageData.illustration_url = backup.illustration_url;
+        // Keep existing caption if no new marker found
+        if (!page.illustration_caption) {
+          pageData.illustration_caption = backup.illustration_caption;
+        }
+        pageData.illustration_prompt = backup.illustration_prompt;
+      }
+      
+      return pageData;
+    });
     
     const { error } = await supabase.from('book_pages').insert(batch);
     if (error) throw error;
@@ -253,15 +285,15 @@ async function processIngestJob(supabase: any, job: any) {
   
   console.log(`Book ${job.book_id} ingested successfully with ${pages.length} pages`);
   
-  // Queue illustration job for pages with markers
+  // Queue illustration job for pages with markers that don't have images
   const pagesWithIllustrations = pages
     .map((page, index) => ({ ...page, page_index: index }))
-    .filter(page => page.illustration_caption);
+    .filter(page => page.illustration_caption && !imageBackup.has(page.page_index));
     
   if (pagesWithIllustrations.length > 0) {
     await supabase.from('nova_jobs').insert({
       book_id: job.book_id,
-      type: 'illustrate_markers',
+      job_type: 'illustrate_markers',
       payload: { pages: pagesWithIllustrations },
       status: 'queued'
     });
@@ -271,7 +303,7 @@ async function processIngestJob(supabase: any, job: any) {
   // Queue analysis job (for first read analysis)
   await supabase.from('nova_jobs').insert({
     book_id: job.book_id,
-    type: 'analyze',
+    job_type: 'analyze',
     payload: {},
     status: 'queued'
   });
@@ -382,8 +414,8 @@ async function processAnalyzeJob(supabase: any, job: any) {
     word_count: wordCount,
     reading_level: readingLevel,
     estimated_minutes: estimatedMinutes,
-    analyzed: true,
-    analyzed_at: new Date().toISOString()
+    analysis_done: true,
+    analysis_at: new Date().toISOString()
   }).eq('id', job.book_id);
   
   console.log(`Book ${job.book_id} analyzed: ${wordCount} words, ${readingLevel} level, ~${estimatedMinutes} minutes`);
@@ -564,7 +596,7 @@ serve(async (req) => {
 
     for (const job of jobs || []) {
       try {
-        console.log(`Processing job ${job.id} (${job.type}) for book ${job.book_id}`);
+        console.log(`Processing job ${job.id} (${job.job_type}) for book ${job.book_id}`);
 
         // Mark as processing
         await supabase.from('nova_jobs').update({ 
@@ -572,7 +604,7 @@ serve(async (req) => {
           started_at: new Date().toISOString()
         }).eq('id', job.id);
 
-        switch (job.type) {
+        switch (job.job_type) {
           case 'ingest':
             await processIngestJob(supabase, job);
             break;
@@ -589,7 +621,7 @@ serve(async (req) => {
             await processIllustrateMarkersJob(supabase, job);
             break;
           default:
-            throw new Error(`Unknown job type: ${job.type}`);
+            throw new Error(`Unknown job type: ${job.job_type}`);
         }
 
         // Mark as completed

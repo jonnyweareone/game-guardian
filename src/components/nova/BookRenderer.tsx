@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, RotateCcw, Loader2, BookOpen } from 'lucide-
 import { PageContent } from './PageContent';
 import ReadToMeDock from './ReadToMeDock';
 import { useNovaSignals } from '@/hooks/useNovaSignals';
+import { Token } from '@/lib/tokenizerUtils';
 
 interface BookRendererProps {
   bookId: string;
@@ -110,7 +111,7 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
         stopListening();
       };
     }
-  }, [bookId, childId]);
+  }, [bookId, childId, startListening, stopListening]);
 
   // Create session on component mount
   useEffect(() => {
@@ -224,6 +225,21 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
   const currentPageData = pages[currentPage];
   const hasChapters = allPages?.some(p => p.chapter_index !== null);
 
+  // Safely parse tokens with proper type checking
+  let parsedTokens: Token[] = [];
+  if (currentPageData?.tokens) {
+    try {
+      if (Array.isArray(currentPageData.tokens)) {
+        parsedTokens = currentPageData.tokens as Token[];
+      } else if (typeof currentPageData.tokens === 'string') {
+        parsedTokens = JSON.parse(currentPageData.tokens);
+      }
+    } catch (error) {
+      console.warn('Failed to parse tokens:', error);
+      parsedTokens = [];
+    }
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 pb-24">
       {/* Sticky top navigation bar */}
@@ -287,7 +303,7 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
       <div className="px-4">
         <PageContent
           content={currentPageData?.content || ''}
-          tokens={currentPageData?.tokens || []}
+          tokens={parsedTokens}
           illustration_url={currentPageData?.illustration_url}
           illustration_caption={currentPageData?.illustration_caption}
           illustration_inline_at={currentPageData?.illustration_inline_at}
