@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Generate demo Nova insights and problem words for testing
-export const generateDemoInsights = async (sessionId: string, childId: string, bookId: string) => {
+export const generateDemoInsights = async (sessionId: string, childId: string, bookId: string, bookTitle?: string) => {
   console.log('Generating demo insights for session:', sessionId);
 
   // Demo insights

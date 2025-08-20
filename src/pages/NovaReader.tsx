@@ -9,6 +9,7 @@ import { useNovaSession } from '@/hooks/useNovaSession';
 import { NovaCoach } from '@/components/nova/NovaCoach';
 import { ProblemWords } from '@/components/nova/ProblemWords';
 import VoiceInterface from '@/components/nova/VoiceInterface';
+import RealtimeVoiceInterface from '@/components/nova/RealtimeVoiceInterface';
 import { EpubReader } from '@/components/nova/EpubReader';
 import { TextToSpeechPlayer } from '@/components/nova/TextToSpeechPlayer';
 import { ReadingRewards } from '@/components/nova/ReadingRewards';
@@ -60,10 +61,10 @@ export default function NovaReader() {
     if (sessionId && activeChildId && bookId && book?.title) {
       console.log('Generating demo data for Nova coaching');
       
-      // Generate demo insights and problem words after a short delay
+      // Generate real AI insights and problem words after a short delay
       setTimeout(() => {
-        generateDemoInsights(sessionId, activeChildId, bookId);
-      }, 3000); // 3 second delay to simulate AI processing
+        generateDemoInsights(sessionId, activeChildId, bookId, book?.title);
+      }, 3000); // 3 second delay to simulate processing
     }
   }, [sessionId, activeChildId, bookId, book?.title]);
 
@@ -237,8 +238,11 @@ export default function NovaReader() {
             }}
           />
           
-          {/* Voice Interface */}
-          <VoiceInterface 
+          {/* Realtime Voice Interface */}
+          <RealtimeVoiceInterface
+            sessionId={sessionId}
+            childId={activeChildId}
+            bookId={bookId}
             onSpeakingChange={setAiSpeaking}
             onTranscriptUpdate={setTranscript}
           />
