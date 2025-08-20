@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { edu } from '@/lib/educationApi';
@@ -18,7 +19,7 @@ export default function EducationTab({ childId, childAge = 7, hint = '' }: Props
   const childQ = useQuery({
     queryKey: ['child-basic', childId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('children').select('id, dob').eq('id', childId).single();
+      const { data, error } = await supabase.from('children').select('id, dob, name').eq('id', childId).single();
       if (error) throw error; return data;
     }
   });
@@ -77,6 +78,7 @@ export default function EducationTab({ childId, childAge = 7, hint = '' }: Props
       const { error } = await supabase.from('children').update({ dob: dobISO }).eq('id', childId);
       if (error) throw error;
 
+      // The trigger will automatically update education_profiles, but we can also do it manually for immediate feedback
       const { yearGroup, keyStage } = yearAndKeyStageFromDOB(dobISO);
       await edu.saveProfile(childId, {
         ...(profileQ.data || {}),
@@ -107,12 +109,18 @@ export default function EducationTab({ childId, childAge = 7, hint = '' }: Props
 
   const dobISO = childQ.data?.dob ?? undefined;
   const computed = yearAndKeyStageFromDOB(dobISO);
+  
+  // Show next academic year info if we're before August
+  const now = new Date();
+  const isBeforeAugust = now.getMonth() < 7; // August is month 7
+  const nextYearInfo = isBeforeAugust && dobISO ? 
+    yearAndKeyStageFromDOB(dobISO, new Date(now.getFullYear(), 7, 1)) : null;
 
   return (
     <div className="grid gap-4">
       {/* Profile & School */}
       <Card>
-        <CardHeader><CardTitle>Education Profile</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Education Profile - {childQ.data?.name}</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="grid md:grid-cols-3 gap-2">
             <div>
@@ -127,14 +135,22 @@ export default function EducationTab({ childId, childAge = 7, hint = '' }: Props
               />
               {computed.yearGroup && (
                 <div className="text-xs text-muted-foreground mt-1">
-                  {computed.yearGroup} • {computed.keyStage}
+                  Current: {computed.yearGroup} • {computed.keyStage}
+                  {nextYearInfo && nextYearInfo.yearGroup !== computed.yearGroup && (
+                    <div className="text-blue-600">
+                      Next: {nextYearInfo.yearGroup} from September
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
             <div>
               <label className="text-xs text-muted-foreground">Key Stage</label>
-              <Select value={profileQ.data?.key_stage ?? computed.keyStage ?? ''} onValueChange={(v)=>saveProfileM.mutate({ ...(profileQ.data||{}), key_stage:v })}>
+              <Select 
+                value={profileQ.data?.key_stage ?? computed.keyStage ?? ''} 
+                onValueChange={(v)=>saveProfileM.mutate({ ...(profileQ.data||{}), key_stage:v })}
+              >
                 <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="KS1">KS1</SelectItem>
@@ -197,7 +213,6 @@ export default function EducationTab({ childId, childAge = 7, hint = '' }: Props
           </Button>
         </CardContent>
       </Card>
-
 
       {/* Homework (Libre/Google links) */}
       <Card>

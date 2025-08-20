@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from 'lucide-react';
@@ -90,6 +91,13 @@ export default function EducationPage() {
       
       {children.map((child) => {
         const { yearGroup, keyStage } = yearAndKeyStageFromDOB(child.dob);
+        const now = new Date();
+        const isBeforeAugust = now.getMonth() < 7; // August is month 7
+        
+        // Show next year group if we're before August 1st
+        const nextYearInfo = isBeforeAugust && child.dob ? 
+          yearAndKeyStageFromDOB(child.dob, new Date(now.getFullYear(), 7, 1)) : null;
+        
         return (
         <Card key={child.id} className="overflow-hidden">
           <CardContent className="p-6">
@@ -106,9 +114,12 @@ export default function EducationPage() {
                   <h2 className="text-xl font-semibold">{child.name}</h2>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                     <span>Coins: {wallets[child.id]?.coins ?? 0}</span>
-                    {child.dob && <span>DOB: {child.dob}</span>}
+                    {child.dob && <span>DOB: {new Date(child.dob).toLocaleDateString('en-GB')}</span>}
                     {yearGroup && <span>Year: {yearGroup}</span>}
                     {keyStage && <span>Key Stage: {keyStage}</span>}
+                    {nextYearInfo && nextYearInfo.yearGroup !== yearGroup && (
+                      <span className="text-blue-600">Next: {nextYearInfo.yearGroup} from September</span>
+                    )}
                   </div>
                 </div>
               </div>
