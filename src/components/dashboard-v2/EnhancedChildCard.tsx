@@ -15,16 +15,13 @@ import {
   MessageSquare,
   Gamepad2,
   Share2,
-  BarChart3,
-  BookOpen
+  BarChart3
 } from 'lucide-react';
 import SessionTimeline from './SessionTimeline';
 import FilterPresetPicker from './FilterPresetPicker';
 import BedtimePicker from './BedtimePicker';
 import AppChooser from './AppChooser';
 import NotificationsPanel from './NotificationsPanel';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface Child {
   id: string;
@@ -71,37 +68,8 @@ const EnhancedChildCard = ({
   onViewFullActivity
 }: EnhancedChildCardProps) => {
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
-  const { toast } = useToast();
   
   const isOnline = sessions.some(s => s.is_active);
-
-  const handleNovaLearning = async () => {
-    try {
-      // Mint a child token for Nova Learning access
-      const { data, error } = await supabase.functions.invoke('nova-mint-child-token', {
-        body: { child_id: child.id }
-      });
-
-      if (error) throw error;
-
-      if (data?.nova_url) {
-        // Open Nova Learning in new tab with the token
-        window.open(data.nova_url, '_blank');
-        
-        toast({
-          title: "Nova Learning Opened",
-          description: `${child.name} can now access Nova Learning directly.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error opening Nova Learning:', error);
-      toast({
-        title: "Error",
-        description: "Failed to open Nova Learning. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <Card className="overflow-hidden">
@@ -147,18 +115,6 @@ const EnhancedChildCard = ({
               </div>
               
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNovaLearning();
-                  }}
-                  title="Open Nova Learning"
-                >
-                  <BookOpen className="h-4 w-4" />
-                </Button>
                 <Button
                   variant="ghost"
                   size="sm"

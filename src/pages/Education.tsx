@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import EducationTab from '@/components/dashboard-v2/EducationTab';
+import { Button } from '@/components/ui/button';
 import ChildEducationTabs from '@/components/education/ChildEducationTabs';
 import SEOHead from '@/components/SEOHead';
 import { getChildren } from '@/lib/api';
 import { getWallet } from '@/lib/rewardsApi';
 import { yearAndKeyStageFromDOB } from '@/lib/ukSchoolYear';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export default function EducationPage() {
   const { data: children, isLoading } = useQuery({
@@ -15,8 +17,8 @@ export default function EducationPage() {
     queryFn: getChildren
   });
 
-  const [openId, setOpenId] = useState<string>("");
   const [wallets, setWallets] = useState<Record<string, any>>({});
+  const { toast } = useToast();
 
   // Load wallets when children are loaded
   useEffect(() => {
@@ -34,6 +36,34 @@ export default function EducationPage() {
       })();
     }
   }, [children]);
+
+  const handleNovaLearning = async (child: any) => {
+    try {
+      // Mint a child token for Nova Learning access
+      const { data, error } = await supabase.functions.invoke('nova-mint-child-token', {
+        body: { child_id: child.id }
+      });
+
+      if (error) throw error;
+
+      if (data?.nova_url) {
+        // Open Nova Learning in new tab with the token
+        window.open(data.nova_url, '_blank');
+        
+        toast({
+          title: "Nova Learning Opened",
+          description: `${child.name} can now access Nova Learning directly.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error opening Nova Learning:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open Nova Learning. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) return <div>Loading Education…</div>;
   if (!children?.length) return <div>No children yet.</div>;
@@ -72,31 +102,18 @@ export default function EducationPage() {
                 </div>
               </div>
               
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 hover:bg-primary hover:text-primary-foreground"
+                onClick={() => handleNovaLearning(child)}
+                title="Open Nova Learning"
+              >
+                <BookOpen className="h-4 w-4" />
+              </Button>
             </div>
 
-            
-            <div 
-              className="mt-4 cursor-pointer flex items-center justify-between hover:bg-muted/50 transition-colors p-2 rounded"
-              onClick={() => setOpenId(openId === child.id ? "" : child.id)}
-            >
-              <span className="font-medium">Education Details</span>
-              <ChevronDown 
-                className={`w-5 h-5 transition-transform ${
-                  openId === child.id ? 'transform rotate-180' : ''
-                }`}
-              />
-            </div>
-            
-            {openId === child.id && (
-              <div className="border-t mt-2 pt-4 space-y-4">
-                <EducationTab 
-                  childId={child.id}
-                  childAge={child.age ?? undefined}
-                  hint={''}
-                />
-                <ChildEducationTabs childId={child.id} />
-              </div>
-            )}
+            <ChildEducationTabs childId={child.id} />
           </CardContent>
         </Card>
         );
