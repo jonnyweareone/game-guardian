@@ -236,7 +236,8 @@ serve(async (req) => {
       const tokens = pageWords.map((word, index) => ({
         word,
         start: pageWords.slice(0, index).join(' ').length + (index > 0 ? 1 : 0),
-        end: pageWords.slice(0, index + 1).join(' ').length
+        end: pageWords.slice(0, index + 1).join(' ').length,
+        tricky: (word.replace(/[^a-zA-Z]/g, '')).length >= 9
       }))
 
       // Analyze page content for TTS voice segments

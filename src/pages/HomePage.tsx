@@ -1,8 +1,9 @@
-
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Shield, 
   Gamepad2, 
@@ -24,6 +25,21 @@ import {
 import EcosystemHero from '@/components/EcosystemHero';
 
 const HomePage = () => {
+  // Background: if admin is logged in, ensure books are ingested (no manual steps)
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        if (!userRes?.user) return;
+        const { data: isAdmin } = await supabase.rpc('is_admin');
+        if (isAdmin) {
+          await supabase.functions.invoke('books-batch-reingest', { body: { limit: 50, force: false } });
+        }
+      } catch (e) {
+        console.error('Auto re-ingest batch failed (ignored):', e);
+      }
+    })();
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}

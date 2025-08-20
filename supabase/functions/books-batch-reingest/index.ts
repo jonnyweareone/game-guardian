@@ -22,6 +22,38 @@ function createServiceClient() {
   return createClient(supabaseUrl, serviceKey)
 }
 
+// Simple heuristics to analyze voice segments per page
+function analyzeVoiceSegments(text: string) {
+  const segments: Array<{ text: string; label: string; start_para_idx: number }> = []
+  const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 0)
+
+  for (let sentenceIndex = 0; sentenceIndex < sentences.length; sentenceIndex++) {
+    const sentence = sentences[sentenceIndex].trim()
+    if (!sentence) continue
+
+    let label = 'narrator'
+
+    // Heuristics for dialogue vs narration
+    const lower = sentence.toLowerCase()
+    const isDialogue = sentence.includes('"') || sentence.includes("'")
+    if (isDialogue) {
+      if (lower.includes('sir') || lower.includes('madam') || lower.includes('indeed') || lower.includes('certainly')) {
+        label = 'adult_male'
+      } else if (lower.match(/\b(mommy|daddy|wow|cool|awesome|yay|ooh)\b/)) {
+        label = 'child'
+      } else if (lower.match(/\b(dude|like|totally|whatever|omg)\b/)) {
+        label = 'teen'
+      } else {
+        label = 'child'
+      }
+    }
+
+    segments.push({ text: sentence, label, start_para_idx: sentenceIndex })
+  }
+
+  return segments
+}
+
 async function ingestSingle(supabase: ReturnType<typeof createServiceClient>, source_url: string, book_id?: string) {
   if (!source_url) throw new Error('source_url missing')
 
@@ -114,9 +146,12 @@ async function ingestSingle(supabase: ReturnType<typeof createServiceClient>, so
       word,
       start: pageWords.slice(0, index).join(' ').length + (index > 0 ? 1 : 0),
       end: pageWords.slice(0, index + 1).join(' ').length,
+      tricky: (word.replace(/[^a-zA-Z]/g, '')).length >= 9
     }))
 
-    pages.push({ book_id: finalBookId, page_index: i, content: pageContent, tokens })
+    const tts_segments = analyzeVoiceSegments(pageContent)
+
+    pages.push({ book_id: finalBookId, page_index: i, content: pageContent, tokens, tts_segments })
   }
 
   // Batch insert pages

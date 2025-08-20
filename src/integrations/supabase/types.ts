@@ -470,7 +470,7 @@ export type Database = {
           created_at: string
           error: string | null
           id: string
-          source_url: string
+          source_url: string | null
           started_at: string | null
           status: string
           user_id: string | null
@@ -481,7 +481,7 @@ export type Database = {
           created_at?: string
           error?: string | null
           id?: string
-          source_url: string
+          source_url?: string | null
           started_at?: string | null
           status?: string
           user_id?: string | null
@@ -492,7 +492,7 @@ export type Database = {
           created_at?: string
           error?: string | null
           id?: string
-          source_url?: string
+          source_url?: string | null
           started_at?: string | null
           status?: string
           user_id?: string | null

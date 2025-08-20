@@ -87,6 +87,22 @@ export default function NovaReader() {
     }
   }, [book]);
 
+  // Auto-ingest if not yet ingested (no manual action needed)
+  useEffect(() => {
+    const autoIngest = async () => {
+      try {
+        if (book && !book.ingested && (book as any).source_url && bookId) {
+          console.log('Auto-ingesting book (background):', bookId);
+          await supabase.functions.invoke('book-ingest', { body: { book_id: bookId } });
+          // No blocking UI; page will refresh when content is ready if needed
+        }
+      } catch (e) {
+        console.error('Auto-ingest failed:', e);
+      }
+    };
+    autoIngest();
+  }, [book, bookId]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
