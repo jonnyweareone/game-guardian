@@ -55,10 +55,13 @@ export default function NovaReader() {
   // Determine reader type
   useEffect(() => {
     if (book) {
-      if ((book as any).download_epub_url) {
-        setReaderContent('epub');
-      } else if ((book as any).download_pdf_url) {
+      // Prefer PDF (most reliable to embed), then online, then EPUB (simulated)
+      if ((book as any).download_pdf_url) {
         setReaderContent('pdf');
+      } else if ((book as any).read_online_url) {
+        setReaderContent('online');
+      } else if ((book as any).download_epub_url) {
+        setReaderContent('epub');
       } else {
         setReaderContent('online');
       }

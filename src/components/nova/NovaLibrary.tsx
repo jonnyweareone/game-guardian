@@ -64,7 +64,9 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
 
       // Filter by key stage if available
       if (educationProfile?.key_stage) {
-        query = query.eq('ks', educationProfile.key_stage);
+        const ks = educationProfile.key_stage;
+        // Match either books.ks or level_tags array
+        query = query.or(`ks.eq.${ks},level_tags.cs.{${ks}}`);
       }
 
       // Filter by age if child's DOB is available
@@ -93,7 +95,9 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
 
       // Filter by key stage if available
       if (educationProfile?.key_stage) {
-        query = query.eq('ks', educationProfile.key_stage);
+        const ks = educationProfile.key_stage;
+        // Match either books.ks or level_tags array
+        query = query.or(`ks.eq.${ks},level_tags.cs.{${ks}}`);
       }
 
       const { data, error } = await query;
