@@ -68,42 +68,33 @@ export const EnhancedTextToSpeechPlayer: React.FC<EnhancedTextToSpeechPlayerProp
     calm: { name: 'Calm', description: 'Gentle, soothing' }
   };
 
-  // Load user preferences
+  // Load user preferences from localStorage (fallback until types update)
   useEffect(() => {
     if (childId) {
-      const loadPreferences = async () => {
+      const savedPrefs = localStorage.getItem(`tts_prefs_${childId}`);
+      if (savedPrefs) {
         try {
-          const { data, error } = await supabase
-            .from('child_tts_preferences')
-            .select('*')
-            .eq('child_id', childId)
-            .single();
-
-          if (data && !error) {
-            setIsMultiVoice(data.multi_voice || false);
-            setVoiceStyle(data.voice_style || 'storybook');
-          }
+          const prefs = JSON.parse(savedPrefs);
+          setIsMultiVoice(prefs.multiVoice || false);
+          setVoiceStyle(prefs.voiceStyle || 'storybook');
         } catch (error) {
-          console.log('No saved preferences found');
+          console.log('Failed to load preferences');
         }
-      };
-      loadPreferences();
+      }
     }
   }, [childId]);
 
-  // Save user preferences
-  const savePreferences = async () => {
+  // Save user preferences to localStorage
+  const savePreferences = () => {
     if (!childId) return;
     
     try {
-      await supabase
-        .from('child_tts_preferences')
-        .upsert({
-          child_id: childId,
-          multi_voice: isMultiVoice,
-          voice_style: voiceStyle,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'child_id' });
+      const prefs = {
+        multiVoice: isMultiVoice,
+        voiceStyle: voiceStyle,
+        updated: new Date().toISOString()
+      };
+      localStorage.setItem(`tts_prefs_${childId}`, JSON.stringify(prefs));
     } catch (error) {
       console.error('Failed to save preferences:', error);
     }

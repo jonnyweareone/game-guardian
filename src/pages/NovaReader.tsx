@@ -11,7 +11,7 @@ import { NovaCoach } from '@/components/nova/NovaCoach';
 import { ProblemWords } from '@/components/nova/ProblemWords';
 import RealtimeVoiceInterface from '@/components/nova/RealtimeVoiceInterface';
 import { EpubReader } from '@/components/nova/EpubReader';
-import { TextToSpeechPlayer } from '@/components/nova/TextToSpeechPlayer';
+import { EnhancedTextToSpeechPlayer } from '@/components/nova/EnhancedTextToSpeechPlayer';
 import { ReadingRewards } from '@/components/nova/ReadingRewards';
 import { BookRenderer } from '@/components/nova/BookRenderer';
 import { BookIngestionDialog } from '@/components/BookIngestionDialog';
@@ -259,13 +259,17 @@ export default function NovaReader() {
             }}
           />
 
-          {/* Text-to-Speech Player */}
-          <TextToSpeechPlayer 
+          {/* Enhanced Text-to-Speech Player */}
+          <EnhancedTextToSpeechPlayer 
             bookId={bookId || ''}
             bookTitle={book?.title || ''}
             bookContent={getSampleBookContent(book?.title || '')}
+            childId={activeChildId}
             onProgressUpdate={(progress) => {
               console.log('TTS progress:', progress);
+            }}
+            onParagraphHighlight={(paragraphIndex) => {
+              console.log('Highlighting paragraph:', paragraphIndex);
             }}
           />
           

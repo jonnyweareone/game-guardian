@@ -8,10 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BookOpen, Users, Clock, Sparkles, Gamepad2, Headset, BookMarked } from 'lucide-react';
+import { BookOpen, Users, Clock, Sparkles, Gamepad2, Headset, BookMarked, Volume2 } from 'lucide-react';
 import { NovaLibrary } from '@/components/nova/NovaLibrary';
 import { NovaShelf } from '@/components/nova/NovaShelf';
 import { NovaTimeline } from '@/components/nova/NovaTimeline';
+import { TTSDemo } from '@/components/nova/TTSDemo';
 import { useNovaSignals } from '@/hooks/useNovaSignals';
 
 export default function NovaLearning() {
@@ -184,7 +185,7 @@ export default function NovaLearning() {
 
         {/* Main tabs */}
         <Tabs defaultValue="library" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="library" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Books
@@ -192,6 +193,10 @@ export default function NovaLearning() {
             <TabsTrigger value="shelf" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               My Shelf
+            </TabsTrigger>
+            <TabsTrigger value="tts-demo" className="flex items-center gap-2">
+              <Volume2 className="h-4 w-4" />
+              Voice Demo
             </TabsTrigger>
             <TabsTrigger value="activities" className="flex items-center gap-2">
               <BookMarked className="h-4 w-4" />
@@ -217,6 +222,10 @@ export default function NovaLearning() {
 
           <TabsContent value="shelf" className="mt-6">
             <NovaShelf childId={activeChildId} />
+          </TabsContent>
+
+          <TabsContent value="tts-demo" className="mt-6">
+            <TTSDemo />
           </TabsContent>
 
           <TabsContent value="activities" className="mt-6">

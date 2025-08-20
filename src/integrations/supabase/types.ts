@@ -1311,6 +1311,33 @@ export type Database = {
         }
         Relationships: []
       }
+      child_tts_preferences: {
+        Row: {
+          child_id: string
+          created_at: string
+          id: string
+          multi_voice: boolean
+          updated_at: string
+          voice_style: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          id?: string
+          multi_voice?: boolean
+          updated_at?: string
+          voice_style?: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          id?: string
+          multi_voice?: boolean
+          updated_at?: string
+          voice_style?: string
+        }
+        Relationships: []
+      }
       children: {
         Row: {
           age: number | null
@@ -3330,6 +3357,87 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      tts_analysis_cache: {
+        Row: {
+          analysis: Json
+          book_id: string | null
+          created_at: string
+          id: string
+          text_hash: string
+        }
+        Insert: {
+          analysis: Json
+          book_id?: string | null
+          created_at?: string
+          id?: string
+          text_hash: string
+        }
+        Update: {
+          analysis?: Json
+          book_id?: string | null
+          created_at?: string
+          id?: string
+          text_hash?: string
+        }
+        Relationships: []
+      }
+      tts_audio_cache: {
+        Row: {
+          audio_base64: string
+          audio_hash: string
+          created_at: string
+          duration: number | null
+          id: string
+          text_preview: string | null
+          voice: string
+        }
+        Insert: {
+          audio_base64: string
+          audio_hash: string
+          created_at?: string
+          duration?: number | null
+          id?: string
+          text_preview?: string | null
+          voice: string
+        }
+        Update: {
+          audio_base64?: string
+          audio_hash?: string
+          created_at?: string
+          duration?: number | null
+          id?: string
+          text_preview?: string | null
+          voice?: string
+        }
+        Relationships: []
+      }
+      tts_manifests: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          manifest: Json
+          mode: string
+          voice_style: string | null
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          manifest: Json
+          mode: string
+          voice_style?: string | null
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          manifest?: Json
+          mode?: string
+          voice_style?: string | null
+        }
+        Relationships: []
       }
       ui_manifests: {
         Row: {
