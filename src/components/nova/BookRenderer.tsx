@@ -15,6 +15,7 @@ interface BookPage {
     word: string;
     start: number;
     end: number;
+    tricky?: boolean;
   }> | null;
   image_url?: string;
 }
@@ -54,10 +55,10 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
         }
 
         if (edgeData?.data && Array.isArray(edgeData.data)) {
-          setPages(edgeData.data.map(page => ({
-            ...page,
-            tokens: page.tokens as Array<{word: string; start: number; end: number}> | null
-          })));
+        setPages(edgeData.data.map(page => ({
+          ...page,
+          tokens: page.tokens as Array<{word: string; start: number; end: number; tricky?: boolean}> | null
+        })));
           return;
         }
 
@@ -80,7 +81,7 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
         
         setPages((fallbackData || []).map(page => ({
           ...page,
-          tokens: page.tokens as Array<{word: string; start: number; end: number}> | null
+          tokens: page.tokens as Array<{word: string; start: number; end: number; tricky?: boolean}> | null
         })));
       } catch (err) {
         console.error('Error in loadPages:', err);
@@ -240,18 +241,24 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
 
     return (
       <p className="text-lg leading-relaxed">
-        {currentPageData.tokens.map((token, index) => (
-          <span
-            key={index}
-            className={`${
-              index === currentWordIndex && isReading
-                ? 'bg-yellow-200 text-yellow-900 font-semibold'
-                : ''
-            } transition-colors duration-200`}
-          >
-            {token.word}{' '}
-          </span>
-        ))}
+        {currentPageData.tokens.map((token, index) => {
+          let className = 'transition-colors duration-200';
+          
+          // Current word highlighting (for TTS)
+          if (index === currentWordIndex && isReading) {
+            className += ' bg-yellow-200 text-yellow-900 font-semibold';
+          }
+          // Tricky word highlighting (always visible)
+          else if (token.tricky) {
+            className += ' bg-orange-100 text-orange-800 font-medium border-b-2 border-orange-300';
+          }
+          
+          return (
+            <span key={index} className={className} title={token.tricky ? 'Difficult word' : undefined}>
+              {token.word}{' '}
+            </span>
+          );
+        })}
       </p>
     );
   };

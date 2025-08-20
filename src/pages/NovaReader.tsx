@@ -87,14 +87,33 @@ export default function NovaReader() {
     }
   }, [book]);
 
-  // Auto-ingest if not yet ingested (no manual action needed)
+  // Auto-ingest if not yet ingested and has usable URL
   useEffect(() => {
     const autoIngest = async () => {
       try {
-        if (book && !book.ingested && (book as any).source_url && bookId) {
-          console.log('Auto-ingesting book (background):', bookId);
-          await supabase.functions.invoke('book-ingest', { body: { book_id: bookId } });
-          // No blocking UI; page will refresh when content is ready if needed
+        if (book && !book.ingested && bookId) {
+          const hasUsableUrl = (book as any).source_url || (book as any).read_online_url || (book as any).download_epub_url;
+          if (hasUsableUrl) {
+            console.log('Auto-ingesting book (background):', bookId);
+            await supabase.functions.invoke('book-ingest', { body: { book_id: bookId } });
+            
+            // Poll for completion and refresh when ready
+            const pollForCompletion = setInterval(async () => {
+              const { data: updatedBook } = await supabase
+                .from('books')
+                .select('ingested')
+                .eq('id', bookId)
+                .single();
+              
+              if (updatedBook?.ingested) {
+                clearInterval(pollForCompletion);
+                window.location.reload(); // Refresh to show ingested content
+              }
+            }, 2000);
+            
+            // Stop polling after 30 seconds
+            setTimeout(() => clearInterval(pollForCompletion), 30000);
+          }
         }
       } catch (e) {
         console.error('Auto-ingest failed:', e);
@@ -172,14 +191,32 @@ export default function NovaReader() {
                 size="sm"
                 onClick={async () => {
                   try {
-                    console.log('Triggering re-ingestion for book:', bookId);
+                    const hasUsableUrl = (book as any).source_url || (book as any).read_online_url || (book as any).download_epub_url;
+                    if (!hasUsableUrl) {
+                      console.error('No usable URL for ingestion');
+                      return;
+                    }
+                    
+                    console.log('Triggering manual re-ingestion for book:', bookId);
                     await supabase.functions.invoke('book-ingest', {
                       body: { book_id: bookId }
                     });
-                    // Refresh the book data after a moment
-                    setTimeout(() => {
-                      window.location.reload();
+                    
+                    // Poll for completion and refresh when ready
+                    const pollForCompletion = setInterval(async () => {
+                      const { data: updatedBook } = await supabase
+                        .from('books')
+                        .select('ingested')
+                        .eq('id', bookId)
+                        .single();
+                      
+                      if (updatedBook?.ingested) {
+                        clearInterval(pollForCompletion);
+                        window.location.reload();
+                      }
                     }, 2000);
+                    
+                    setTimeout(() => clearInterval(pollForCompletion), 30000);
                   } catch (error) {
                     console.error('Re-ingestion failed:', error);
                   }

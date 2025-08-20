@@ -69,16 +69,23 @@ serve(async (req) => {
         throw new Error('Book not found')
       }
 
+      // Try source_url first, then fallback to read_online_url or download_epub_url
       if (bookData.source_url) {
         fetchUrl = bookData.source_url
-        if (fetchUrl.includes('gutenberg.org') && !fetchUrl.includes('.txt')) {
-          const bookMatch = fetchUrl.match(/\/ebooks\/(\d+)/)
-          if (bookMatch) {
-            fetchUrl = `https://www.gutenberg.org/files/${bookMatch[1]}/${bookMatch[1]}-0.txt`
-          }
-        }
+      } else if (bookData.read_online_url) {
+        fetchUrl = bookData.read_online_url
+      } else if (bookData.download_epub_url) {
+        fetchUrl = bookData.download_epub_url
       } else {
-        throw new Error('Book has no source URL to re-process')
+        throw new Error('Book has no usable URL to re-process')
+      }
+
+      // Convert various URLs to plain text if possible
+      if (fetchUrl.includes('gutenberg.org') && !fetchUrl.includes('.txt')) {
+        const bookMatch = fetchUrl.match(/\/ebooks\/(\d+)/)
+        if (bookMatch) {
+          fetchUrl = `https://www.gutenberg.org/files/${bookMatch[1]}/${bookMatch[1]}-0.txt`
+        }
       }
       
       actualBookId = book_id
