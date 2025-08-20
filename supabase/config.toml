@@ -43,3 +43,6 @@ verify_jwt = true
 
 [functions.tts-render]
 verify_jwt = true
+
+[functions.book-ingest]
+verify_jwt = false

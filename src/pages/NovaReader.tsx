@@ -105,10 +105,11 @@ export default function NovaReader() {
                 .eq('id', bookId)
                 .single();
               
-              if (updatedBook?.ingested) {
-                clearInterval(pollForCompletion);
-                window.location.reload(); // Refresh to show ingested content
-              }
+                if (updatedBook?.ingested) {
+                  clearInterval(pollForCompletion);
+                  // Update state instead of hard reload
+                  setReaderContent('ingested');
+                }
             }, 2000);
             
             // Stop polling after 30 seconds
@@ -212,7 +213,8 @@ export default function NovaReader() {
                       
                       if (updatedBook?.ingested) {
                         clearInterval(pollForCompletion);
-                        window.location.reload();
+                        // Update state instead of hard reload
+                        setReaderContent('ingested');
                       }
                     }, 2000);
                     

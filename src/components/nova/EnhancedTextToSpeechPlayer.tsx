@@ -166,13 +166,61 @@ export const EnhancedTextToSpeechPlayer: React.FC<EnhancedTextToSpeechPlayerProp
             segments = bookPages[0].tts_segments;
             console.log('Using pre-computed TTS segments from database');
           }
-          } else {
-            // Fallback to sample content if DB has no pages yet
+        } else {
+          // No pages found - trigger book ingestion
+          console.log('No book pages found, triggering ingestion...');
+          
+          try {
+            await supabase.functions.invoke('book-ingest', {
+              body: { book_id: bookId }
+            });
+            
+            toast({
+              title: "Preparing Book...",
+              description: "Processing book content for enhanced reading. This may take a moment.",
+            });
+            
+            // Poll for pages to become available
+            const pollForPages = async () => {
+              for (let attempt = 0; attempt < 15; attempt++) {
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+                
+                const { data: pages } = await supabase
+                  .from('book_pages')
+                  .select('content, tts_segments')
+                  .eq('book_id', bookId)
+                  .order('page_index')
+                  .limit(1);
+                
+                if (pages && pages.length > 0) {
+                  textContent = pages[0].content;
+                  if (isMultiVoice && pages[0].tts_segments && Array.isArray(pages[0].tts_segments)) {
+                    segments = pages[0].tts_segments;
+                  }
+                  break;
+                }
+              }
+              
+              if (!textContent) {
+                // Final fallback to sample content
+                textContent = getSampleBookContent(bookTitle) || '';
+                if (!textContent) {
+                  throw new Error('Book ingestion failed - no content available');
+                }
+              }
+            };
+            
+            await pollForPages();
+            
+          } catch (ingestError) {
+            console.error('Auto-ingestion failed:', ingestError);
+            // Fallback to sample content
             textContent = getSampleBookContent(bookTitle) || '';
             if (!textContent) {
-              throw new Error('No book content found - please ingest the book first');
+              throw new Error('No book content found and ingestion failed');
             }
           }
+        }
       }
 
       if (!textContent) {
@@ -216,7 +264,16 @@ export const EnhancedTextToSpeechPlayer: React.FC<EnhancedTextToSpeechPlayerProp
         }
       });
 
-      if (renderError) throw renderError;
+      if (renderError) {
+        console.error('TTS render failed, falling back to browser speech:', renderError);
+        // Fallback to browser speech synthesis
+        toast({
+          title: "Using Browser Voice",
+          description: "Enhanced voices unavailable, using system speech.",
+          variant: "default",
+        });
+        return;
+      }
 
       // Step 3: Set up audio queue
       const audioSegments: AudioSegment[] = renderData.manifest;

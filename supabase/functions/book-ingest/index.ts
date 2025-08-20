@@ -13,6 +13,19 @@ serve(async (req) => {
   }
 
   try {
+    // Origin safety check for public endpoint
+    const origin = req.headers.get('origin')
+    const allowedOrigins = [
+      'https://xzxjwuzwltoapifcyzww.supabase.co',
+      'http://localhost:5173',
+      'http://localhost:8080',
+      'https://guardian-ai.lovable.app'
+    ]
+    
+    if (origin && !allowedOrigins.includes(origin)) {
+      console.warn('Blocked request from unauthorized origin:', origin)
+      throw new Error('Unauthorized origin')
+    }
     const { source_url, book_id } = await req.json()
     
     // Accept either source_url for new ingestion or book_id for re-ingestion
