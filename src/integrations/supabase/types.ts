@@ -818,6 +818,98 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_completions: {
+        Row: {
+          child_id: string
+          created_at: string
+          daily_challenge_id: string
+          event_id: string | null
+          id: string
+          points_awarded: number
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          daily_challenge_id: string
+          event_id?: string | null
+          id?: string
+          points_awarded: number
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          daily_challenge_id?: string
+          event_id?: string | null
+          id?: string
+          points_awarded?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_completions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_completions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "challenge_completions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "challenge_completions_daily_challenge_id_fkey"
+            columns: ["daily_challenge_id"]
+            isOneToOne: false
+            referencedRelation: "daily_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_templates: {
+        Row: {
+          bonus: Json
+          created_at: string
+          description: string
+          id: string
+          item_slug: string
+          points: number
+          requirement: Json
+          subject: string
+          title: string
+        }
+        Insert: {
+          bonus?: Json
+          created_at?: string
+          description: string
+          id?: string
+          item_slug: string
+          points?: number
+          requirement: Json
+          subject: string
+          title: string
+        }
+        Update: {
+          bonus?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          item_slug?: string
+          points?: number
+          requirement?: Json
+          subject?: string
+          title?: string
+        }
+        Relationships: []
+      }
       child_app_groups: {
         Row: {
           action: Database["public"]["Enums"]["rule_action"]
@@ -1585,6 +1677,39 @@ export type Database = {
         }
         Relationships: []
       }
+      content_items: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          launch_url: string
+          meta: Json
+          slug: string
+          subject: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          launch_url: string
+          meta?: Json
+          slug: string
+          subject: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          launch_url?: string
+          meta?: Json
+          slug?: string
+          subject?: string
+          title?: string
+        }
+        Relationships: []
+      }
       conversation_summaries: {
         Row: {
           ai_summary: string
@@ -1732,6 +1857,35 @@ export type Database = {
           topic?: string
         }
         Relationships: []
+      }
+      daily_challenges: {
+        Row: {
+          challenge_date: string
+          created_at: string
+          id: string
+          template_id: string
+        }
+        Insert: {
+          challenge_date: string
+          created_at?: string
+          id?: string
+          template_id: string
+        }
+        Update: {
+          challenge_date?: string
+          created_at?: string
+          id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_challenges_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       device_activations: {
         Row: {
@@ -2270,6 +2424,55 @@ export type Database = {
             foreignKeyName: "education_profiles_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: true
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
+      game_events: {
+        Row: {
+          child_id: string
+          created_at: string
+          event_type: string
+          game: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          event_type: string
+          game: string
+          id?: string
+          payload?: Json
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          event_type?: string
+          game?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_events_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_events_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "game_events_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_effective_app_policy"
             referencedColumns: ["child_id"]
           },

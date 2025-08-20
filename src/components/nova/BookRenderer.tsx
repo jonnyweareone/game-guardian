@@ -27,6 +27,24 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
   
   const { isListening, startListening, stopListening } = useNovaSignals(childId);
 
+  // Emit page read events for challenges
+  const emitPageRead = useCallback(async () => {
+    if (!childId) return;
+    
+    try {
+      await supabase.functions.invoke('nova-game-event', {
+        body: {
+          child_id: childId,
+          game: 'NovaBooks',
+          event_type: 'book_read_pages',
+          event_data: { book_id: bookId, count: 1 }
+        }
+      });
+    } catch (error) {
+      console.error('Error emitting page read event:', error);
+    }
+  }, [childId, bookId]);
+
   // Load book details
   const { data: book, isLoading: bookLoading } = useQuery({
     queryKey: ['book', bookId],
@@ -135,8 +153,13 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
       setCurrentPage(newPage);
       setCurrentTokenIndex(undefined); // Reset token highlighting
       onProgressUpdate?.(newPage, ((newPage + 1) / pages.length) * 100);
+      
+      // Emit page read event when advancing (throttled)
+      if (newPage > currentPage) {
+        emitPageRead();
+      }
     }
-  }, [pages, onProgressUpdate]);
+  }, [pages, onProgressUpdate, currentPage, emitPageRead]);
 
   const handlePlayPause = useCallback(() => {
     setIsPlaying(!isPlaying);
@@ -230,7 +253,7 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
   if (currentPageData?.tokens) {
     try {
       if (Array.isArray(currentPageData.tokens)) {
-        parsedTokens = currentPageData.tokens as Token[];
+        parsedTokens = currentPageData.tokens as unknown as Token[];
       } else if (typeof currentPageData.tokens === 'string') {
         parsedTokens = JSON.parse(currentPageData.tokens);
       }

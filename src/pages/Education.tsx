@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ChildEducationTabs from '@/components/education/ChildEducationTabs';
 import SEOHead from '@/components/SEOHead';
+import DailyChallengesBanner from '@/components/DailyChallengesBanner';
 import { getChildren } from '@/lib/api';
 import { getWallet } from '@/lib/rewardsApi';
 import { yearAndKeyStageFromDOB } from '@/lib/ukSchoolYear';
@@ -86,6 +87,8 @@ export default function EducationPage() {
         title="Guardian AI | Education Management"
         description="Manage your children's educational journey with personalized learning paths, progress tracking, and AI-powered insights."
       />
+      
+      <DailyChallengesBanner />
       
       <h1 className="text-3xl font-bold">📚 Nova Education</h1>
       
