@@ -74,9 +74,17 @@ async function generateSpeech(text: string, voice: string): Promise<string> {
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    const base64Audio = btoa(
-      String.fromCharCode(...new Uint8Array(arrayBuffer))
-    );
+    
+    // Fix base64 encoding to prevent stack overflow with large files
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const chunkSize = 8192; // Process in chunks to avoid stack overflow
+    let base64Audio = '';
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      const chunkString = String.fromCharCode.apply(null, Array.from(chunk));
+      base64Audio += btoa(chunkString);
+    }
 
     return base64Audio;
   } catch (error) {

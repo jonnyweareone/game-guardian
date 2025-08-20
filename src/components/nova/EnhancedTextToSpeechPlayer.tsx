@@ -119,37 +119,65 @@ export const EnhancedTextToSpeechPlayer: React.FC<EnhancedTextToSpeechPlayerProp
 
   // Analyze and render audio
   const prepareAudio = async () => {
-    if (!bookContent) {
-      toast({
-        title: "No Content",
-        description: "No text available to read aloud.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsPreparing(true);
     
     try {
+      let textContent = bookContent;
       let segments: any[] = [];
 
-      if (isMultiVoice) {
-        // Step 1: Analyze text for multi-voice
-        console.log('Analyzing text for multi-voice...');
-        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('tts-analyze', {
-          body: { text: bookContent, book_id: bookId }
-        });
+      // If no bookContent provided, try to fetch from database
+      if (!textContent) {
+        console.log('Fetching book content from database...');
+        const { data: bookPages, error: pagesError } = await supabase
+          .from('book_pages')
+          .select('content, tts_segments')
+          .eq('book_id', bookId)
+          .order('page_index')
+          .limit(1); // Get first page for now
 
-        if (analysisError) throw analysisError;
-        segments = analysisData.segments;
-      } else {
-        // Single voice mode - create simple segments
-        const paragraphs = bookContent.split('\n\n').filter(p => p.trim().length > 0);
-        segments = paragraphs.map((text, index) => ({
-          text: text.trim(),
-          label: 'narrator',
-          start_para_idx: index
-        }));
+        if (pagesError) throw pagesError;
+        
+        if (bookPages && bookPages.length > 0) {
+          textContent = bookPages[0].content;
+          
+          // Use pre-computed TTS segments if available
+          if (isMultiVoice && bookPages[0].tts_segments && Array.isArray(bookPages[0].tts_segments)) {
+            segments = bookPages[0].tts_segments;
+            console.log('Using pre-computed TTS segments from database');
+          }
+        } else {
+          throw new Error('No book content found - please ingest the book first');
+        }
+      }
+
+      if (!textContent) {
+        toast({
+          title: "No Content",
+          description: "No text available to read aloud.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If we don't have pre-computed segments, analyze the content
+      if (segments.length === 0) {
+        if (isMultiVoice) {
+          console.log('Analyzing text for multi-voice...');
+          const { data: analysisData, error: analysisError } = await supabase.functions.invoke('tts-analyze', {
+            body: { text: textContent, book_id: bookId }
+          });
+
+          if (analysisError) throw analysisError;
+          segments = analysisData.segments;
+        } else {
+          // Single voice mode - create simple segments
+          const paragraphs = textContent.split('\n\n').filter(p => p.trim().length > 0);
+          segments = paragraphs.map((text, index) => ({
+            text: text.trim(),
+            label: 'narrator',
+            start_para_idx: index
+          }));
+        }
       }
 
       // Step 2: Render audio
@@ -184,7 +212,7 @@ export const EnhancedTextToSpeechPlayer: React.FC<EnhancedTextToSpeechPlayerProp
       console.error('Audio preparation error:', error);
       toast({
         title: "Preparation Failed",
-        description: "Failed to prepare audio. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to prepare audio. Please try again.",
         variant: "destructive",
       });
     } finally {

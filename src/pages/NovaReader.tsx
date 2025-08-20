@@ -150,20 +150,29 @@ export default function NovaReader() {
                 </div>
               )}
               
-              {!book.ingested && (
-                <BookIngestionDialog
-                  trigger={
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Ingest Book
-                    </Button>
+            {!book.ingested && (
+              <Button
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    console.log('Triggering re-ingestion for book:', bookId);
+                    await supabase.functions.invoke('book-ingest', {
+                      body: { book_id: bookId }
+                    });
+                    // Refresh the book data after a moment
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 2000);
+                  } catch (error) {
+                    console.error('Re-ingestion failed:', error);
                   }
-                  onIngestionComplete={() => {
-                    // Refresh the book data
-                    window.location.reload();
-                  }}
-                />
-              )}
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Ingest Book
+              </Button>
+            )}
               
               {(book as any).has_audio && (
                 <Button variant="outline" size="sm">
@@ -263,7 +272,7 @@ export default function NovaReader() {
           <EnhancedTextToSpeechPlayer 
             bookId={bookId || ''}
             bookTitle={book?.title || ''}
-            bookContent={getSampleBookContent(book?.title || '')}
+            bookContent={book?.ingested ? '' : getSampleBookContent(book?.title || '')}
             childId={activeChildId}
             onProgressUpdate={(progress) => {
               console.log('TTS progress:', progress);

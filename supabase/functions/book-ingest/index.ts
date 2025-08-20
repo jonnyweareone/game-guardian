@@ -15,8 +15,9 @@ serve(async (req) => {
   try {
     const { source_url, book_id } = await req.json()
     
-    if (!source_url) {
-      throw new Error('source_url is required')
+    // Accept either source_url for new ingestion or book_id for re-ingestion
+    if (!source_url && !book_id) {
+      throw new Error('Either source_url or book_id is required')
     }
 
     const supabase = createClient(
@@ -24,14 +25,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Starting book ingestion for:', source_url)
+    console.log('Starting book ingestion for:', source_url || `book_id: ${book_id}`)
 
     // Create or update ingest job
     const { data: ingestJob, error: ingestError } = await supabase
       .from('book_ingests')
       .insert({
-        source_url,
-        book_id,
+        source_url: source_url || null,
+        book_id: book_id || null,
         status: 'processing',
         started_at: new Date().toISOString()
       })
@@ -43,14 +44,44 @@ serve(async (req) => {
       throw ingestError
     }
 
-    // Fetch content from Gutenberg
     let fetchUrl = source_url
-    if (source_url.includes('gutenberg.org') && !source_url.includes('.txt')) {
-      // Convert HTML page to plain text URL
-      const bookMatch = source_url.match(/\/ebooks\/(\d+)/)
-      if (bookMatch) {
-        fetchUrl = `https://www.gutenberg.org/files/${bookMatch[1]}/${bookMatch[1]}-0.txt`
+    let actualBookId = book_id
+
+    if (source_url) {
+      // Fetch content from URL (new ingestion)
+      if (source_url.includes('gutenberg.org') && !source_url.includes('.txt')) {
+        // Convert HTML page to plain text URL
+        const bookMatch = source_url.match(/\/ebooks\/(\d+)/)
+        if (bookMatch) {
+          fetchUrl = `https://www.gutenberg.org/files/${bookMatch[1]}/${bookMatch[1]}-0.txt`
+        }
       }
+    } else if (book_id) {
+      // Re-process existing book from database
+      console.log('Re-processing existing book:', book_id)
+      const { data: bookData } = await supabase
+        .from('books')
+        .select('*')
+        .eq('id', book_id)
+        .single()
+
+      if (!bookData) {
+        throw new Error('Book not found')
+      }
+
+      if (bookData.source_url) {
+        fetchUrl = bookData.source_url
+        if (fetchUrl.includes('gutenberg.org') && !fetchUrl.includes('.txt')) {
+          const bookMatch = fetchUrl.match(/\/ebooks\/(\d+)/)
+          if (bookMatch) {
+            fetchUrl = `https://www.gutenberg.org/files/${bookMatch[1]}/${bookMatch[1]}-0.txt`
+          }
+        }
+      } else {
+        throw new Error('Book has no source URL to re-process')
+      }
+      
+      actualBookId = book_id
     }
 
     console.log('Fetching content from:', fetchUrl)
@@ -102,10 +133,10 @@ serve(async (req) => {
     console.log('Clean text length:', cleanText.length)
 
     // Create or update book record
-    const gutenbergMatch = source_url.match(/\/ebooks\/(\d+)/)
+    const gutenbergMatch = (source_url || fetchUrl).match(/\/ebooks\/(\d+)/)
     const gutenbergId = gutenbergMatch ? parseInt(gutenbergMatch[1]) : null
 
-    let finalBookId = book_id
+    let finalBookId = actualBookId
     if (!finalBookId) {
       // Create new book
       const { data: newBook, error: bookError } = await supabase
@@ -132,19 +163,60 @@ serve(async (req) => {
       await supabase
         .from('books')
         .update({
-          source_url,
+          title: title || 'Unknown Title',
+          author: author || 'Unknown Author',
+          source_url: source_url || null,
           gutenberg_id: gutenbergId,
           ingested: true
         })
         .eq('id', finalBookId)
     }
 
-    // Split content into pages (roughly 500 words per page)
+    // Split content into pages (roughly 500 words per page) and analyze for TTS
     const words = cleanText.split(/\s+/)
     const wordsPerPage = 500
     const totalPages = Math.ceil(words.length / wordsPerPage)
 
-    console.log(`Splitting into ${totalPages} pages`)
+    console.log(`Splitting into ${totalPages} pages with TTS analysis`)
+
+    // Simple voice analysis function (basic pattern matching)
+    function analyzeVoiceSegments(text: string) {
+      const segments = []
+      const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0)
+      
+      for (let sentenceIndex = 0; sentenceIndex < sentences.length; sentenceIndex++) {
+        const sentence = sentences[sentenceIndex].trim()
+        if (!sentence) continue
+        
+        let label = 'narrator'
+        
+        // Simple heuristics for voice detection
+        if (sentence.includes('"') || sentence.includes("'")) {
+          if (sentence.toLowerCase().includes('said') || sentence.toLowerCase().includes('asked')) {
+            label = 'narrator'
+          } else {
+            // Check for age indicators in dialogue
+            if (sentence.toLowerCase().match(/\b(mommy|daddy|wow|cool|awesome|yay|ooh)\b/)) {
+              label = 'child'
+            } else if (sentence.toLowerCase().match(/\b(dude|like|totally|whatever|omg)\b/)) {
+              label = 'teen'  
+            } else if (sentence.toLowerCase().match(/\b(sir|madam|indeed|certainly|good day)\b/)) {
+              label = 'adult_male'
+            } else {
+              label = 'child' // Default for dialogue
+            }
+          }
+        }
+        
+        segments.push({
+          text: sentence,
+          label,
+          start_para_idx: sentenceIndex
+        })
+      }
+      
+      return segments
+    }
 
     // Clear existing pages
     await supabase
@@ -152,7 +224,7 @@ serve(async (req) => {
       .delete()
       .eq('book_id', finalBookId)
 
-    // Insert pages
+    // Insert pages with TTS analysis
     const pages = []
     for (let i = 0; i < totalPages; i++) {
       const startWord = i * wordsPerPage
@@ -167,11 +239,15 @@ serve(async (req) => {
         end: pageWords.slice(0, index + 1).join(' ').length
       }))
 
+      // Analyze page content for TTS voice segments
+      const ttsSegments = analyzeVoiceSegments(pageContent)
+
       pages.push({
         book_id: finalBookId,
         page_index: i,
         content: pageContent,
-        tokens: tokens
+        tokens: tokens,
+        tts_segments: ttsSegments
       })
     }
 

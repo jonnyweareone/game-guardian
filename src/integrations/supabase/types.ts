@@ -508,6 +508,7 @@ export type Database = {
           image_url: string | null
           page_index: number
           tokens: Json | null
+          tts_segments: Json | null
         }
         Insert: {
           book_id: string
@@ -517,6 +518,7 @@ export type Database = {
           image_url?: string | null
           page_index: number
           tokens?: Json | null
+          tts_segments?: Json | null
         }
         Update: {
           book_id?: string
@@ -526,6 +528,7 @@ export type Database = {
           image_url?: string | null
           page_index?: number
           tokens?: Json | null
+          tts_segments?: Json | null
         }
         Relationships: [
           {
