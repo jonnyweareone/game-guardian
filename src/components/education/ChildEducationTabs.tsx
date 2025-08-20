@@ -2,6 +2,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { edu } from "@/lib/educationApi";
+import EducationTab from "@/components/dashboard-v2/EducationTab";
 
 type TLItem = {
   id: string;
@@ -140,18 +141,34 @@ export default function ChildEducationTabs({ childId }: { childId: string }) {
   const books = aggregateBooks(reading);
   const summary = buildSummary(reading, activities);
 
+  // Persist last selected tab per child in localStorage
+  const [activeTab, setActiveTab] = React.useState(() => {
+    const saved = localStorage.getItem(`edu-tab-${childId}`);
+    return saved || 'profile'; // Default to profile tab
+  });
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    localStorage.setItem(`edu-tab-${childId}`, value);
+  };
+
   return (
     <div className="rounded-xl bg-card border p-4">
-      <Tabs defaultValue="timeline">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <div className="flex items-center justify-between mb-3">
           <div className="font-semibold">Education</div>
           <TabsList>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="reading">Reading</TabsTrigger>
             <TabsTrigger value="books">Books & Courses</TabsTrigger>
             <TabsTrigger value="summary">Summary</TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="profile">
+          <EducationTab childId={childId} />
+        </TabsContent>
 
         <TabsContent value="timeline">
           {timelineLoading ? (

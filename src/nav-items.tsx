@@ -1,4 +1,4 @@
-import { HomeIcon, ShieldIcon, Users, Settings, Smartphone, ShoppingBag, UserCheck, FileText, Briefcase, Megaphone, BookOpen, Package, GraduationCap, Gift } from "lucide-react";
+import { HomeIcon, ShieldIcon, Users, Settings, Smartphone, ShoppingBag, UserCheck, FileText, Briefcase, Megaphone, BookOpen, Package, GraduationCap, Gift, BookA } from "lucide-react";
 
 import Index from "./pages/Index";
 import HomePage from "./pages/HomePage";
@@ -25,6 +25,8 @@ import GuardianNova from "./pages/GuardianNova";
 import Education from "./pages/Education";
 import Rewards from "./pages/Rewards";
 import Monitoring from "./pages/Monitoring";
+import NovaLearning from "./pages/NovaLearning";
+import NovaReader from "./pages/NovaReader";
 
 export interface NavItem {
   title: string;
@@ -62,6 +64,20 @@ export const navItems: NavItem[] = [
     to: "/monitoring",
     icon: <ShieldIcon className="h-4 w-4" />,
     page: <Monitoring />,
+    requiresAuth: true,
+  },
+  {
+    title: "Nova Learning",
+    to: "/novalearning",
+    icon: <BookA className="h-4 w-4" />,
+    page: <NovaLearning />,
+    requiresAuth: true,
+  },
+  {
+    title: "Nova Reader",
+    to: "/novalearning/reading/:bookId",
+    icon: <BookOpen className="h-4 w-4" />,
+    page: <NovaReader />,
     requiresAuth: true,
   },
   {
