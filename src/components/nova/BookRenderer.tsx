@@ -274,81 +274,90 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
   }
 
   return (
-    <Card className="max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Page {currentPage + 1} of {pages.length}</span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={isReading ? stopReading : startReading}
-              disabled={!currentPageData}
-            >
-              {isReading ? (
-                <>
-                  <Pause className="h-4 w-4 mr-2" />
-                  Stop Reading
-                </>
-              ) : (
-                <>
-                  <Volume2 className="h-4 w-4 mr-2" />
-                  Read Aloud
-                </>
-              )}
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
+    <div className="h-full flex flex-col">
+      {/* Header with controls */}
+      <div className="flex items-center justify-between p-4 border-b bg-card">
+        <span className="font-medium">Page {currentPage + 1} of {pages.length}</span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={isReading ? stopReading : startReading}
+            disabled={!currentPageData}
+          >
+            {isReading ? (
+              <>
+                <Pause className="h-4 w-4 mr-2" />
+                Stop Reading
+              </>
+            ) : (
+              <>
+                <Volume2 className="h-4 w-4 mr-2" />
+                Read Aloud
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
 
-      <CardContent className="space-y-6">
-        {/* Image pane (if available) */}
-        {currentPageData.image_url && (
-          <div className="w-full h-48 bg-muted rounded-lg overflow-hidden">
+      {/* Split-screen content */}
+      <div className="flex-1 flex">
+        {/* Left pane - Text content */}
+        <div className="flex-1 p-6 overflow-y-auto">
+          <div
+            ref={contentRef}
+            className="font-serif text-foreground"
+            style={{ fontSize: '18px', lineHeight: '1.8' }}
+          >
+            {renderHighlightedText()}
+          </div>
+        </div>
+
+        {/* Right pane - Image */}
+        <div className="w-1/2 border-l bg-muted/30 flex items-center justify-center">
+          {currentPageData.image_url ? (
             <img
               src={currentPageData.image_url}
               alt={`Page ${currentPage + 1} illustration`}
-              className="w-full h-full object-cover"
+              className="max-w-full max-h-full object-contain"
             />
-          </div>
-        )}
+          ) : (
+            <div className="text-center text-muted-foreground">
+              <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-lg flex items-center justify-center">
+                📖
+              </div>
+              <p>No image for this page</p>
+            </div>
+          )}
+        </div>
+      </div>
 
-        {/* Text content with highlighting */}
-        <div
-          ref={contentRef}
-          className="min-h-96 p-6 bg-background border rounded-lg font-serif text-foreground"
-          style={{ fontSize: '18px', lineHeight: '1.8' }}
+      {/* Navigation footer */}
+      <div className="flex justify-between items-center p-4 border-t bg-card">
+        <Button
+          variant="outline"
+          onClick={prevPage}
+          disabled={currentPage === 0}
+          className="flex items-center gap-2"
         >
-          {renderHighlightedText()}
+          <ChevronLeft className="h-4 w-4" />
+          Previous
+        </Button>
+
+        <div className="text-sm text-muted-foreground">
+          Progress: {Math.round(((currentPage + 1) / pages.length) * 100)}%
         </div>
 
-        {/* Navigation controls */}
-        <div className="flex justify-between items-center">
-          <Button
-            variant="outline"
-            onClick={prevPage}
-            disabled={currentPage === 0}
-            className="flex items-center gap-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
-
-          <div className="text-sm text-muted-foreground">
-            Progress: {Math.round(((currentPage + 1) / pages.length) * 100)}%
-          </div>
-
-          <Button
-            variant="outline"
-            onClick={nextPage}
-            disabled={currentPage === pages.length - 1}
-            className="flex items-center gap-2"
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        <Button
+          variant="outline"
+          onClick={nextPage}
+          disabled={currentPage === pages.length - 1}
+          className="flex items-center gap-2"
+        >
+          Next
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 };
