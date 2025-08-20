@@ -198,36 +198,6 @@ export default function EducationTab({ childId, childAge = 7, hint = '' }: Props
         </CardContent>
       </Card>
 
-      {/* Learning Timeline */}
-      <Card>
-        <CardHeader><CardTitle>Learning Timeline</CardTitle></CardHeader>
-        <CardContent className="text-sm grid md:grid-cols-3 gap-3">
-          <div>
-            <div className="font-medium mb-1">Achievements</div>
-            <ul className="space-y-1 max-h-40 overflow-auto">
-              {(timelineQ.data?.achievements ?? []).map((a:any)=>(
-                <li key={a.id}>• {a.kind} — {new Date(a.created_at).toLocaleString()}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <div className="font-medium mb-1">Study Sessions</div>
-            <ul className="space-y-1 max-h-40 overflow-auto">
-              {(timelineQ.data?.study ?? []).map((s:any)=>(
-                <li key={s.id}>• {s.source} {s.subject?`(${s.subject})`:''} — {s.minutes}m</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <div className="font-medium mb-1">Reading</div>
-            <ul className="space-y-1 max-h-40 overflow-auto">
-              {(timelineQ.data?.reading ?? []).map((r:any)=>(
-                <li key={r.id}>• session {r.id.slice(0,8)}… — pages {r.pages_completed}</li>
-              ))}
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Homework (Libre/Google links) */}
       <Card>
