@@ -300,21 +300,10 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
         </div>
       </div>
 
-      {/* Split-screen content */}
-      <div className="flex-1 flex">
-        {/* Left pane - Text content */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div
-            ref={contentRef}
-            className="font-serif text-foreground"
-            style={{ fontSize: '18px', lineHeight: '1.8' }}
-          >
-            {renderHighlightedText()}
-          </div>
-        </div>
-
-        {/* Right pane - Image */}
-        <div className="w-1/2 border-l bg-muted/30 flex items-center justify-center">
+      {/* Vertical split content */}
+      <div className="flex-1 flex flex-col">
+        {/* Top pane - Image */}
+        <div className="h-1/2 min-h-[220px] border-b bg-muted/30 flex items-center justify-center">
           {currentPageData.image_url ? (
             <img
               src={currentPageData.image_url}
@@ -329,6 +318,17 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
               <p>No image for this page</p>
             </div>
           )}
+        </div>
+
+        {/* Bottom pane - Text content */}
+        <div className="flex-1 p-6 overflow-y-auto">
+          <div
+            ref={contentRef}
+            className="font-serif text-foreground"
+            style={{ fontSize: '18px', lineHeight: '1.8' }}
+          >
+            {renderHighlightedText()}
+          </div>
         </div>
       </div>
 
