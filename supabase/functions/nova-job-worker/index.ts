@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -503,12 +504,12 @@ async function generateImage(prompt: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-image-1',
+      model: 'dall-e-3',
       prompt,
       n: 1,
       size: '1024x1024',
       quality: 'standard',
-      output_format: 'png'
+      response_format: 'b64_json'
     }),
   })
 
@@ -520,13 +521,13 @@ async function generateImage(prompt: string) {
   const result = await response.json()
   const imageData = result.data[0]
   
-  // gpt-image-1 returns base64 directly
-  const base64Data = imageData.b64_json || imageData.url
-  const imageBytes = Uint8Array.from(atob(base64Data.replace(/^data:image\/\w+;base64,/, '')), c => c.charCodeAt(0))
+  // Convert base64 to bytes
+  const base64Data = imageData.b64_json
+  const imageBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))
 
   return {
     imageBytes,
-    costCents: 4.0 // Approximate cost for gpt-image-1
+    costCents: 4.0 // Approximate cost for dall-e-3
   }
 }
 
