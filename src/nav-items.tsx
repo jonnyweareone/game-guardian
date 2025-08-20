@@ -27,6 +27,7 @@ import Rewards from "./pages/Rewards";
 import Monitoring from "./pages/Monitoring";
 import NovaLearning from "./pages/NovaLearning";
 import NovaReader from "./pages/NovaReader";
+import AdminBooksIngest from "./pages/admin/AdminBooksIngest";
 
 export interface NavItem {
   title: string;

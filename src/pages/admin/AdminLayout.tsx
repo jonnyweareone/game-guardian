@@ -13,6 +13,7 @@ export default function AdminLayout() {
     { to: "/admin/ui-themes", label: "UI Themes" },
     { to: "/admin/content-push", label: "Content Push" },
     { to: "/admin/ota-demo", label: "OTA Demo" },
+    { to: "/admin/books", label: "Books Ingest" },
   ];
 
   return (

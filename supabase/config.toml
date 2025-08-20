@@ -34,3 +34,6 @@ verify_jwt = false
 
 [functions.text-to-speech]
 verify_jwt = false
+
+[functions.books-batch-reingest]
+verify_jwt = true
