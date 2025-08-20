@@ -27,6 +27,9 @@ import AdminBooksIngest from "./pages/admin/AdminBooksIngest";
 import OtaDemoLayout from "./pages/admin/ota-demo/OtaDemoLayout";
 import OtaUpdateManager from "./pages/admin/ota-demo/OtaUpdateManager";
 import OtaReports from "./pages/admin/ota-demo/OtaReports";
+import TuxMathGame from "@/pages/games/TuxMath";
+import BlocklyMazeGame from "@/pages/games/BlocklyMaze";
+import TurtlestitchActivity from "@/pages/activities/Turtlestitch";
 
 const queryClient = new QueryClient();
 
@@ -133,6 +136,11 @@ const App = () => (
               <Route path="/products/os-mini" element={<ProductOSMini />} />
               <Route path="/products/os-full" element={<ProductOSFull />} />
               <Route path="/products/receiver" element={<ProductReceiver />} />
+              
+              {/* Game and Activity routes - public access for tokens */}
+              <Route path="/games/tuxmath" element={<TuxMathGame />} />
+              <Route path="/games/blockly/maze" element={<BlocklyMazeGame />} />
+              <Route path="/activities/turtlestitch" element={<TurtlestitchActivity />} />
               
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />
