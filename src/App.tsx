@@ -17,6 +17,17 @@ import ProductOSMini from "./pages/ProductOSMini";
 import ProductOSFull from "./pages/ProductOSFull";
 import ProductReceiver from "./pages/ProductReceiver";
 
+// Import admin components
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDevices from "./pages/admin/AdminDevices";
+import AdminAppCatalog from "./pages/admin/AdminAppCatalog";
+import AdminUIThemes from "./pages/admin/AdminUIThemes";
+import AdminContentPush from "./pages/admin/AdminContentPush";
+import AdminBooksIngest from "./pages/admin/AdminBooksIngest";
+import OtaDemoLayout from "./pages/admin/ota-demo/OtaDemoLayout";
+import OtaUpdateManager from "./pages/admin/ota-demo/OtaUpdateManager";
+import OtaReports from "./pages/admin/ota-demo/OtaReports";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -74,7 +85,7 @@ const App = () => (
               
               {/* Protected routes */}
               {navItems
-                .filter(item => !["/auth", "/", "/app-store", "/homework-helper", "/guardian-nova", "/novalearning", "/novalearning/reading/:bookId"].includes(item.to))
+                .filter(item => !["/auth", "/", "/app-store", "/homework-helper", "/guardian-nova", "/novalearning", "/novalearning/reading/:bookId", "/admin", "/admin/waitlist"].includes(item.to))
                 .map(({ to, page, title, requiresAuth = true, requiresAdmin = false }) => (
                   <Route
                     key={to}
@@ -92,6 +103,30 @@ const App = () => (
                     }
                   />
                 ))}
+              
+              {/* Admin routes with nested routing */}
+              <Route path="/admin" element={
+                <AuthGuard requireAuth={true}>
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                </AuthGuard>
+              }>
+                <Route index element={<Navigate to="/admin/devices" replace />} />
+                <Route path="devices" element={<AdminDevices />} />
+                <Route path="app-catalog" element={<AdminAppCatalog />} />
+                <Route path="ui-themes" element={<AdminUIThemes />} />
+                <Route path="content-push" element={<AdminContentPush />} />
+                <Route path="books" element={<AdminBooksIngest />} />
+                <Route path="ota-demo" element={<OtaDemoLayout />}>
+                  <Route index element={<Navigate to="/admin/ota-demo/manager" replace />} />
+                  <Route path="manager" element={<OtaUpdateManager />} />
+                  <Route path="reports" element={<OtaReports />} />
+                </Route>
+                <Route path="waitlist" element={
+                  navItems.find(item => item.to === "/admin/waitlist")?.page
+                } />
+              </Route>
               
               {/* Product detail routes */}
               <Route path="/products/device" element={<ProductDevice />} />
