@@ -24,6 +24,7 @@ import HomeworkHelper from "./pages/HomeworkHelper";
 import GuardianNova from "./pages/GuardianNova";
 import Education from "./pages/Education";
 import Rewards from "./pages/Rewards";
+import Monitoring from "./pages/Monitoring";
 
 export interface NavItem {
   title: string;
@@ -55,6 +56,13 @@ export const navItems: NavItem[] = [
     icon: <GraduationCap className="h-4 w-4" />,
     page: <GuardianNova />,
     requiresAuth: false,
+  },
+  {
+    title: "Monitoring",
+    to: "/monitoring",
+    icon: <ShieldIcon className="h-4 w-4" />,
+    page: <Monitoring />,
+    requiresAuth: true,
   },
   {
     title: "Homework Helper",

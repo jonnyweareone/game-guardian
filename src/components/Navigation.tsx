@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Menu, Shield, User, LogOut, Settings, Home, BookOpen, Package, Zap, Users } from 'lucide-react';
+import { Menu, Shield, User, LogOut, Settings, Home, BookOpen, Package, Zap, Users, Gift } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -31,9 +31,12 @@ const Navigation = () => {
 
   const protectedNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Settings },
-    { href: '/dashboard-v2', label: 'Monitoring', icon: Zap },
+    { href: '/monitoring', label: 'Monitoring', icon: Zap },
     { href: '/education', label: 'Education', icon: BookOpen },
     { href: '/children', label: 'Children', icon: Users },
+    { href: '/devices', label: 'Device Management', icon: Shield },
+    { href: '/rewards', label: 'Rewards', icon: Gift },
+    { href: '/account', label: 'Settings', icon: Settings },
   ];
 
   return (
@@ -51,41 +54,43 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            {publicNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-
-            {user && protectedNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-                 >
-                   <Icon className="h-4 w-4" />
-                   {item.label}
-                 </Link>
-              );
-            })}
+            {user ? (
+              protectedNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive(item.href)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                   >
+                     <Icon className="h-4 w-4" />
+                     {item.label}
+                   </Link>
+                );
+              })
+            ) : (
+              publicNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive(item.href)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })
+            )}
           </div>
 
           {/* Auth Buttons */}
@@ -121,43 +126,45 @@ const Navigation = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-80">
                 <div className="flex flex-col gap-4 mt-8">
-                  {publicNavItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                          isActive(item.href)
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-
-                  {user && protectedNavItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                          isActive(item.href)
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                        }`}
-                       >
-                         <Icon className="h-4 w-4" />
-                         {item.label}
-                       </Link>
-                    );
-                  })}
+                  {user ? (
+                    protectedNavItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.href}
+                          to={item.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                            isActive(item.href)
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          }`}
+                         >
+                           <Icon className="h-4 w-4" />
+                           {item.label}
+                         </Link>
+                      );
+                    })
+                  ) : (
+                    publicNavItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.href}
+                          to={item.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                            isActive(item.href)
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    })
+                  )}
                 </div>
               </SheetContent>
             </Sheet>

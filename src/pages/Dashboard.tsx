@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -407,10 +408,10 @@ const Dashboard = () => {
                   </p>
                 </div>
                 <Button asChild>
-                  <a href="/children">
+                  <Link to="/children">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Child Profile
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </Card>
@@ -459,22 +460,24 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 gap-4 text-center">
-                      <Button variant="outline" size="sm" asChild>
-                        <a href="/education">
-                          <GraduationCap className="h-4 w-4 mr-1" />
-                          Education
-                        </a>
-                      </Button>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href="/rewards">
-                          <Gift className="h-4 w-4 mr-1" />
-                          Rewards
-                        </a>
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />
-                        Monitor
-                      </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/education">
+                      <GraduationCap className="h-4 w-4 mr-1" />
+                      Education
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/rewards">
+                      <Gift className="h-4 w-4 mr-1" />
+                      Rewards
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/monitoring?child=${child.id}`}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      Monitor
+                    </Link>
+                  </Button>
                     </div>
                   </CardContent>
                 </Card>
