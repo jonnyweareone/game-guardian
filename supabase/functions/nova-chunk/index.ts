@@ -102,6 +102,93 @@ serve(async (req) => {
       })
       .eq('id', session_id);
 
+    // If we have text, process it with AI
+    if (raw_text && raw_text.trim()) {
+      // Process with OpenAI for AI insights
+      const openAIKey = Deno.env.get('OPENAI_API_KEY');
+      if (openAIKey) {
+        try {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are a reading coach for children aged 7-11. Analyze the text and provide a brief summary (2-3 sentences), 3 key points, 2 comprehension questions, and a difficulty rating from 1-10. Respond in JSON format with fields: summary, key_points (array), questions (array), difficulty (number).'
+                },
+                {
+                  role: 'user',
+                  content: `Analyze this text for a child reader: "${raw_text}"`
+                }
+              ],
+              max_tokens: 300,
+              temperature: 0.7
+            }),
+          });
+
+          if (response.ok) {
+            const aiResponse = await response.json();
+            const content = aiResponse.choices[0]?.message?.content;
+            
+            if (content) {
+              try {
+                const insights = JSON.parse(content);
+                
+                // Store AI insights
+                await supabase
+                  .from('ai_reading_insights')
+                  .insert({
+                    session_id,
+                    child_id,
+                    book_id,
+                    scope: 'chunk',
+                    locator,
+                    summary: insights.summary,
+                    key_points: insights.key_points || [],
+                    questions: insights.questions || [],
+                    difficulty: insights.difficulty || 5
+                  });
+
+                // Extract and store problem words (simplified)
+                const words = raw_text.toLowerCase().match(/\b\w+\b/g) || [];
+                const longWords = words.filter(word => word.length > 6);
+                
+                for (const word of longWords.slice(0, 3)) { // Limit to 3 per chunk
+                  await supabase
+                    .from('problem_words')
+                    .upsert({
+                      session_id,
+                      child_id,
+                      book_id,
+                      word,
+                      count: 1,
+                      syllables: Math.ceil(word.length / 3), // Simple heuristic
+                      hints: [`Break it down: ${word.split('').join('-')}`, `Try saying it slowly`],
+                      first_seen_locator: locator,
+                      last_seen_locator: locator
+                    }, {
+                      onConflict: 'session_id,child_id,book_id,word',
+                      ignoreDuplicates: false
+                    });
+                }
+
+                console.log('AI processing completed for chunk:', chunkId);
+              } catch (parseError) {
+                console.error('Error parsing AI response:', parseError);
+              }
+            }
+          }
+        } catch (aiError) {
+          console.error('Error processing with AI:', aiError);
+        }
+      }
+    }
+
     // Broadcast progress update
     const channel = supabase.channel(`nova_child_${child_id}`);
     await channel.send({

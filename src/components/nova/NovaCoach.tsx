@@ -9,10 +9,26 @@ interface NovaCoachProps {
   childId: string;
 }
 
-export function NovaCoach({ sessionId, childId }: NovaCoachProps) {
-  // Placeholder for AI insights (will be enabled once types are regenerated)
-  const insights: any[] = [];
-  const latestInsight = null;
+export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
+  // Fetch latest AI insights for this session
+  const { data: latestInsight } = useQuery({
+    queryKey: ['ai-insights', sessionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_reading_insights' as any)
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('scope', 'chunk')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!sessionId,
+    refetchInterval: 10000, // Refetch every 10 seconds
+  });
 
   if (!latestInsight) {
     return (

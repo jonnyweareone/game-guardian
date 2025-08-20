@@ -25,7 +25,13 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('child_reading_timeline')
-        .select('*')
+        .select(`
+          *,
+          books!inner (
+            title,
+            cover_url
+          )
+        `)
         .eq('child_id', childId)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -74,19 +80,20 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
   };
 
   const formatEventTitle = (event: any) => {
+    const bookTitle = event.books?.title || 'Unknown Book';
     switch (event.event_type) {
       case 'started':
-        return `Started reading "${event.title}"`;
+        return `Started reading "${bookTitle}"`;
       case 'progress':
-        return `Reading progress: ${Math.round(event.progress || 0)}%`;
+        return `Reading progress`;
       case 'finished':
-        return `Finished reading "${event.title}"`;
+        return `Finished reading "${bookTitle}"`;
       case 'note':
-        return `Added note to "${event.title}"`;
+        return `Added note to "${bookTitle}"`;
       case 'highlight':
-        return `Highlighted text in "${event.title}"`;
+        return `Highlighted text in "${bookTitle}"`;
       default:
-        return `Activity in "${event.title}"`;
+        return `Activity in "${bookTitle}"`;
     }
   };
 
@@ -162,10 +169,10 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
                 <div key={event.id} className="flex items-start gap-4 p-4 rounded-lg bg-muted/30">
                   {/* Book Cover */}
                   <div className="w-12 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
-                    {event.cover_url ? (
+                    {event.books?.cover_url ? (
                       <img
-                        src={event.cover_url}
-                        alt={event.title}
+                        src={event.books.cover_url}
+                        alt={event.books?.title || 'Book cover'}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -193,18 +200,11 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
                         <span>
                           {new Date(event.created_at).toLocaleString()}
                         </span>
-                        {event.progress && (
-                          <span className="font-medium">
-                            {Math.round(event.progress)}% complete
-                          </span>
-                        )}
                       </div>
                       
-                      {event.note && (
-                        <div className="bg-background p-2 rounded border-l-2 border-primary">
-                          <p className="text-sm">{event.note}</p>
-                        </div>
-                      )}
+                      <div className="text-xs text-muted-foreground">
+                        {event.books?.title}
+                      </div>
                     </div>
                   </div>
                 </div>

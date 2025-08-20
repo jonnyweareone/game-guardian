@@ -33,10 +33,14 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader ?? '' } } }
     );
 
-    // Get session details
+    // Get session details and verify ownership
     const { data: session, error: sessionError } = await supabase
       .from('child_reading_sessions')
-      .select('*')
+      .select(`
+        *,
+        children!inner(parent_id),
+        books!inner(title)
+      `)
       .eq('id', session_id)
       .single();
 
@@ -50,26 +54,9 @@ serve(async (req) => {
       );
     }
 
-    // Verify user owns the child
-    const { data: child, error: childError } = await supabase
-      .from('children')
-      .select('id, parent_id')
-      .eq('id', session.child_id)
-      .single();
-
-    if (childError || !child) {
-      return new Response(
-        JSON.stringify({ error: 'Child not found' }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user || user.id !== child.parent_id) {
+    if (userError || !user || user.id !== (session as any).children.parent_id) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { 
@@ -79,13 +66,13 @@ serve(async (req) => {
       );
     }
 
-    // Update session with end time
-    const endedAt = new Date().toISOString();
+    // Update session with end time and total seconds
     const { error: updateError } = await supabase
       .from('child_reading_sessions')
       .update({
-        ended_at: endedAt,
-        total_seconds: total_seconds || Math.round((Date.now() - new Date(session.started_at).getTime()) / 1000)
+        ended_at: new Date().toISOString(),
+        total_seconds: total_seconds || 0,
+        updated_at: new Date().toISOString()
       })
       .eq('id', session_id);
 
@@ -105,27 +92,22 @@ serve(async (req) => {
       .from('child_listening_state')
       .update({
         is_listening: false,
-        book_id: null,
-        session_id: null,
         updated_at: new Date().toISOString()
       })
       .eq('child_id', session.child_id);
 
     // Update or create reading rollup
-    const rollupDate = new Date().toISOString().split('T')[0];
     await supabase
       .from('reading_rollups')
       .upsert({
         child_id: session.child_id,
         book_id: session.book_id,
-        rollup_date,
-        sessions: 1,
         total_seconds: total_seconds || 0,
-        last_session_at: endedAt,
+        sessions: 1,
+        last_session_at: new Date().toISOString(),
         last_summary: 'Reading session completed'
       }, {
-        onConflict: 'child_id,book_id,rollup_date',
-        // Add to existing values if record exists
+        onConflict: 'child_id,book_id',
         ignoreDuplicates: false
       });
 
@@ -135,12 +117,82 @@ serve(async (req) => {
       .insert({
         child_id: session.child_id,
         book_id: session.book_id,
-        event_type: 'session_ended',
-        session_id,
-        created_at: endedAt
+        event_type: 'finished',
+        session_id: session_id
       });
 
-    // Broadcast listening stopped
+    // Generate session-level AI summary if we have OpenAI key
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    if (openAIKey) {
+      try {
+        // Get all chunks from this session
+        const { data: chunks } = await supabase
+          .from('reading_chunks')
+          .select('raw_text')
+          .eq('session_id', session_id)
+          .not('raw_text', 'is', null);
+
+        if (chunks && chunks.length > 0) {
+          const allText = chunks.map(c => c.raw_text).join(' ').substring(0, 2000);
+          
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'Create a session summary for a child\'s reading session. Provide overall insights about their reading progress, key themes they encountered, and encouragement. Keep it positive and educational. Respond in JSON format with fields: summary, key_points (array), questions (array), difficulty (number).'
+                },
+                {
+                  role: 'user',
+                  content: `Summarize this reading session (${Math.floor((total_seconds || 0) / 60)} minutes): "${allText}"`
+                }
+              ],
+              max_tokens: 400,
+              temperature: 0.7
+            }),
+          });
+
+          if (response.ok) {
+            const aiResponse = await response.json();
+            const content = aiResponse.choices[0]?.message?.content;
+            
+            if (content) {
+              try {
+                const insights = JSON.parse(content);
+                
+                // Store session-level AI insights
+                await supabase
+                  .from('ai_reading_insights')
+                  .insert({
+                    session_id,
+                    child_id: session.child_id,
+                    book_id: session.book_id,
+                    scope: 'session',
+                    summary: insights.summary,
+                    key_points: insights.key_points || [],
+                    questions: insights.questions || [],
+                    difficulty: insights.difficulty || 5
+                  });
+
+                console.log('Session AI summary generated');
+              } catch (parseError) {
+                console.error('Error parsing session AI response:', parseError);
+              }
+            }
+          }
+        }
+      } catch (aiError) {
+        console.error('Error generating session summary:', aiError);
+      }
+    }
+
+    // Broadcast session ended
     const channel = supabase.channel(`nova_child_${session.child_id}`);
     await channel.send({
       type: 'broadcast',
@@ -148,18 +200,19 @@ serve(async (req) => {
       payload: {
         type: 'listening_off',
         session_id,
-        total_seconds: total_seconds || 0
+        total_seconds: total_seconds || 0,
+        title: 'Reading session completed'
       }
     });
 
-    console.log(`Nova session ended: ${session_id} for child ${session.child_id}`);
+    console.log(`Nova session ended: ${session_id} (${total_seconds}s)`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
         session_id,
-        ended_at: endedAt,
-        total_seconds: total_seconds || 0
+        total_seconds: total_seconds || 0,
+        ended_at: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

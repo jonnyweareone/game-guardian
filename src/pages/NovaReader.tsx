@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Volume2, Sparkles, Brain } from 'lucide-react';
+import { ArrowLeft, BookOpen, Volume2, VolumeX } from 'lucide-react';
+import { useNovaSession } from '@/hooks/useNovaSession';
 import { NovaCoach } from '@/components/nova/NovaCoach';
 import { ProblemWords } from '@/components/nova/ProblemWords';
-import { useNovaSession } from '@/hooks/useNovaSession';
+import { EpubReader } from '@/components/nova/EpubReader';
 
 export default function NovaReader() {
   const { bookId } = useParams<{ bookId: string }>();
@@ -41,9 +42,9 @@ export default function NovaReader() {
     enabled: !!bookId,
   });
 
-  // Nova session management (auto-start listening)
+  // Nova session management
   const { sessionId, isListening, startSession, endSession } = useNovaSession(
-    activeChildId,
+    activeChildId || '',
     bookId || '',
     book?.title
   );
@@ -121,7 +122,6 @@ export default function NovaReader() {
                 <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full">
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                   <span className="text-sm">AI Listening</span>
-                  <Sparkles className="h-4 w-4" />
                 </div>
               )}
               
@@ -139,50 +139,51 @@ export default function NovaReader() {
       <div className="flex h-[calc(100vh-5rem)]">
         {/* Main reader area */}
         <div className="flex-1 p-6">
-          <Card className="h-full">
-            <CardContent className="p-6 h-full">
-              {readerContent === 'epub' && (book as any).download_epub_url && (
-                <div className="text-center py-20">
-                  <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">EPUB Reader</h3>
-                  <p className="text-muted-foreground mb-4">
-                    This would integrate with Readium Web or similar EPUB reader
-                  </p>
-                  <Button 
-                    onClick={() => window.open((book as any).download_epub_url, '_blank')}
-                  >
-                    Download EPUB
-                  </Button>
-                </div>
+          <div className="h-full flex flex-col">
+            {/* Reader Content */}
+            <div className="flex-1 bg-background rounded-lg border">
+              {readerContent === 'epub' && book.download_epub_url && (
+                <EpubReader
+                  bookUrl={book.download_epub_url}
+                  bookTitle={book.title}
+                  onLocationChange={(locator) => {
+                    console.log('Location changed:', locator);
+                  }}
+                  onTextExtracted={(text) => {
+                    console.log('Text extracted:', text);
+                  }}
+                />
               )}
-
-              {readerContent === 'pdf' && (book as any).download_pdf_url && (
-                <div className="h-full">
+              
+              {(readerContent === 'pdf' || readerContent === 'online') && (
+                <div className="w-full h-full">
                   <iframe
-                    src={(book as any).download_pdf_url}
-                    className="w-full h-full border-0"
-                    title={`${book.title} - PDF Reader`}
+                    src={book.download_pdf_url || book.read_online_url}
+                    className="w-full h-full border-0 rounded-lg"
+                    title={`${book.title} Reader`}
                   />
                 </div>
               )}
-
-              {readerContent === 'online' && (book as any).read_online_url && (
-                <div className="h-full">
-                  <iframe
-                    src={(book as any).read_online_url}
-                    className="w-full h-full border-0"
-                    title={`${book.title} - Online Reader`}
-                  />
+              
+              {!readerContent && (
+                <div className="w-full h-full p-8 flex items-center justify-center">
+                  <div className="text-center space-y-4">
+                    <BookOpen className="w-16 h-16 mx-auto text-muted-foreground" />
+                    <div>
+                      <h3 className="text-lg font-semibold">Reader Loading...</h3>
+                      <p className="text-muted-foreground">Preparing your reading experience</p>
+                    </div>
+                  </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Nova Coach Sidebar */}
         <div className="w-80 border-l bg-muted/20 p-4 space-y-4 overflow-y-auto">
           <div className="flex items-center gap-2 text-primary font-semibold">
-            <Brain className="h-5 w-5" />
+            <BookOpen className="h-5 w-5" />
             Nova Coach
           </div>
 
@@ -195,12 +196,12 @@ export default function NovaReader() {
 
           {!sessionId && (
             <Card>
-              <CardContent className="pt-6 text-center">
-                <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <div className="p-6 text-center">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
                   Start reading to activate Nova Coach
                 </p>
-              </CardContent>
+              </div>
             </Card>
           )}
         </div>

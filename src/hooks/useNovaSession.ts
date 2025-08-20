@@ -1,104 +1,94 @@
-import { useEffect, useState, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useRef } from 'react';
+import { invokeEdgeFunction } from '@/lib/supabase-functions';
 
-export function useNovaSession(childId: string, bookId: string, bookTitle?: string) {
-  const [sessionId, setSessionId] = useState<string>('');
+export const useNovaSession = (childId: string, bookId: string, bookTitle?: string) => {
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef<Date | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
-  // Start session and listening
   const startSession = async () => {
-    if (!childId || !bookId) return;
+    if (!childId || !bookId || sessionId) return;
 
     try {
-      // Call Nova edge function to start session
-      const { data, error } = await supabase.functions.invoke('nova-start-session', {
-        body: {
-          child_id: childId,
-          book_id: bookId,
-          locator: null, // Could be enhanced with reader position
-        },
+      const { data, error } = await invokeEdgeFunction('nova-start-session', {
+        child_id: childId,
+        book_id: bookId,
+        locator: '0.0'
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error starting Nova session:', error);
+        return;
+      }
 
-      setSessionId(data.session_id);
-      setIsListening(true);
-      startTimeRef.current = new Date();
+      if (data?.session_id) {
+        setSessionId(data.session_id);
+        setIsListening(true);
+        startTimeRef.current = Date.now();
 
-      // Start periodic chunk reporting (every 45 seconds)
-      intervalRef.current = setInterval(async () => {
-        if (data.session_id) {
-          await supabase.functions.invoke('nova-chunk', {
-            body: {
-              session_id: data.session_id,
-              child_id: childId,
-              book_id: bookId,
-              locator: null, // Would contain reader position in real implementation
-              raw_text: null, // Would contain extracted text for AI analysis
-            },
+        // Start periodic reporting
+        intervalRef.current = setInterval(async () => {
+          await invokeEdgeFunction('nova-chunk', {
+            session_id: data.session_id,
+            child_id: childId,
+            book_id: bookId,
+            locator: Math.random().toFixed(2), // Random progress for demo
+            raw_text: `Sample text from ${bookTitle || 'book'} at ${new Date().toLocaleTimeString()}`
           });
-        }
-      }, 45000);
+        }, 45000); // Every 45 seconds
 
+        console.log('Nova session started:', data.session_id);
+      }
     } catch (error) {
       console.error('Failed to start Nova session:', error);
     }
   };
 
-  // End session
   const endSession = async () => {
     if (!sessionId) return;
 
     try {
-      // Clear interval
+      // Clear interval first
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
 
-      // Calculate session duration
+      // Calculate total seconds
       const totalSeconds = startTimeRef.current 
-        ? Math.round((Date.now() - startTimeRef.current.getTime()) / 1000)
+        ? Math.floor((Date.now() - startTimeRef.current) / 1000)
         : 0;
 
-      // Call Nova edge function to end session
-      await supabase.functions.invoke('nova-end-session', {
-        body: {
-          session_id: sessionId,
-          total_seconds: totalSeconds,
-        },
+      await invokeEdgeFunction('nova-end-session', {
+        session_id: sessionId,
+        total_seconds: totalSeconds
       });
 
-      setSessionId('');
+      setSessionId(null);
       setIsListening(false);
       startTimeRef.current = null;
-
+      console.log('Nova session ended');
     } catch (error) {
       console.error('Failed to end Nova session:', error);
     }
   };
 
-  // Auto-start session when component mounts
+  // Auto-start session when dependencies are available
   useEffect(() => {
-    if (childId && bookId) {
+    if (childId && bookId && bookTitle && !sessionId) {
       startSession();
     }
+  }, [childId, bookId, bookTitle]);
 
-    // Cleanup on unmount
-    return () => {
-      if (sessionId) {
-        endSession();
-      }
-    };
-  }, [childId, bookId]);
-
-  // Cleanup interval on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+      }
+      if (sessionId) {
+        endSession();
       }
     };
   }, []);
@@ -107,6 +97,6 @@ export function useNovaSession(childId: string, bookId: string, bookTitle?: stri
     sessionId,
     isListening,
     startSession,
-    endSession,
+    endSession
   };
-}
+};

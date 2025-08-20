@@ -12,11 +12,25 @@ interface ProblemWordsProps {
   childId: string;
 }
 
-export function ProblemWords({ sessionId, childId }: ProblemWordsProps) {
+export const ProblemWords: React.FC<ProblemWordsProps> = ({ sessionId, childId }) => {
   const [expandedWords, setExpandedWords] = useState<Set<string>>(new Set());
 
-  // Placeholder for problem words (will be enabled once types are regenerated)
-  const problemWords: any[] = [];
+  // Fetch problem words for this session
+  const { data: problemWords } = useQuery({
+    queryKey: ['problem-words', sessionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('problem_words' as any)
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('count', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!sessionId,
+    refetchInterval: 15000, // Refetch every 15 seconds
+  });
 
   const toggleWordExpansion = (wordId: string) => {
     const newExpanded = new Set(expandedWords);
@@ -37,7 +51,7 @@ export function ProblemWords({ sessionId, childId }: ProblemWordsProps) {
     }
   };
 
-  if (problemWords.length === 0) {
+  if (!problemWords || problemWords.length === 0) {
     return (
       <Card>
         <CardHeader>
