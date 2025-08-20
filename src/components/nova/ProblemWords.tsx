@@ -81,17 +81,17 @@ export const ProblemWords: React.FC<ProblemWordsProps> = ({ sessionId, childId }
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {problemWords.map((word) => (
+        {problemWords.map((word: any) => (
           <Collapsible 
-            key={word.id}
-            open={expandedWords.has(word.id)}
-            onOpenChange={() => toggleWordExpansion(word.id)}
+            key={word?.id}
+            open={expandedWords.has(word?.id)}
+            onOpenChange={() => toggleWordExpansion(word?.id)}
           >
             <CollapsibleTrigger asChild>
               <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">{word.word}</span>
-                  {word.count > 1 && (
+                  <span className="font-medium text-sm">{word?.word}</span>
+                  {word?.count > 1 && (
                     <Badge variant="secondary" className="text-xs">
                       {word.count}x
                     </Badge>
@@ -103,7 +103,7 @@ export const ProblemWords: React.FC<ProblemWordsProps> = ({ sessionId, childId }
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      speakWord(word.word);
+                      speakWord(word?.word);
                     }}
                     className="h-6 w-6 p-0"
                   >
@@ -122,12 +122,12 @@ export const ProblemWords: React.FC<ProblemWordsProps> = ({ sessionId, childId }
                     Phonetics
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {word.ipa && (
+                    {word?.ipa && (
                       <Badge variant="outline" className="text-xs font-mono">
                         /{word.ipa}/
                       </Badge>
                     )}
-                    {word.syllables && (
+                    {word?.syllables && (
                       <Badge variant="outline" className="text-xs">
                         {word.syllables} syllable{word.syllables !== 1 ? 's' : ''}
                       </Badge>
@@ -136,7 +136,7 @@ export const ProblemWords: React.FC<ProblemWordsProps> = ({ sessionId, childId }
                 </div>
 
                 {/* Phonemes */}
-                {word.phonemes && word.phonemes.length > 0 && (
+                {word?.phonemes && word.phonemes.length > 0 && (
                   <div>
                     <div className="text-xs font-medium text-muted-foreground mb-1">
                       Sounds
@@ -152,7 +152,7 @@ export const ProblemWords: React.FC<ProblemWordsProps> = ({ sessionId, childId }
                 )}
 
                 {/* Hints */}
-                {word.hints && word.hints.length > 0 && (
+                {word?.hints && word.hints.length > 0 && (
                   <div>
                     <div className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
                       <Lightbulb className="h-3 w-3" />
@@ -176,7 +176,7 @@ export const ProblemWords: React.FC<ProblemWordsProps> = ({ sessionId, childId }
                   className="w-full"
                   onClick={() => {
                     // Future: Could open practice modal or navigate to practice page
-                    speakWord(word.word);
+                    speakWord(word?.word);
                   }}
                 >
                   <Play className="h-3 w-3 mr-2" />

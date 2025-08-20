@@ -51,6 +51,9 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
     );
   }
 
+  // Type guard to ensure we have a valid insight object
+  const insight = latestInsight as any;
+
   return (
     <div className="space-y-4">
       {/* Summary */}
@@ -62,25 +65,25 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {latestInsight.summary && (
+          {insight?.summary && (
             <div>
               <p className="text-sm text-muted-foreground">
-                {latestInsight.summary}
+                {insight.summary}
               </p>
             </div>
           )}
 
-          {latestInsight.difficulty && (
+          {insight?.difficulty && (
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-orange-500" />
               <span className="text-sm">Difficulty:</span>
               <Badge variant={
-                latestInsight.difficulty <= 3 ? 'default' :
-                latestInsight.difficulty <= 6 ? 'secondary' :
+                insight.difficulty <= 3 ? 'default' :
+                insight.difficulty <= 6 ? 'secondary' :
                 'destructive'
               }>
-                {latestInsight.difficulty <= 3 ? 'Easy' :
-                 latestInsight.difficulty <= 6 ? 'Medium' :
+                {insight.difficulty <= 3 ? 'Easy' :
+                 insight.difficulty <= 6 ? 'Medium' :
                  'Challenging'}
               </Badge>
             </div>
@@ -89,7 +92,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
       </Card>
 
       {/* Key Points */}
-      {latestInsight.key_points && latestInsight.key_points.length > 0 && (
+      {insight?.key_points && insight.key_points.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
@@ -99,7 +102,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {latestInsight.key_points.slice(0, 3).map((point: string, index: number) => (
+              {insight.key_points.slice(0, 3).map((point: string, index: number) => (
                 <li key={index} className="text-sm flex items-start gap-2">
                   <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
                   <span className="text-muted-foreground">{point}</span>
@@ -111,7 +114,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
       )}
 
       {/* Comprehension Questions */}
-      {latestInsight.questions && latestInsight.questions.length > 0 && (
+      {insight?.questions && insight.questions.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
@@ -121,7 +124,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {latestInsight.questions.slice(0, 2).map((question: string, index: number) => (
+              {insight.questions.slice(0, 2).map((question: string, index: number) => (
                 <div key={index} className="p-3 bg-muted/50 rounded-lg">
                   <p className="text-sm font-medium mb-1">Question {index + 1}:</p>
                   <p className="text-sm text-muted-foreground">{question}</p>
@@ -135,9 +138,11 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
       {/* Scope indicator */}
       <div className="text-center">
         <Badge variant="outline" className="text-xs">
-          {latestInsight.scope === 'chunk' ? 'Chapter' : 'Session'} insights
+          {insight?.scope === 'chunk' ? 'Chapter' : 'Session'} insights
         </Badge>
       </div>
+    </div>
+  );
     </div>
   );
 }
