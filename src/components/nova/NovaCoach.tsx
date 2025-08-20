@@ -143,6 +143,4 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
       </div>
     </div>
   );
-    </div>
-  );
 }
