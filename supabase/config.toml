@@ -28,3 +28,6 @@ verify_jwt = true
 
 [functions.nova-mint-child-token]
 verify_jwt = true
+
+[functions.realtime-chat]
+verify_jwt = false

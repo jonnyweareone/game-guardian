@@ -8,13 +8,16 @@ import { ArrowLeft, BookOpen, Volume2, VolumeX } from 'lucide-react';
 import { useNovaSession } from '@/hooks/useNovaSession';
 import { NovaCoach } from '@/components/nova/NovaCoach';
 import { ProblemWords } from '@/components/nova/ProblemWords';
+import VoiceInterface from '@/components/nova/VoiceInterface';
 import { EpubReader } from '@/components/nova/EpubReader';
 
 export default function NovaReader() {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
   const [activeChildId, setActiveChildId] = useState<string>('');
-  const [readerContent, setReaderContent] = useState<'epub' | 'pdf' | 'online'>('online');
+  const [readerContent, setReaderContent] = useState<'epub' | 'pdf' | 'online'>('epub');
+  const [aiSpeaking, setAiSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState('');
 
   // Get active child from session storage
   useEffect(() => {
@@ -180,29 +183,33 @@ export default function NovaReader() {
           </div>
         </div>
 
-        {/* Nova Coach Sidebar */}
-        <div className="w-80 border-l bg-muted/20 p-4 space-y-4 overflow-y-auto">
-          <div className="flex items-center gap-2 text-primary font-semibold">
-            <BookOpen className="h-5 w-5" />
-            Nova Coach
-          </div>
-
+        {/* Right Sidebar - AI Coach and Voice Interface */}
+        <div className="w-80 bg-muted/50 p-4 space-y-4 overflow-y-auto">
+          {/* Voice Interface */}
+          <VoiceInterface 
+            onSpeakingChange={setAiSpeaking}
+            onTranscriptUpdate={setTranscript}
+          />
+          
           {sessionId && (
             <>
               <NovaCoach sessionId={sessionId} childId={activeChildId} />
               <ProblemWords sessionId={sessionId} childId={activeChildId} />
             </>
           )}
-
-          {!sessionId && (
-            <Card>
-              <div className="p-6 text-center">
-                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Start reading to activate Nova Coach
-                </p>
-              </div>
-            </Card>
+          
+          {aiSpeaking && (
+            <div className="flex items-center space-x-2 p-3 bg-primary/10 rounded-lg">
+              <div className="w-3 h-3 rounded-full bg-primary animate-pulse"></div>
+              <span className="text-sm text-primary font-medium">Nova is speaking...</span>
+            </div>
+          )}
+          
+          {transcript && (
+            <div className="p-3 bg-background rounded-lg border">
+              <h4 className="text-sm font-medium mb-2">AI Response:</h4>
+              <p className="text-sm text-muted-foreground">{transcript}</p>
+            </div>
           )}
         </div>
       </div>
