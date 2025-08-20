@@ -1,3 +1,4 @@
+
 project_id = "xzxjwuzwltoapifcyzww"
 
 [api]
@@ -32,6 +33,9 @@ verify_jwt = true
 [functions.nova-generate-insights]
 verify_jwt = false
 
+[functions.nova-job-worker]
+verify_jwt = false
+
 [functions.text-to-speech]
 verify_jwt = false
 
@@ -49,3 +53,6 @@ verify_jwt = false
 
 [functions.admin-books-reingest]
 verify_jwt = true
+
+[functions.get-book-pages]
+verify_jwt = false

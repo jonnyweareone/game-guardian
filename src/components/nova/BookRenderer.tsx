@@ -1,24 +1,11 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Play, Pause, Volume2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-
-interface BookPage {
-  id: string;
-  book_id: string;
-  page_index: number;
-  content: string;
-  tokens: Array<{
-    word: string;
-    start: number;
-    end: number;
-    tricky?: boolean;
-  }> | null;
-  image_url?: string;
-}
+import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Loader2 } from 'lucide-react';
+import { TextToSpeechPlayer } from './TextToSpeechPlayer';
 
 interface BookRendererProps {
   bookId: string;
@@ -27,350 +14,252 @@ interface BookRendererProps {
   onCoinsAwarded?: (coins: number) => void;
 }
 
-export const BookRenderer: React.FC<BookRendererProps> = ({
-  bookId,
-  childId,
-  onProgressUpdate,
-  onCoinsAwarded
-}) => {
-  const { toast } = useToast();
-  const [pages, setPages] = useState<BookPage[]>([]);
+export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded }: BookRendererProps) {
   const [currentPage, setCurrentPage] = useState(0);
-  const [isReading, setIsReading] = useState(false);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  // Load book pages using edge function
+  // Load book details
+  const { data: book, isLoading: bookLoading } = useQuery({
+    queryKey: ['book', bookId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('id', bookId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Load book pages
+  const { data: pages, isLoading: pagesLoading, refetch: refetchPages } = useQuery({
+    queryKey: ['book-pages', bookId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('book_pages')
+        .select('*')
+        .eq('book_id', bookId)
+        .order('page_index');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: book && !book.ingested ? 5000 : false, // Poll if not ingested
+  });
+
+  // Create reading session mutation
+  const createSessionMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from('child_reading_sessions')
+        .insert({
+          child_id: childId,
+          book_id: bookId,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (session) => {
+      setSessionId(session.id);
+      console.log('Reading session created:', session.id);
+    },
+  });
+
+  // Update session on unmount or page change
+  const updateSessionMutation = useMutation({
+    mutationFn: async ({ sessionId, currentLocator, totalSeconds }: {
+      sessionId: string;
+      currentLocator?: string;
+      totalSeconds?: number;
+    }) => {
+      const updates: any = { updated_at: new Date().toISOString() };
+      if (currentLocator !== undefined) updates.current_locator = currentLocator;
+      if (totalSeconds !== undefined) updates.total_seconds = totalSeconds;
+
+      const { error } = await supabase
+        .from('child_reading_sessions')
+        .update(updates)
+        .eq('id', sessionId);
+      
+      if (error) throw error;
+    },
+  });
+
+  // Create session on component mount
   useEffect(() => {
-    const loadPages = async () => {
-      try {
-        // First try the edge function
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('get-book-pages', {
-          body: { book_id: bookId }
-        });
-
-        if (edgeError) {
-          console.error('Error loading pages via edge function:', edgeError);
-        }
-
-        if (edgeData?.data && Array.isArray(edgeData.data)) {
-        setPages(edgeData.data.map(page => ({
-          ...page,
-          tokens: page.tokens as Array<{word: string; start: number; end: number; tricky?: boolean}> | null
-        })));
-          return;
-        }
-
-        // Fallback to direct query if edge function fails
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('book_pages')
-          .select('*')
-          .eq('book_id', bookId)
-          .order('page_index');
-
-        if (fallbackError) {
-          console.error('Error loading pages:', fallbackError);
-          toast({
-            title: "Error",
-            description: "Failed to load book pages",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        setPages((fallbackData || []).map(page => ({
-          ...page,
-          tokens: page.tokens as Array<{word: string; start: number; end: number; tricky?: boolean}> | null
-        })));
-      } catch (err) {
-        console.error('Error in loadPages:', err);
-        toast({
-          title: "Error",
-          description: "Failed to load book content",
-          variant: "destructive",
-        });
-      }
-    };
-
-    if (bookId) {
-      loadPages();
+    if (bookId && childId && !sessionId) {
+      createSessionMutation.mutate();
     }
-  }, [bookId, toast]);
+  }, [bookId, childId]);
 
-  // Load reading progress
+  // Update session when page changes
   useEffect(() => {
-    const loadProgress = async () => {
-      try {
-        const { data } = await supabase
-          .from('child_reading_sessions')
-          .select('current_locator')
-          .eq('book_id', bookId)
-          .eq('child_id', childId)
-          .order('started_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (data?.current_locator) {
-          const pageIndex = parseInt(data.current_locator) || 0;
-          setCurrentPage(Math.min(pageIndex, pages.length - 1));
-        }
-      } catch (error) {
-        console.error('Error loading progress:', error);
-      }
-    };
-
-    if (bookId && childId && pages.length > 0) {
-      loadProgress();
+    if (sessionId && pages && pages.length > 0) {
+      updateSessionMutation.mutate({
+        sessionId,
+        currentLocator: `page-${currentPage}`,
+      });
     }
-  }, [bookId, childId, pages.length]);
+  }, [sessionId, currentPage]);
+
+  const handlePageChange = useCallback((newPage: number) => {
+    if (pages && newPage >= 0 && newPage < pages.length) {
+      setCurrentPage(newPage);
+      onProgressUpdate?.(newPage, ((newPage + 1) / pages.length) * 100);
+    }
+  }, [pages, onProgressUpdate]);
+
+  const handlePlayPause = useCallback(() => {
+    setIsPlaying(!isPlaying);
+  }, [isPlaying]);
+
+  const handleRestart = useCallback(() => {
+    setCurrentPage(0);
+    setIsPlaying(false);
+  }, []);
+
+  // Show loading state
+  if (bookLoading || pagesLoading) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading book...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show message if book not ingested yet
+  if (book && !book.ingested) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Preparing your book...</h3>
+          <p className="text-muted-foreground">
+            We're getting "{book.title}" ready for you. This usually takes just a minute or two.
+          </p>
+          <Button 
+            variant="outline" 
+            onClick={() => refetchPages()} 
+            className="mt-4"
+          >
+            Check Again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show message if no pages available yet
+  if (!pages || pages.length === 0) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <div className="text-muted-foreground mb-4">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              📚
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No pages available yet</h3>
+          <p className="text-muted-foreground mb-4">
+            This book is still being processed. Please try again in a few moments.
+          </p>
+          <Button variant="outline" onClick={() => refetchPages()}>
+            Refresh
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const currentPageData = pages[currentPage];
 
-  const saveProgress = async (pageIndex: number, readPercent: number = 100) => {
-    try {
-      // Update reading session
-      await supabase
-        .from('child_reading_sessions')
-        .upsert({
-          child_id: childId,
-          book_id: bookId,
-          current_locator: pageIndex.toString(),
-          updated_at: new Date().toISOString()
-        });
-
-      // Update page progress and award coins
-      if (readPercent === 100) {
-        const { data: progressData } = await supabase
-          .from('child_page_progress')
-          .upsert({
-            child_id: childId,
-            book_id: bookId,
-            page_index: pageIndex,
-            read_percent: readPercent,
-            coins_awarded: 5, // 5 coins per completed page
-            updated_at: new Date().toISOString()
-          })
-          .select()
-          .maybeSingle();
-
-        if (progressData && 'coins_awarded' in progressData) {
-          onCoinsAwarded?.(progressData.coins_awarded);
-          toast({
-            title: "Page Complete! 🎉",
-            description: `You earned ${progressData.coins_awarded} coins!`,
-          });
-        }
-      }
-
-      onProgressUpdate?.(pageIndex, readPercent);
-    } catch (error) {
-      console.error('Error saving progress:', error);
-    }
-  };
-
-  const startReading = () => {
-    if (!currentPageData) return;
-
-    setIsReading(true);
-    setCurrentWordIndex(0);
-
-    // Use browser's speech synthesis for TTS
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(currentPageData.content);
-      utterance.rate = 0.8;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      // Track word highlighting during speech
-      utterance.onboundary = (event) => {
-        if (event.name === 'word') {
-          const charIndex = event.charIndex;
-          const wordIndex = currentPageData.tokens?.findIndex(token => 
-            token.start <= charIndex && token.end >= charIndex
-          ) || 0;
-          setCurrentWordIndex(wordIndex);
-        }
-      };
-
-      utterance.onend = () => {
-        setIsReading(false);
-        setCurrentWordIndex(0);
-        saveProgress(currentPage, 100);
-      };
-
-      speechRef.current = utterance;
-      speechSynthesis.speak(utterance);
-    }
-  };
-
-  const stopReading = () => {
-    setIsReading(false);
-    setCurrentWordIndex(0);
-    
-    if (speechRef.current) {
-      speechSynthesis.cancel();
-      speechRef.current = null;
-    }
-  };
-
-  const nextPage = () => {
-    if (currentPage < pages.length - 1) {
-      const newPage = currentPage + 1;
-      setCurrentPage(newPage);
-      setCurrentWordIndex(0);
-      saveProgress(newPage, 0);
-      stopReading();
-    }
-  };
-
-  const prevPage = () => {
-    if (currentPage > 0) {
-      const newPage = currentPage - 1;
-      setCurrentPage(newPage);
-      setCurrentWordIndex(0);
-      saveProgress(newPage, 0);
-      stopReading();
-    }
-  };
-
-  const renderHighlightedText = () => {
-    if (!currentPageData?.tokens) {
-      return <p className="text-lg leading-relaxed">{currentPageData?.content}</p>;
-    }
-
-    return (
-      <p className="text-lg leading-relaxed">
-        {currentPageData.tokens.map((token, index) => {
-          let className = 'transition-colors duration-200';
-          
-          // Current word highlighting (for TTS)
-          if (index === currentWordIndex && isReading) {
-            className += ' bg-yellow-200 text-yellow-900 font-semibold';
-          }
-          // Tricky word highlighting (always visible)
-          else if (token.tricky) {
-            className += ' bg-orange-100 text-orange-800 font-medium border-b-2 border-orange-300';
-          }
-          
-          return (
-            <span key={index} className={className} title={token.tricky ? 'Difficult word' : undefined}>
-              {token.word}{' '}
-            </span>
-          );
-        })}
-      </p>
-    );
-  };
-
-  if (!pages || pages.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p>No pages available yet. Book may need to be ingested.</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Please check the admin panel to ingest this book.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!currentPageData) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p>Loading book content...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="h-full flex flex-col">
+    <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* Header with controls */}
-      <div className="flex items-center justify-between p-4 border-b bg-card">
-        <span className="font-medium">Page {currentPage + 1} of {pages.length}</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 0}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage + 1} of {pages.length}
+          </span>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === pages.length - 1}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={isReading ? stopReading : startReading}
-            disabled={!currentPageData}
+            onClick={handleRestart}
           >
-            {isReading ? (
-              <>
-                <Pause className="h-4 w-4 mr-2" />
-                Stop Reading
-              </>
-            ) : (
-              <>
-                <Volume2 className="h-4 w-4 mr-2" />
-                Read Aloud
-              </>
-            )}
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePlayPause}
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
         </div>
       </div>
 
-      {/* Vertical split content */}
-      <div className="flex-1 flex flex-col">
-        {/* Top pane - Image */}
-        <div className="h-1/2 min-h-[220px] border-b bg-muted/30 flex items-center justify-center">
-          {currentPageData.image_url ? (
-            <img
-              src={currentPageData.image_url}
-              alt={`Page ${currentPage + 1} illustration`}
-              className="max-w-full max-h-full object-contain"
-            />
-          ) : (
-            <div className="text-center text-muted-foreground">
-              <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-lg flex items-center justify-center">
-                📖
-              </div>
-              <p>No image for this page</p>
-            </div>
-          )}
-        </div>
-
-        {/* Bottom pane - Text content */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div
-            ref={contentRef}
-            className="font-serif text-foreground"
-            style={{ fontSize: '18px', lineHeight: '1.8' }}
-          >
-            {renderHighlightedText()}
+      {/* Main content */}
+      <Card>
+        <CardContent className="p-8">
+          <div className="prose prose-lg max-w-none">
+            {currentPageData?.content.split('\n').map((paragraph, index) => (
+              <p key={index} className="mb-4 leading-relaxed">
+                {paragraph}
+              </p>
+            ))}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Navigation footer */}
-      <div className="flex justify-between items-center p-4 border-t bg-card">
-        <Button
-          variant="outline"
-          onClick={prevPage}
-          disabled={currentPage === 0}
-          className="flex items-center gap-2"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Previous
-        </Button>
+      {/* Text-to-speech player */}
+      {currentPageData && (
+        <TextToSpeechPlayer
+          text={currentPageData.content}
+          isPlaying={isPlaying}
+          onPlayingChange={setIsPlaying}
+          voiceSpans={currentPageData.voice_spans}
+        />
+      )}
 
-        <div className="text-sm text-muted-foreground">
-          Progress: {Math.round(((currentPage + 1) / pages.length) * 100)}%
-        </div>
-
-        <Button
-          variant="outline"
-          onClick={nextPage}
-          disabled={currentPage === pages.length - 1}
-          className="flex items-center gap-2"
-        >
-          Next
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+      {/* Progress indicator */}
+      <div className="w-full bg-muted rounded-full h-2">
+        <div
+          className="bg-primary h-2 rounded-full transition-all duration-300"
+          style={{ width: `${((currentPage + 1) / pages.length) * 100}%` }}
+        />
       </div>
     </div>
   );
-};
+}

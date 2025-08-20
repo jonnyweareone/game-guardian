@@ -509,6 +509,7 @@ export type Database = {
           page_index: number
           tokens: Json | null
           tts_segments: Json | null
+          voice_spans: Json | null
         }
         Insert: {
           book_id: string
@@ -519,6 +520,7 @@ export type Database = {
           page_index: number
           tokens?: Json | null
           tts_segments?: Json | null
+          voice_spans?: Json | null
         }
         Update: {
           book_id?: string
@@ -529,6 +531,7 @@ export type Database = {
           page_index?: number
           tokens?: Json | null
           tts_segments?: Json | null
+          voice_spans?: Json | null
         }
         Relationships: [
           {
@@ -574,6 +577,9 @@ export type Database = {
         Row: {
           age_max: number | null
           age_min: number | null
+          analysis_at: string | null
+          analysis_done: boolean | null
+          analysis_mode: string | null
           author: string | null
           authors: string[] | null
           category: string | null
@@ -586,6 +592,7 @@ export type Database = {
           has_audio: boolean | null
           id: string
           ingested: boolean
+          ingested_at: string | null
           is_fiction: boolean | null
           ks: string | null
           language: string | null
@@ -604,6 +611,9 @@ export type Database = {
         Insert: {
           age_max?: number | null
           age_min?: number | null
+          analysis_at?: string | null
+          analysis_done?: boolean | null
+          analysis_mode?: string | null
           author?: string | null
           authors?: string[] | null
           category?: string | null
@@ -616,6 +626,7 @@ export type Database = {
           has_audio?: boolean | null
           id?: string
           ingested?: boolean
+          ingested_at?: string | null
           is_fiction?: boolean | null
           ks?: string | null
           language?: string | null
@@ -634,6 +645,9 @@ export type Database = {
         Update: {
           age_max?: number | null
           age_min?: number | null
+          analysis_at?: string | null
+          analysis_done?: boolean | null
+          analysis_mode?: string | null
           author?: string | null
           authors?: string[] | null
           category?: string | null
@@ -646,6 +660,7 @@ export type Database = {
           has_audio?: boolean | null
           id?: string
           ingested?: boolean
+          ingested_at?: string | null
           is_fiction?: boolean | null
           ks?: string | null
           language?: string | null
@@ -2620,6 +2635,53 @@ export type Database = {
         }
         Relationships: []
       }
+      nova_jobs: {
+        Row: {
+          attempts: number | null
+          book_id: string
+          created_at: string | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          job_type: string
+          payload: Json | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number | null
+          book_id: string
+          created_at?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          job_type: string
+          payload?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number | null
+          book_id?: string
+          created_at?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          job_type?: string
+          payload?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nova_jobs_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nova_problem_words: {
         Row: {
           child_id: string
@@ -3930,6 +3992,21 @@ export type Database = {
       mark_devices_offline_if_stale: {
         Args: { grace_seconds: number }
         Returns: undefined
+      }
+      nova_claim_job: {
+        Args: { p_job_type?: string }
+        Returns: {
+          attempts: number | null
+          book_id: string
+          created_at: string | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          job_type: string
+          payload: Json | null
+          started_at: string | null
+          status: string
+        }
       }
       request_reward: {
         Args: { p_child: string; p_note?: string; p_reward: string }
