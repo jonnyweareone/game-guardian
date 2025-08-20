@@ -463,41 +463,119 @@ export type Database = {
         }
         Relationships: []
       }
+      book_topics: {
+        Row: {
+          book_id: string
+          topic_id: string
+        }
+        Insert: {
+          book_id: string
+          topic_id: string
+        }
+        Update: {
+          book_id?: string
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_topics_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_topics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           age_max: number | null
           age_min: number | null
           author: string | null
+          authors: string[] | null
           category: string | null
+          cover_url: string | null
           created_at: string | null
+          description: string | null
+          download_epub_url: string | null
+          download_pdf_url: string | null
+          has_audio: boolean | null
           id: string
+          is_fiction: boolean | null
           ks: string | null
+          language: string | null
+          level_tags: string[] | null
+          license: string | null
+          pages: number | null
+          published_year: number | null
+          read_online_url: string | null
+          source: string | null
+          source_id: string | null
           source_url: string | null
           subject: string | null
+          subjects: string[] | null
           title: string
         }
         Insert: {
           age_max?: number | null
           age_min?: number | null
           author?: string | null
+          authors?: string[] | null
           category?: string | null
+          cover_url?: string | null
           created_at?: string | null
+          description?: string | null
+          download_epub_url?: string | null
+          download_pdf_url?: string | null
+          has_audio?: boolean | null
           id?: string
+          is_fiction?: boolean | null
           ks?: string | null
+          language?: string | null
+          level_tags?: string[] | null
+          license?: string | null
+          pages?: number | null
+          published_year?: number | null
+          read_online_url?: string | null
+          source?: string | null
+          source_id?: string | null
           source_url?: string | null
           subject?: string | null
+          subjects?: string[] | null
           title: string
         }
         Update: {
           age_max?: number | null
           age_min?: number | null
           author?: string | null
+          authors?: string[] | null
           category?: string | null
+          cover_url?: string | null
           created_at?: string | null
+          description?: string | null
+          download_epub_url?: string | null
+          download_pdf_url?: string | null
+          has_audio?: boolean | null
           id?: string
+          is_fiction?: boolean | null
           ks?: string | null
+          language?: string | null
+          level_tags?: string[] | null
+          license?: string | null
+          pages?: number | null
+          published_year?: number | null
+          read_online_url?: string | null
+          source?: string | null
+          source_id?: string | null
           source_url?: string | null
           subject?: string | null
+          subjects?: string[] | null
           title?: string
         }
         Relationships: []
@@ -624,6 +702,47 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_effective_app_policy"
             referencedColumns: ["child_id"]
+          },
+        ]
+      }
+      child_bookshelf: {
+        Row: {
+          book_id: string
+          child_id: string
+          finished_at: string | null
+          last_location: Json | null
+          progress: number | null
+          saved_offline: boolean | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["bookshelf_status"]
+        }
+        Insert: {
+          book_id: string
+          child_id: string
+          finished_at?: string | null
+          last_location?: Json | null
+          progress?: number | null
+          saved_offline?: boolean | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["bookshelf_status"]
+        }
+        Update: {
+          book_id?: string
+          child_id?: string
+          finished_at?: string | null
+          last_location?: Json | null
+          progress?: number | null
+          saved_offline?: boolean | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["bookshelf_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_bookshelf_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1259,6 +1378,33 @@ export type Database = {
             referencedColumns: ["child_id"]
           },
         ]
+      }
+      curriculum_topics: {
+        Row: {
+          id: string
+          keywords: string[] | null
+          phase: string
+          slug: string
+          subject_area: string
+          topic: string
+        }
+        Insert: {
+          id?: string
+          keywords?: string[] | null
+          phase?: string
+          slug: string
+          subject_area: string
+          topic: string
+        }
+        Update: {
+          id?: string
+          keywords?: string[] | null
+          phase?: string
+          slug?: string
+          subject_area?: string
+          topic?: string
+        }
+        Relationships: []
       }
       device_activations: {
         Row: {
@@ -3452,6 +3598,7 @@ export type Database = {
         | "inappropriate_sharing"
         | "cyberbullying"
       app_role: "admin" | "moderator" | "user"
+      bookshelf_status: "saved" | "reading" | "finished" | "abandoned"
       clip_status:
         | "pending"
         | "approved"
@@ -3602,6 +3749,7 @@ export const Constants = {
         "cyberbullying",
       ],
       app_role: ["admin", "moderator", "user"],
+      bookshelf_status: ["saved", "reading", "finished", "abandoned"],
       clip_status: [
         "pending",
         "approved",

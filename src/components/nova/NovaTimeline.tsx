@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,45 +23,35 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
   const { data: timeline = [], isLoading } = useQuery({
     queryKey: ['nova-timeline', childId],
     queryFn: async () => {
-      try {
-        const { data, error } = await (supabase as any)
-          .from('child_reading_timeline')
-          .select('*')
-          .eq('child_id', childId)
-          .order('created_at', { ascending: false })
-          .limit(50);
-          
-        if (error) throw error;
-        return data || [];
-      } catch (error) {
-        console.log('Timeline table not ready yet, returning empty data');
-        return [];
-      }
+      const { data, error } = await supabase
+        .from('child_reading_timeline')
+        .select('*')
+        .eq('child_id', childId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+        
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!childId,
   });
 
-  // Load reading rollups for summary stats
-  const { data: rollups = [] } = useQuery({
-    queryKey: ['nova-rollups', childId],
+  // Load bookshelf summary for stats
+  const { data: bookshelfStats = [] } = useQuery({
+    queryKey: ['nova-bookshelf-stats', childId],
     queryFn: async () => {
-      try {
-        const { data, error } = await (supabase as any)
-          .from('reading_rollups')
-          .select(`
-            *,
-            books (title, cover_url, author)
-          `)
-          .eq('child_id', childId)
-          .order('last_session_at', { ascending: false })
-          .limit(10);
-          
-        if (error) throw error;
-        return data || [];
-      } catch (error) {
-        console.log('Reading rollups table not ready yet, returning empty data');
-        return [];
-      }
+      const { data, error } = await supabase
+        .from('child_bookshelf')
+        .select(`
+          *,
+          books (title, cover_url, author, authors)
+        `)
+        .eq('child_id', childId)
+        .order('started_at', { ascending: false })
+        .limit(10);
+        
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!childId,
   });
@@ -99,10 +90,13 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
     }
   };
 
-  // Calculate total stats
-  const totalSessions = rollups.reduce((sum, rollup) => sum + (rollup.sessions || 0), 0);
-  const totalMinutes = rollups.reduce((sum, rollup) => sum + Math.round((rollup.total_seconds || 0) / 60), 0);
-  const totalPages = rollups.reduce((sum, rollup) => sum + (rollup.pages_completed || 0), 0);
+  // Calculate stats
+  const totalBooks = bookshelfStats.length;
+  const booksFinished = bookshelfStats.filter(book => book.status === 'finished').length;
+  const booksInProgress = bookshelfStats.filter(book => book.status === 'reading').length;
+  const averageProgress = bookshelfStats.length > 0 
+    ? Math.round(bookshelfStats.reduce((sum, book) => sum + (book.progress || 0), 0) / bookshelfStats.length)
+    : 0;
 
   if (isLoading) {
     return (
@@ -119,29 +113,29 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary">{totalSessions}</div>
-            <div className="text-sm text-muted-foreground">Reading Sessions</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{totalPages}</div>
-            <div className="text-sm text-muted-foreground">Pages Read</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{totalMinutes}m</div>
-            <div className="text-sm text-muted-foreground">Reading Time</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{rollups.length}</div>
+            <div className="text-2xl font-bold text-primary">{totalBooks}</div>
             <div className="text-sm text-muted-foreground">Books Started</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{booksFinished}</div>
+            <div className="text-sm text-muted-foreground">Books Finished</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600">{booksInProgress}</div>
+            <div className="text-sm text-muted-foreground">Currently Reading</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">{averageProgress}%</div>
+            <div className="text-sm text-muted-foreground">Average Progress</div>
           </CardContent>
         </Card>
       </div>
@@ -221,7 +215,7 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
       </Card>
 
       {/* Books in Progress */}
-      {rollups.length > 0 && (
+      {bookshelfStats.length > 0 && (
         <Card>
           <CardContent className="p-6">
             <h3 className="font-semibold mb-4 flex items-center gap-2">
@@ -230,14 +224,14 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
             </h3>
             
             <div className="grid md:grid-cols-2 gap-4">
-              {rollups.slice(0, 6).map((rollup) => (
-                <div key={rollup.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+              {bookshelfStats.slice(0, 6).map((item) => (
+                <div key={item.book_id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
                   {/* Book Cover */}
                   <div className="w-10 h-12 bg-muted rounded overflow-hidden flex-shrink-0">
-                    {rollup.books?.cover_url ? (
+                    {item.books?.cover_url ? (
                       <img
-                        src={rollup.books.cover_url}
-                        alt={rollup.books.title}
+                        src={item.books.cover_url}
+                        alt={item.books?.title}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -249,29 +243,30 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
 
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-sm line-clamp-2 mb-1">
-                      {rollup.books?.title || 'Unknown Book'}
+                      {item.books?.title || 'Unknown Book'}
                     </h4>
                     
                     <div className="text-xs text-muted-foreground space-y-1">
                       <div className="flex justify-between">
-                        <span>{rollup.sessions} sessions</span>
-                        <span>{rollup.pages_completed} pages</span>
+                        <span>Status: {item.status}</span>
+                        <span>{Math.round(item.progress || 0)}% complete</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>{Math.round((rollup.total_seconds || 0) / 60)}m reading</span>
-                        {rollup.last_session_at && (
-                          <span>
-                            Last: {new Date(rollup.last_session_at).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
+                      {item.started_at && (
+                        <div>
+                          Started: {new Date(item.started_at).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
 
-                    {rollup.last_summary && (
-                      <div className="mt-2 text-xs bg-background p-2 rounded border-l-2 border-primary">
-                        {rollup.last_summary}
+                    {/* Progress bar */}
+                    <div className="mt-2">
+                      <div className="w-full bg-muted rounded-full h-1.5">
+                        <div 
+                          className="bg-primary rounded-full h-1.5 transition-all"
+                          style={{ width: `${item.progress || 0}%` }}
+                        />
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))}

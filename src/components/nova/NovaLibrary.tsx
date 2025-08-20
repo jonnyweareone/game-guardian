@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Search, Filter, PlayCircle, FileText, Volume2 } from 'lucide-react';
+import { BookOpen, Search, PlayCircle, FileText, Volume2 } from 'lucide-react';
 
 interface NovaLibraryProps {
   childId: string;
@@ -50,14 +51,43 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
     enabled: !!childId,
   });
 
-  // Load curriculum books filtered by child's key stage
+  // Load fiction books (is_fiction=true, filtered by child's age)
+  const { data: fictionBooks = [], isLoading: loadingFiction } = useQuery({
+    queryKey: ['nova-fiction-books', child?.dob, educationProfile?.key_stage],
+    queryFn: async () => {
+      let query = supabase
+        .from('books')
+        .select('*')
+        .eq('is_fiction', true)
+        .order('title')
+        .limit(10);
+
+      // Filter by key stage if available
+      if (educationProfile?.key_stage) {
+        query = query.eq('ks', educationProfile.key_stage);
+      }
+
+      // Filter by age if child's DOB is available
+      if (child?.dob) {
+        const age = new Date().getFullYear() - new Date(child.dob).getFullYear();
+        query = query.lte('age_min', age).gte('age_max', age);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!child && !!educationProfile,
+  });
+
+  // Load curriculum books (is_fiction=false, filtered by key stage)
   const { data: curriculumBooks = [], isLoading: loadingCurriculum } = useQuery({
     queryKey: ['nova-curriculum-books', educationProfile?.key_stage],
     queryFn: async () => {
       let query = supabase
         .from('books')
         .select('*')
-        .eq('category', 'curriculum')
+        .eq('is_fiction', false)
         .order('title')
         .limit(10);
 
@@ -71,30 +101,6 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
       return data || [];
     },
     enabled: !!educationProfile,
-  });
-
-  // Load fiction books filtered by child's age range
-  const { data: fictionBooks = [], isLoading: loadingFiction } = useQuery({
-    queryKey: ['nova-fiction-books', child?.dob],
-    queryFn: async () => {
-      let query = supabase
-        .from('books')
-        .select('*')
-        .eq('category', 'fiction')
-        .order('title')
-        .limit(10);
-
-      // Filter by age if child's DOB is available
-      if (child?.dob) {
-        const age = new Date().getFullYear() - new Date(child.dob).getFullYear();
-        query = query.lte('age_min', age).gte('age_max', age);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!child,
   });
 
   // Load all books for search
@@ -111,7 +117,7 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
         .order('title');
 
       if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%,subject.ilike.%${searchQuery}%`);
+        query = query.or(`title.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
 
       if (ageFilter !== 'all') {
@@ -120,11 +126,11 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
       }
 
       if (subjectFilter !== 'all') {
-        // Use 'ks' column for key stage filtering, 'subject' for others
+        // Use 'ks' column for key stage filtering, 'category' for others
         if (subjectFilter.startsWith('KS')) {
           query = query.eq('ks', subjectFilter);
         } else {
-          query = query.eq('subject', subjectFilter);
+          query = query.contains('subjects', [subjectFilter]);
         }
       }
 
@@ -136,8 +142,20 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
 
   const isLoading = loadingCurriculum || loadingFiction || loadingAll;
 
-  // Placeholder for bookshelf data (will be enabled once types are regenerated)
-  const bookshelfData: any[] = [];
+  // Load bookshelf data for status display
+  const { data: bookshelfData = [] } = useQuery({
+    queryKey: ['nova-bookshelf', childId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('child_bookshelf')
+        .select('*')
+        .eq('child_id', childId);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!childId,
+  });
 
   const getBookStatus = (bookId: string) => {
     const shelf = bookshelfData.find(item => item.book_id === bookId);
@@ -146,8 +164,8 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
 
   const handleStartReading = async (book: any) => {
     try {
-      // Update bookshelf status (using any cast until types refresh)
-      await (supabase as any)
+      // Update bookshelf status
+      await supabase
         .from('child_bookshelf')
         .upsert({
           child_id: childId,
@@ -158,7 +176,7 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
         });
 
       // Navigate to reader
-      navigate(`/novalearning/reading/${book.id}`);
+      navigate(`/nova-reader/${book.id}?child=${childId}`);
     } catch (error) {
       console.error('Error starting reading:', error);
     }
@@ -181,9 +199,9 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
         <CardContent className="p-4">
           {/* Book Cover */}
           <div className="aspect-[3/4] mb-4 bg-muted rounded-lg overflow-hidden">
-            {(book as any).cover_url ? (
+            {book.cover_url ? (
               <img
-                src={(book as any).cover_url}
+                src={book.cover_url}
                 alt={book.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
               />
@@ -200,17 +218,47 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
               {book.title}
             </h3>
             
-            {(book.author || (book as any).authors) && (
+            {(book.author || book.authors) && (
               <p className="text-xs text-muted-foreground">
-                by {book.author || ((book as any).authors && (book as any).authors.join(', '))}
+                by {book.author || (book.authors && book.authors.join(', '))}
               </p>
             )}
 
-            {/* Age range */}
-            {book.age_min && book.age_max && (
-              <p className="text-xs text-muted-foreground">
-                Ages {book.age_min}-{book.age_max}
-              </p>
+            {/* Age range and format badges */}
+            <div className="flex flex-wrap gap-1 mb-2">
+              {book.age_min && book.age_max && (
+                <Badge variant="outline" className="text-xs">
+                  Ages {book.age_min}-{book.age_max}
+                </Badge>
+              )}
+              {book.download_epub_url && (
+                <Badge variant="secondary" className="text-xs">
+                  <FileText className="h-3 w-3 mr-1" />
+                  EPUB
+                </Badge>
+              )}
+              {book.has_audio && (
+                <Badge variant="secondary" className="text-xs">
+                  <Volume2 className="h-3 w-3 mr-1" />
+                  Audio
+                </Badge>
+              )}
+            </div>
+
+            {/* Progress if reading */}
+            {status && status.status === 'reading' && (
+              <div className="mb-2">
+                <div className="flex justify-between text-xs mb-1">
+                  <span>Progress</span>
+                  <span>{Math.round(status.progress || 0)}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div 
+                    className="bg-primary rounded-full h-1.5 transition-all"
+                    style={{ width: `${status.progress || 0}%` }}
+                  />
+                </div>
+              </div>
             )}
 
             {/* Read button */}
@@ -220,7 +268,7 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
               size="sm"
             >
               <PlayCircle className="h-4 w-4 mr-2" />
-              {status?.status === 'in_progress' ? 'Continue' : 'Read'}
+              {status?.status === 'reading' ? 'Continue' : 'Read'}
             </Button>
           </div>
         </CardContent>
@@ -274,9 +322,9 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
                 <SelectItem value="all">All Subjects</SelectItem>
                 <SelectItem value="Fantasy">Fantasy</SelectItem>
                 <SelectItem value="Adventure">Adventure</SelectItem>
-                <SelectItem value="Friendship">Friendship</SelectItem>
-                <SelectItem value="Nature">Nature</SelectItem>
                 <SelectItem value="Animals">Animals</SelectItem>
+                <SelectItem value="Family">Family</SelectItem>
+                <SelectItem value="Friendship">Friendship</SelectItem>
                 <SelectItem value="KS2">KS2</SelectItem>
               </SelectContent>
             </Select>
@@ -306,29 +354,6 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
         </div>
       )}
 
-      {/* Curriculum Books Rail */}
-      {!hasSearchResults && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            📚 Curriculum Books
-          </h2>
-          {curriculumBooks.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  No curriculum books available for {educationProfile?.key_stage || 'this key stage'} yet.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="flex gap-4 overflow-x-auto pb-4">
-              {curriculumBooks.map(renderBookCard)}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Fiction Books Rail */}
       {!hasSearchResults && (
         <div>
@@ -347,6 +372,29 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
           ) : (
             <div className="flex gap-4 overflow-x-auto pb-4">
               {fictionBooks.map(renderBookCard)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Curriculum Books Rail */}
+      {!hasSearchResults && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            📚 Curriculum Books
+          </h2>
+          {curriculumBooks.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">
+                  No curriculum books available for {educationProfile?.key_stage || 'this key stage'} yet.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {curriculumBooks.map(renderBookCard)}
             </div>
           )}
         </div>
