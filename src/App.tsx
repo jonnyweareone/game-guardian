@@ -152,6 +152,7 @@ const App = () => (
               <Route path="/play/turtlestitch" element={<Turtlestitch />} />
               <Route path="/play/tuxmath" element={<TuxMath />} />
               <Route path="/play/antura" element={<Antura />} />
+              <Route path="/play/spacetrek" element={<SpaceTrek />} />
               
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />
