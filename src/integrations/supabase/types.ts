@@ -463,6 +463,116 @@ export type Database = {
         }
         Relationships: []
       }
+      book_chapter_images: {
+        Row: {
+          book_id: string
+          chapter_id: string
+          cost_estimate_cents: number | null
+          created_at: string | null
+          height: number | null
+          id: string
+          image_url: string
+          negative_prompt: string | null
+          prompt: string | null
+          provider: string | null
+          seed: number | null
+          slot: number
+          width: number | null
+        }
+        Insert: {
+          book_id: string
+          chapter_id: string
+          cost_estimate_cents?: number | null
+          created_at?: string | null
+          height?: number | null
+          id?: string
+          image_url: string
+          negative_prompt?: string | null
+          prompt?: string | null
+          provider?: string | null
+          seed?: number | null
+          slot: number
+          width?: number | null
+        }
+        Update: {
+          book_id?: string
+          chapter_id?: string
+          cost_estimate_cents?: number | null
+          created_at?: string | null
+          height?: number | null
+          id?: string
+          image_url?: string
+          negative_prompt?: string | null
+          prompt?: string | null
+          provider?: string | null
+          seed?: number | null
+          slot?: number
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_chapter_images_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_chapter_images_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "book_chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_chapters: {
+        Row: {
+          book_id: string
+          chapter_hash: string | null
+          chapter_index: number
+          chapter_title: string | null
+          created_at: string | null
+          first_page_index: number | null
+          generated_images: number
+          id: string
+          last_page_index: number | null
+          max_images: number
+        }
+        Insert: {
+          book_id: string
+          chapter_hash?: string | null
+          chapter_index: number
+          chapter_title?: string | null
+          created_at?: string | null
+          first_page_index?: number | null
+          generated_images?: number
+          id?: string
+          last_page_index?: number | null
+          max_images?: number
+        }
+        Update: {
+          book_id?: string
+          chapter_hash?: string | null
+          chapter_index?: number
+          chapter_title?: string | null
+          created_at?: string | null
+          first_page_index?: number | null
+          generated_images?: number
+          id?: string
+          last_page_index?: number | null
+          max_images?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_chapters_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_ingests: {
         Row: {
           book_id: string | null
@@ -505,6 +615,8 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          illustration_prompt: string | null
+          illustration_url: string | null
           image_url: string | null
           page_index: number
           tokens: Json | null
@@ -516,6 +628,8 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          illustration_prompt?: string | null
+          illustration_url?: string | null
           image_url?: string | null
           page_index: number
           tokens?: Json | null
@@ -527,6 +641,8 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          illustration_prompt?: string | null
+          illustration_url?: string | null
           image_url?: string | null
           page_index?: number
           tokens?: Json | null
@@ -591,6 +707,8 @@ export type Database = {
           gutenberg_id: number | null
           has_audio: boolean | null
           id: string
+          images_generated: boolean | null
+          images_provider: string | null
           ingested: boolean
           ingested_at: string | null
           is_fiction: boolean | null
@@ -604,6 +722,7 @@ export type Database = {
           source: string | null
           source_id: string | null
           source_url: string | null
+          started_at: string | null
           subject: string | null
           subjects: string[] | null
           title: string
@@ -625,6 +744,8 @@ export type Database = {
           gutenberg_id?: number | null
           has_audio?: boolean | null
           id?: string
+          images_generated?: boolean | null
+          images_provider?: string | null
           ingested?: boolean
           ingested_at?: string | null
           is_fiction?: boolean | null
@@ -638,6 +759,7 @@ export type Database = {
           source?: string | null
           source_id?: string | null
           source_url?: string | null
+          started_at?: string | null
           subject?: string | null
           subjects?: string[] | null
           title: string
@@ -659,6 +781,8 @@ export type Database = {
           gutenberg_id?: number | null
           has_audio?: boolean | null
           id?: string
+          images_generated?: boolean | null
+          images_provider?: string | null
           ingested?: boolean
           ingested_at?: string | null
           is_fiction?: boolean | null
@@ -672,6 +796,7 @@ export type Database = {
           source?: string | null
           source_id?: string | null
           source_url?: string | null
+          started_at?: string | null
           subject?: string | null
           subjects?: string[] | null
           title?: string
@@ -2639,6 +2764,7 @@ export type Database = {
         Row: {
           attempts: number | null
           book_id: string
+          chapter_id: string | null
           created_at: string | null
           error: string | null
           finished_at: string | null
@@ -2651,6 +2777,7 @@ export type Database = {
         Insert: {
           attempts?: number | null
           book_id: string
+          chapter_id?: string | null
           created_at?: string | null
           error?: string | null
           finished_at?: string | null
@@ -2663,6 +2790,7 @@ export type Database = {
         Update: {
           attempts?: number | null
           book_id?: string
+          chapter_id?: string | null
           created_at?: string | null
           error?: string | null
           finished_at?: string | null
@@ -2678,6 +2806,13 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nova_jobs_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "book_chapters"
             referencedColumns: ["id"]
           },
         ]
@@ -3998,6 +4133,7 @@ export type Database = {
         Returns: {
           attempts: number | null
           book_id: string
+          chapter_id: string | null
           created_at: string | null
           error: string | null
           finished_at: string | null

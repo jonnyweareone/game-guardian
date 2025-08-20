@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -9,8 +8,9 @@ const corsHeaders = {
 
 interface NovaJob {
   id: string
-  job_type: 'ingest' | 'analyze'
+  job_type: 'ingest' | 'analyze' | 'illustrate' | 'illustrate_slot' | 'illustrate_finalize'
   book_id: string
+  chapter_id?: string
   payload: any
   status: string
   attempts: number
@@ -58,6 +58,12 @@ serve(async (req) => {
           await processIngestJob(supabase, job)
         } else if (job.job_type === 'analyze') {
           await processAnalyzeJob(supabase, job)
+        } else if (job.job_type === 'illustrate') {
+          await processIllustrateJob(supabase, job)
+        } else if (job.job_type === 'illustrate_slot') {
+          await processIllustrateSlotJob(supabase, job)
+        } else if (job.job_type === 'illustrate_finalize') {
+          await processIllustrateFinalizeJob(supabase, job)
         }
 
         // Mark job as done
@@ -181,6 +187,9 @@ async function processIngestJob(supabase: any, job: NovaJob) {
     })
     .eq('id', book_id)
 
+  // Create chapters after ingestion
+  await createChaptersFromPages(supabase, book_id, pages)
+
   console.log(`Book ${book_id} ingested successfully with ${pages.length} pages`)
 }
 
@@ -224,6 +233,301 @@ async function processAnalyzeJob(supabase: any, job: NovaJob) {
     .eq('id', book_id)
 
   console.log(`Book ${book_id} analyzed successfully`)
+}
+
+async function processIllustrateJob(supabase: any, job: NovaJob) {
+  const { book_id, payload } = job
+  const { mode = 'progressive', max_per_chapter = 2 } = payload
+
+  console.log(`Starting illustration job for book ${book_id} (${mode} mode)`)
+
+  // Get all chapters for this book
+  const { data: chapters, error } = await supabase
+    .from('book_chapters')
+    .select('*')
+    .eq('book_id', book_id)
+    .order('chapter_index')
+
+  if (error) {
+    throw new Error(`Failed to fetch chapters: ${error.message}`)
+  }
+
+  if (!chapters || chapters.length === 0) {
+    throw new Error('No chapters found for illustration')
+  }
+
+  // For each chapter, enqueue slot 1 jobs
+  for (const chapter of chapters) {
+    if (chapter.generated_images < chapter.max_images) {
+      // Always enqueue slot 1
+      await supabase
+        .from('nova_jobs')
+        .insert({
+          job_type: 'illustrate_slot',
+          book_id,
+          chapter_id: chapter.id,
+          payload: { slot: 1, provider: 'api' }
+        })
+
+      console.log(`Enqueued slot 1 for chapter ${chapter.chapter_index}`)
+    }
+  }
+
+  console.log(`Illustration bootstrap completed for book ${book_id}`)
+}
+
+async function processIllustrateSlotJob(supabase: any, job: NovaJob) {
+  const { book_id, chapter_id, payload } = job
+  const { slot, provider = 'api' } = payload
+
+  console.log(`Generating illustration for chapter ${chapter_id}, slot ${slot}`)
+
+  // Get chapter details
+  const { data: chapter, error: chapterError } = await supabase
+    .from('book_chapters')
+    .select('*')
+    .eq('id', chapter_id)
+    .single()
+
+  if (chapterError || !chapter) {
+    throw new Error('Chapter not found')
+  }
+
+  // Check if this slot already exists
+  const { data: existingImage } = await supabase
+    .from('book_chapter_images')
+    .select('id')
+    .eq('chapter_id', chapter_id)
+    .eq('slot', slot)
+    .single()
+
+  if (existingImage) {
+    console.log(`Slot ${slot} already exists for chapter ${chapter_id}`)
+    return
+  }
+
+  // Get book details for prompt context
+  const { data: book } = await supabase
+    .from('books')
+    .select('title, author, subjects, level_tags')
+    .eq('id', book_id)
+    .single()
+
+  // Build safe, kid-friendly prompt
+  const prompt = buildChapterPrompt(book, chapter, slot)
+  console.log(`Generated prompt: ${prompt}`)
+
+  // Generate image using OpenAI
+  const imageResult = await generateImage(prompt)
+
+  // Upload to storage
+  const fileName = `${chapter.chapter_index}-${slot}.png`
+  const filePath = `${book_id}/${fileName}`
+  
+  const { error: uploadError } = await supabase.storage
+    .from('book-art')
+    .upload(filePath, imageResult.imageBytes, {
+      contentType: 'image/png',
+      upsert: true
+    })
+
+  if (uploadError) {
+    throw new Error(`Failed to upload image: ${uploadError.message}`)
+  }
+
+  const imageUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/book-art/${filePath}`
+
+  // Save to database
+  await supabase
+    .from('book_chapter_images')
+    .insert({
+      book_id,
+      chapter_id,
+      slot,
+      image_url: imageUrl,
+      prompt,
+      width: 1024,
+      height: 1024,
+      provider,
+      cost_estimate_cents: imageResult.costCents
+    })
+
+  // Update chapter generated count
+  await supabase
+    .from('book_chapters')
+    .update({ 
+      generated_images: chapter.generated_images + 1
+    })
+    .eq('id', chapter_id)
+
+  // Assign to appropriate page
+  const targetPageIndex = slot === 1 
+    ? chapter.first_page_index 
+    : Math.floor((chapter.first_page_index + chapter.last_page_index) / 2)
+
+  if (targetPageIndex !== null) {
+    await supabase
+      .from('book_pages')
+      .update({
+        illustration_url: imageUrl,
+        illustration_prompt: prompt
+      })
+      .eq('book_id', book_id)
+      .eq('page_index', targetPageIndex)
+  }
+
+  console.log(`Generated and assigned illustration for chapter ${chapter.chapter_index}, slot ${slot}`)
+}
+
+async function processIllustrateFinalizeJob(supabase: any, job: NovaJob) {
+  const { book_id } = job
+
+  console.log(`Finalizing illustrations for book ${book_id}`)
+
+  // Check if all chapters have max images
+  const { data: chapters } = await supabase
+    .from('book_chapters')
+    .select('generated_images, max_images')
+    .eq('book_id', book_id)
+
+  const allComplete = chapters?.every(ch => ch.generated_images >= ch.max_images)
+
+  if (allComplete) {
+    await supabase
+      .from('books')
+      .update({ images_generated: true })
+      .eq('id', book_id)
+
+    console.log(`All illustrations completed for book ${book_id}`)
+  }
+}
+
+async function createChaptersFromPages(supabase: any, bookId: string, pages: string[]) {
+  // Simple chapter detection based on content patterns
+  const chapters = []
+  let currentChapter = 0
+  let chapterStart = 0
+
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i]
+    
+    // Look for chapter markers (very basic heuristic)
+    const isChapterStart = /^(Chapter|CHAPTER)\s+\d+/i.test(page.trim()) ||
+                          /^\d+\.\s+[A-Z]/.test(page.trim()) ||
+                          (i === 0) // First page is always start of first chapter
+
+    if (isChapterStart && i > chapterStart) {
+      // End previous chapter
+      chapters.push({
+        book_id: bookId,
+        chapter_index: currentChapter,
+        chapter_title: extractChapterTitle(pages[chapterStart]),
+        first_page_index: chapterStart,
+        last_page_index: i - 1,
+        chapter_hash: hashString(pages.slice(chapterStart, i).join(''))
+      })
+
+      currentChapter++
+      chapterStart = i
+    }
+  }
+
+  // Add final chapter
+  chapters.push({
+    book_id: bookId,
+    chapter_index: currentChapter,
+    chapter_title: extractChapterTitle(pages[chapterStart]),
+    first_page_index: chapterStart,
+    last_page_index: pages.length - 1,
+    chapter_hash: hashString(pages.slice(chapterStart).join(''))
+  })
+
+  // Insert chapters
+  if (chapters.length > 0) {
+    await supabase
+      .from('book_chapters')
+      .upsert(chapters, { onConflict: 'book_id,chapter_index' })
+
+    console.log(`Created ${chapters.length} chapters for book ${bookId}`)
+  }
+}
+
+function extractChapterTitle(pageContent: string): string {
+  const lines = pageContent.split('\n').filter(line => line.trim())
+  if (lines.length === 0) return 'Untitled Chapter'
+  
+  // Look for chapter title patterns
+  const firstLine = lines[0].trim()
+  if (/^(Chapter|CHAPTER)\s+\d+/i.test(firstLine)) {
+    return firstLine
+  }
+  
+  // Use first substantial line as title
+  return lines.find(line => line.length > 5 && line.length < 100) || 'Untitled Chapter'
+}
+
+function hashString(str: string): string {
+  // Simple hash for chapter content detection
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32-bit integer
+  }
+  return hash.toString(16)
+}
+
+function buildChapterPrompt(book: any, chapter: any, slot: number): string {
+  const style = "storybook illustration for children"
+  const audience = book.level_tags?.includes('KS1') ? 'ages 5-7' : 'ages 7-11'
+  const tone = "warm, gentle, and adventurous"
+  
+  const chapterContext = chapter.chapter_title || `Chapter ${chapter.chapter_index + 1}`
+  const slotDescription = slot === 1 ? "opening scene" : "middle scene"
+  
+  return `${style} for ${audience}: ${tone} ${slotDescription} from "${chapterContext}" in the book "${book.title}" by ${book.author || 'unknown author'}. Safe, educational, no text overlays, no photorealism, colorful and engaging.`
+}
+
+async function generateImage(prompt: string) {
+  const openAIKey = Deno.env.get('OPENAI_API_KEY')
+  if (!openAIKey) {
+    throw new Error('OpenAI API key not configured')
+  }
+
+  console.log('Calling OpenAI image generation...')
+  
+  const response = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-image-1',
+      prompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'standard',
+      output_format: 'png'
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`OpenAI API error: ${response.status} ${error}`)
+  }
+
+  const result = await response.json()
+  const imageData = result.data[0]
+  
+  // gpt-image-1 returns base64 directly
+  const base64Data = imageData.b64_json || imageData.url
+  const imageBytes = Uint8Array.from(atob(base64Data.replace(/^data:image\/\w+;base64,/, '')), c => c.charCodeAt(0))
+
+  return {
+    imageBytes,
+    costCents: 4.0 // Approximate cost for gpt-image-1
+  }
 }
 
 function cleanGutenbergText(content: string): string {

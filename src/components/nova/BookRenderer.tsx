@@ -18,6 +18,7 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
   const [currentPage, setCurrentPage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [visitedChapters, setVisitedChapters] = useState(new Set<number>());
   const queryClient = useQueryClient();
 
   // Load book details
@@ -49,6 +50,22 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
       return data || [];
     },
     refetchInterval: book && !book.ingested ? 5000 : false, // Poll if not ingested
+  });
+
+  // Load book chapters
+  const { data: chapters } = useQuery({
+    queryKey: ['book-chapters', bookId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('book_chapters')
+        .select('*')
+        .eq('book_id', bookId)
+        .order('chapter_index');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!bookId,
   });
 
   // Create reading session mutation
@@ -92,6 +109,21 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
     },
   });
 
+  // Ensure slot 2 generation mutation
+  const ensureSlot2Mutation = useMutation({
+    mutationFn: async ({ bookId, chapterIndex }: { bookId: string; chapterIndex: number }) => {
+      const { data, error } = await supabase.functions.invoke('nova-illustrations-ensure-slot2', {
+        body: { book_id: bookId, chapter_index: chapterIndex }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('Slot 2 generation queued:', data);
+    },
+  });
+
   // Create session on component mount
   useEffect(() => {
     if (bookId && childId && !sessionId) {
@@ -108,6 +140,27 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
       });
     }
   }, [sessionId, currentPage]);
+
+  // Trigger slot 2 generation when entering a new chapter
+  useEffect(() => {
+    if (chapters && pages && currentPage < pages.length) {
+      // Find which chapter this page belongs to
+      const currentChapter = chapters.find(ch => 
+        currentPage >= (ch.first_page_index || 0) && 
+        currentPage <= (ch.last_page_index || pages.length - 1)
+      );
+
+      if (currentChapter && !visitedChapters.has(currentChapter.chapter_index)) {
+        setVisitedChapters(prev => new Set([...prev, currentChapter.chapter_index]));
+        
+        // Queue slot 2 generation for this chapter
+        ensureSlot2Mutation.mutate({
+          bookId,
+          chapterIndex: currentChapter.chapter_index
+        });
+      }
+    }
+  }, [currentPage, chapters, pages, bookId]);
 
   const handlePageChange = useCallback((newPage: number) => {
     if (pages && newPage >= 0 && newPage < pages.length) {
@@ -219,20 +272,23 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePlayPause}
-          >
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          </Button>
         </div>
       </div>
 
       {/* Main content */}
       <Card>
         <CardContent className="p-8">
+          {/* Show illustration if available */}
+          {currentPageData?.illustration_url && (
+            <div className="mb-6 text-center">
+              <img 
+                src={currentPageData.illustration_url} 
+                alt={currentPageData.illustration_prompt || "Chapter illustration"}
+                className="max-w-full h-auto rounded-lg shadow-md mx-auto max-h-64"
+              />
+            </div>
+          )}
+          
           <div className="prose prose-lg max-w-none">
             {currentPageData?.content.split('\n').map((paragraph, index) => (
               <p key={index} className="mb-4 leading-relaxed">
