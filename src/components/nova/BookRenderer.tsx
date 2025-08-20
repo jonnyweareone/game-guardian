@@ -263,6 +263,19 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
     );
   };
 
+  if (!pages || pages.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p>No pages available yet. Book may need to be ingested.</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Please check the admin panel to ingest this book.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!currentPageData) {
     return (
       <Card>

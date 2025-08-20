@@ -46,3 +46,6 @@ verify_jwt = true
 
 [functions.book-ingest]
 verify_jwt = false
+
+[functions.admin-books-reingest]
+verify_jwt = true

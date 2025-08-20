@@ -18,27 +18,37 @@ export default function AdminBooksIngest() {
   const runBatch = async () => {
     try {
       setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      
+      // Use the book IDs from the database for testing
+      const testBookIds = [
+        '579faa1c-89a8-4f06-8d57-43bdd9ace00c',
+        '0498599e-45a2-4afa-9c1a-e401cf421d39'
+      ];
 
-      const response = await fetch(
-        `https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/books-batch-reingest`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ limit, force }),
+      console.log('Triggering admin reingest for books:', testBookIds);
+
+      const { data, error } = await supabase.functions.invoke('admin-books-reingest', {
+        body: {
+          book_ids: testBookIds,
+          limit: Math.min(limit, testBookIds.length)
         }
-      );
+      });
 
-      const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.error || 'Batch failed');
+      if (error) {
+        throw new Error(error.message);
+      }
 
-      toast({ title: 'Batch Complete', description: `Processed ${result.count} books.` });
-      console.log('Batch results', result);
+      const successCount = data.results?.filter((r: any) => r.success).length || 0;
+      const totalCount = data.processed || 0;
+      
+      toast({ 
+        title: 'Batch Complete', 
+        description: `Processed ${successCount}/${totalCount} books successfully.` 
+      });
+      
+      console.log('Batch results:', data);
     } catch (e: any) {
+      console.error('Batch error:', e);
       toast({ title: 'Batch Error', description: e.message, variant: 'destructive' });
     } finally {
       setLoading(false);

@@ -13,18 +13,33 @@ serve(async (req) => {
   }
 
   try {
-    // Origin safety check for public endpoint
-    const origin = req.headers.get('origin')
-    const allowedOrigins = [
-      'https://xzxjwuzwltoapifcyzww.supabase.co',
-      'http://localhost:5173',
-      'http://localhost:8080',
-      'https://guardian-ai.lovable.app'
-    ]
+    // Check if using service role (bypass origin check for server-to-server calls)
+    const authHeader = req.headers.get('authorization')
+    const isServiceRole = authHeader && authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '')
     
-    if (origin && !allowedOrigins.includes(origin)) {
-      console.warn('Blocked request from unauthorized origin:', origin)
-      throw new Error('Unauthorized origin')
+    if (!isServiceRole) {
+      // Origin safety check for public endpoint
+      const origin = req.headers.get('origin')
+      const allowedOrigins = [
+        'https://xzxjwuzwltoapifcyzww.supabase.co',
+        'http://localhost:5173',
+        'http://localhost:8080',
+        'https://guardian-ai.lovable.app',
+        'https://gameguardian.ai',
+        'https://www.gameguardian.ai'
+      ]
+      
+      // Allow any *.lovable.app domain for development
+      const isLovableDomain = origin && origin.match(/^https:\/\/.*\.lovable\.app$/)
+      
+      if (origin && !allowedOrigins.includes(origin) && !isLovableDomain) {
+        console.warn('Blocked request from unauthorized origin:', origin)
+        throw new Error('Unauthorized origin')
+      }
+      
+      console.log('Request allowed from origin:', origin)
+    } else {
+      console.log('Service role request - bypassing origin check')
     }
     const { source_url, book_id } = await req.json()
     
