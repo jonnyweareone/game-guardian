@@ -14,6 +14,13 @@ const Navigation = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // Hide navigation on Nova Learning routes (child experience)
+  const isNovaRoute = location.pathname.startsWith('/novalearning');
+  
+  if (isNovaRoute) {
+    return null;
+  }
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate('/');

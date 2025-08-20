@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen, Users, Clock, Sparkles } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { BookOpen, Users, Clock, Sparkles, Gamepad2, Headset, BookMarked } from 'lucide-react';
 import { NovaLibrary } from '@/components/nova/NovaLibrary';
 import { NovaShelf } from '@/components/nova/NovaShelf';
 import { NovaTimeline } from '@/components/nova/NovaTimeline';
@@ -19,6 +20,7 @@ export default function NovaLearning() {
   const [activeChildId, setActiveChildId] = useState<string>('');
   const [children, setChildren] = useState<any[]>([]);
   const [isValidated, setIsValidated] = useState(false);
+  const [childData, setChildData] = useState<any>(null);
 
   // Real-time listening signals
   const { isListening, currentBook } = useNovaSignals(activeChildId);
@@ -46,6 +48,7 @@ export default function NovaLearning() {
         
         if (data?.child) {
           setActiveChildId(data.child.id);
+          setChildData(data.child);
           setIsValidated(true);
           // Store in session for future use
           sessionStorage.setItem('nova_active_child', data.child.id);
@@ -82,7 +85,8 @@ export default function NovaLearning() {
     }
   }, [user, isValidated, activeChildId]);
 
-  if (!user) {
+  // If we have no child data and no user, we need authentication
+  if (!user && !isValidated && !activeChildId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-96">
@@ -93,7 +97,7 @@ export default function NovaLearning() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Please sign in to access Nova Learning.</p>
+            <p className="text-muted-foreground">Please use the Nova Learning link provided by your parent.</p>
           </CardContent>
         </Card>
       </div>
@@ -148,16 +152,23 @@ export default function NovaLearning() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       <div className="container mx-auto p-6">
-        {/* Header with listening indicator */}
+        {/* Child Header */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <BookOpen className="h-8 w-8 text-primary" />
-              Nova Learning
-            </h1>
-            <p className="text-muted-foreground">
-              Discover, read, and learn with AI-powered guidance
-            </p>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={childData?.avatar_url} />
+              <AvatarFallback className="text-xl">
+                {childData?.name ? childData.name.charAt(0).toUpperCase() : 'C'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold">
+                Hello, {childData?.name || 'Student'}! 👋
+              </h1>
+              <p className="text-muted-foreground">
+                Ready to learn something amazing today?
+              </p>
+            </div>
           </div>
           
           {isListening && currentBook && (
@@ -173,18 +184,30 @@ export default function NovaLearning() {
 
         {/* Main tabs */}
         <Tabs defaultValue="library" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="library" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
-              Library
+              Books
             </TabsTrigger>
             <TabsTrigger value="shelf" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Shelf
+              My Shelf
+            </TabsTrigger>
+            <TabsTrigger value="activities" className="flex items-center gap-2">
+              <BookMarked className="h-4 w-4" />
+              Activities
+            </TabsTrigger>
+            <TabsTrigger value="games" className="flex items-center gap-2">
+              <Gamepad2 className="h-4 w-4" />
+              Games
+            </TabsTrigger>
+            <TabsTrigger value="vr" className="flex items-center gap-2">
+              <Headset className="h-4 w-4" />
+              VR
             </TabsTrigger>
             <TabsTrigger value="timeline" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              Timeline
+              Progress
             </TabsTrigger>
           </TabsList>
 
@@ -194,6 +217,66 @@ export default function NovaLearning() {
 
           <TabsContent value="shelf" className="mt-6">
             <NovaShelf childId={activeChildId} />
+          </TabsContent>
+
+          <TabsContent value="activities" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookMarked className="h-5 w-5" />
+                  Learning Activities
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12">
+                  <BookMarked className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">Coming Soon!</h3>
+                  <p className="text-muted-foreground">
+                    Interactive quizzes, fact-finding missions, and curriculum-based activities will be available here soon.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="games" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gamepad2 className="h-5 w-5" />
+                  Educational Games
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12">
+                  <Gamepad2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">Games Coming Soon!</h3>
+                  <p className="text-muted-foreground">
+                    Fun, curriculum-aligned games that make learning exciting will be available here soon.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="vr" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Headset className="h-5 w-5" />
+                  VR Experiences
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12">
+                  <Headset className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">VR Adventures Coming Soon!</h3>
+                  <p className="text-muted-foreground">
+                    Immersive Virtual Reality experiences that bring learning to life will be available here soon.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="timeline" className="mt-6">

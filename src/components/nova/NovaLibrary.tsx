@@ -19,10 +19,46 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
   const [ageFilter, setAgeFilter] = useState<string>('all');
   const [subjectFilter, setSubjectFilter] = useState<string>('all');
 
-  // Load books from catalog
-  const { data: books = [], isLoading } = useQuery({
-    queryKey: ['nova-books', searchQuery, ageFilter, subjectFilter],
+  // Load curriculum books
+  const { data: curriculumBooks = [], isLoading: loadingCurriculum } = useQuery({
+    queryKey: ['nova-curriculum-books'],
     queryFn: async () => {
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('category', 'curriculum')
+        .order('title')
+        .limit(10);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Load fiction books
+  const { data: fictionBooks = [], isLoading: loadingFiction } = useQuery({
+    queryKey: ['nova-fiction-books'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('category', 'fiction')
+        .order('title')
+        .limit(10);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Load all books for search
+  const { data: allBooks = [], isLoading: loadingAll } = useQuery({
+    queryKey: ['nova-all-books', searchQuery, ageFilter, subjectFilter],
+    queryFn: async () => {
+      if (!searchQuery && ageFilter === 'all' && subjectFilter === 'all') {
+        return [];
+      }
+
       let query = supabase
         .from('books')
         .select('*')
@@ -47,6 +83,8 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
     },
   });
 
+  const isLoading = loadingCurriculum || loadingFiction || loadingAll;
+
   // Placeholder for bookshelf data (will be enabled once types are regenerated)
   const bookshelfData: any[] = [];
 
@@ -69,7 +107,7 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
         });
 
       // Navigate to reader
-      navigate(`/nova-reader/${book.id}`);
+      navigate(`/novalearning/reading/${book.id}`);
     } catch (error) {
       console.error('Error starting reading:', error);
     }
@@ -84,13 +122,70 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
     );
   }
 
+  const renderBookCard = (book: any) => {
+    const status = getBookStatus(book.id);
+    
+    return (
+      <Card key={book.id} className="group hover:shadow-lg transition-shadow flex-shrink-0 w-64">
+        <CardContent className="p-4">
+          {/* Book Cover */}
+          <div className="aspect-[3/4] mb-4 bg-muted rounded-lg overflow-hidden">
+            {(book as any).cover_url ? (
+              <img
+                src={(book as any).cover_url}
+                alt={book.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <BookOpen className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+
+          {/* Book Info */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-sm line-clamp-2">
+              {book.title}
+            </h3>
+            
+            {(book.author || (book as any).authors) && (
+              <p className="text-xs text-muted-foreground">
+                by {book.author || ((book as any).authors && (book as any).authors.join(', '))}
+              </p>
+            )}
+
+            {/* Age range */}
+            {book.age_min && book.age_max && (
+              <p className="text-xs text-muted-foreground">
+                Ages {book.age_min}-{book.age_max}
+              </p>
+            )}
+
+            {/* Read button */}
+            <Button
+              onClick={() => handleStartReading(book)}
+              className="w-full mt-3"
+              size="sm"
+            >
+              <PlayCircle className="h-4 w-4 mr-2" />
+              {status?.status === 'in_progress' ? 'Continue' : 'Read'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const hasSearchResults = searchQuery || ageFilter !== 'all' || subjectFilter !== 'all';
+
   return (
-    <div className="space-y-6">
-      {/* Filters */}
+    <div className="space-y-8">
+      {/* Search Filters */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+            <Search className="h-5 w-5" />
             Find Books
           </CardTitle>
         </CardHeader>
@@ -138,112 +233,68 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
         </CardContent>
       </Card>
 
-      {/* Books Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {books.map((book) => {
-          const status = getBookStatus(book.id);
-          
-          return (
-            <Card key={book.id} className="group hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                {/* Book Cover */}
-                <div className="aspect-[3/4] mb-4 bg-muted rounded-lg overflow-hidden">
-                  {(book as any).cover_url ? (
-                    <img
-                      src={(book as any).cover_url}
-                      alt={book.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Book Info */}
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm line-clamp-2">
-                    {book.title}
-                  </h3>
-                  
-                  {(book.author || (book as any).authors) && (
-                    <p className="text-xs text-muted-foreground">
-                      by {book.author || ((book as any).authors && (book as any).authors.join(', '))}
-                    </p>
-                  )}
-
-                  {/* Status Badge */}
-                  <div className="flex items-center gap-2">
-                    {status && (
-                      <Badge variant={
-                        status.status === 'finished' ? 'default' :
-                        status.status === 'in_progress' ? 'secondary' :
-                        'outline'
-                      }>
-                        {status.status === 'not_started' && 'Not Started'}
-                        {status.status === 'in_progress' && `${Math.round(status.progress || 0)}%`}
-                        {status.status === 'finished' && 'Finished'}
-                        {status.status === 'abandoned' && 'Paused'}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Format badges */}
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {(book as any).download_epub_url && (
-                      <Badge variant="outline" className="text-xs">
-                        <BookOpen className="h-3 w-3 mr-1" />
-                        EPUB
-                      </Badge>
-                    )}
-                    {(book as any).download_pdf_url && (
-                      <Badge variant="outline" className="text-xs">
-                        <FileText className="h-3 w-3 mr-1" />
-                        PDF
-                      </Badge>
-                    )}
-                    {(book as any).has_audio && (
-                      <Badge variant="outline" className="text-xs">
-                        <Volume2 className="h-3 w-3 mr-1" />
-                        Audio
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Age range */}
-                  {book.age_min && book.age_max && (
-                    <p className="text-xs text-muted-foreground">
-                      Ages {book.age_min}-{book.age_max}
-                    </p>
-                  )}
-
-                  {/* Read button */}
-                  <Button
-                    onClick={() => handleStartReading(book)}
-                    className="w-full mt-3"
-                    size="sm"
-                  >
-                    <PlayCircle className="h-4 w-4 mr-2" />
-                    {status?.status === 'in_progress' ? 'Continue' : 'Read'}
-                  </Button>
-                </div>
+      {/* Search Results */}
+      {hasSearchResults && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Search Results</h2>
+          {allBooks.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No books found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your search filters to find more books.
+                </p>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {allBooks.map(renderBookCard)}
+            </div>
+          )}
+        </div>
+      )}
 
-      {books.length === 0 && !isLoading && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No books found</h3>
-            <p className="text-muted-foreground">
-              Try adjusting your search filters to find more books.
-            </p>
-          </CardContent>
-        </Card>
+      {/* Curriculum Books Rail */}
+      {!hasSearchResults && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            📚 Curriculum Books
+          </h2>
+          {curriculumBooks.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No curriculum books available yet.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {curriculumBooks.map(renderBookCard)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Fiction Books Rail */}
+      {!hasSearchResults && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            🌟 Fiction Stories
+          </h2>
+          {fictionBooks.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No fiction books available yet.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {fictionBooks.map(renderBookCard)}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

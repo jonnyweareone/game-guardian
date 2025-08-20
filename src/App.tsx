@@ -48,6 +48,16 @@ const App = () => (
                 navItems.find(item => item.to === "/guardian-nova")?.page
               } />
               
+              {/* Nova Learning - public access for child tokens */}
+              <Route path="/novalearning" element={
+                navItems.find(item => item.to === "/novalearning")?.page
+              } />
+              
+              {/* Nova Reader - public access for child tokens */}
+              <Route path="/novalearning/reading/:bookId" element={
+                navItems.find(item => item.to === "/novalearning/reading/:bookId")?.page
+              } />
+              
               {/* Homework Helper - public access */}
               <Route path="/homework-helper" element={
                 navItems.find(item => item.to === "/homework-helper")?.page
@@ -63,7 +73,7 @@ const App = () => (
               
               {/* Protected routes */}
               {navItems
-                .filter(item => !["/auth", "/", "/app-store", "/homework-helper", "/guardian-nova"].includes(item.to))
+                .filter(item => !["/auth", "/", "/app-store", "/homework-helper", "/guardian-nova", "/novalearning", "/novalearning/reading/:bookId"].includes(item.to))
                 .map(({ to, page, title, requiresAuth = true, requiresAdmin = false }) => (
                   <Route
                     key={to}

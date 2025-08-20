@@ -71,14 +71,14 @@ export const navItems: NavItem[] = [
     to: "/novalearning",
     icon: <BookA className="h-4 w-4" />,
     page: <NovaLearning />,
-    requiresAuth: true,
+    requiresAuth: false,
   },
   {
     title: "Nova Reader",
     to: "/novalearning/reading/:bookId",
     icon: <BookOpen className="h-4 w-4" />,
     page: <NovaReader />,
-    requiresAuth: true,
+    requiresAuth: false,
   },
   {
     title: "Homework Helper",
