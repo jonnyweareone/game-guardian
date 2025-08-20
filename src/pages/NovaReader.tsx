@@ -21,7 +21,7 @@ export default function NovaReader() {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
   const [activeChildId, setActiveChildId] = useState<string>('');
-  const [readerContent, setReaderContent] = useState<'epub' | 'pdf' | 'online' | 'ingested'>('ingested');
+  const [readerContent, setReaderContent] = useState<'ingested' | 'none'>('none');
   const [aiSpeaking, setAiSpeaking] = useState(false);
   const [transcript, setTranscript] = useState('');
 
@@ -70,58 +70,15 @@ export default function NovaReader() {
     }
   }, [sessionId, activeChildId, bookId, book?.title]);
 
-  // Determine reader type - prioritize ingested content
+  // Remove all external content logic - only use ingested books
   useEffect(() => {
+    // Don't set readerContent based on URLs, only use ingested status
     if (book) {
-      if (book.ingested) {
-        setReaderContent('ingested');
-      } else if ((book as any).download_pdf_url) {
-        setReaderContent('pdf');
-      } else if ((book as any).read_online_url) {
-        setReaderContent('online');
-      } else if ((book as any).download_epub_url) {
-        setReaderContent('epub');
-      } else {
-        setReaderContent('online');
-      }
+      setReaderContent(book.ingested ? 'ingested' : 'none');
     }
   }, [book]);
 
-  // Auto-ingest if not yet ingested and has usable URL
-  useEffect(() => {
-    const autoIngest = async () => {
-      try {
-        if (book && !book.ingested && bookId) {
-          const hasUsableUrl = (book as any).source_url || (book as any).read_online_url || (book as any).download_epub_url;
-          if (hasUsableUrl) {
-            console.log('Auto-ingesting book (background):', bookId);
-            await supabase.functions.invoke('book-ingest', { body: { book_id: bookId } });
-            
-            // Poll for completion and refresh when ready
-            const pollForCompletion = setInterval(async () => {
-              const { data: updatedBook } = await supabase
-                .from('books')
-                .select('ingested')
-                .eq('id', bookId)
-                .single();
-              
-                if (updatedBook?.ingested) {
-                  clearInterval(pollForCompletion);
-                  // Update state instead of hard reload
-                  setReaderContent('ingested');
-                }
-            }, 2000);
-            
-            // Stop polling after 30 seconds
-            setTimeout(() => clearInterval(pollForCompletion), 30000);
-          }
-        }
-      } catch (e) {
-        console.error('Auto-ingest failed:', e);
-      }
-    };
-    autoIngest();
-  }, [book, bookId]);
+  // Remove auto-ingestion to prevent external requests
 
   if (isLoading) {
     return (
@@ -191,41 +148,12 @@ export default function NovaReader() {
                 variant="outline" 
                 size="sm"
                 onClick={async () => {
-                  try {
-                    const hasUsableUrl = (book as any).source_url || (book as any).read_online_url || (book as any).download_epub_url;
-                    if (!hasUsableUrl) {
-                      console.error('No usable URL for ingestion');
-                      return;
-                    }
-                    
-                    console.log('Triggering manual re-ingestion for book:', bookId);
-                    await supabase.functions.invoke('book-ingest', {
-                      body: { book_id: bookId }
-                    });
-                    
-                    // Poll for completion and refresh when ready
-                    const pollForCompletion = setInterval(async () => {
-                      const { data: updatedBook } = await supabase
-                        .from('books')
-                        .select('ingested')
-                        .eq('id', bookId)
-                        .single();
-                      
-                      if (updatedBook?.ingested) {
-                        clearInterval(pollForCompletion);
-                        // Update state instead of hard reload
-                        setReaderContent('ingested');
-                      }
-                    }, 2000);
-                    
-                    setTimeout(() => clearInterval(pollForCompletion), 30000);
-                  } catch (error) {
-                    console.error('Re-ingestion failed:', error);
-                  }
+                  console.log('Manual ingestion not available - only pre-ingested books supported');
                 }}
+                disabled
               >
                 <Download className="h-4 w-4 mr-2" />
-                Ingest Book
+                Not Available
               </Button>
             )}
               
@@ -244,9 +172,9 @@ export default function NovaReader() {
         {/* Main reader area */}
         <div className="flex-1 p-6">
           <div className="h-full flex flex-col">
-            {/* Reader Content - Use our custom renderer for ingested books */}
+            {/* Only show BookRenderer for parsed database content */}
             <div className="flex-1 bg-background rounded-lg border">
-              {readerContent === 'ingested' && book.ingested && (
+              {book.ingested ? (
                 <BookRenderer
                   bookId={bookId!}
                   childId={activeChildId}
@@ -257,52 +185,14 @@ export default function NovaReader() {
                     console.log(`Awarded ${coins} coins!`);
                   }}
                 />
-              )}
-
-              {readerContent === 'epub' && book.download_epub_url && (
-                <EpubReader
-                  bookUrl={book.download_epub_url}
-                  bookTitle={book.title}
-                  onLocationChange={(locator) => {
-                    console.log('Location changed:', locator);
-                  }}
-                  onTextExtracted={(text) => {
-                    console.log('Text extracted:', text);
-                  }}
-                />
-              )}
-              
-              {(readerContent === 'pdf' || readerContent === 'online') && (
-                <div className="w-full h-full relative">
-                  <iframe
-                    src={
-                      (readerContent === 'pdf' && (book as any).download_pdf_url)
-                        ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(String((book as any).download_pdf_url))}`
-                        : String((book as any).read_online_url)
-                    }
-                    className="w-full h-full border-0 rounded-lg"
-                    title={`${book.title} Reader`}
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute bottom-3 right-3 flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => window.open(String((book as any).download_pdf_url || (book as any).read_online_url), '_blank', 'noopener')}
-                    >
-                      Open in new tab
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
-              {!readerContent && (
+              ) : (
                 <div className="w-full h-full p-8 flex items-center justify-center">
                   <div className="text-center space-y-4">
                     <BookOpen className="w-16 h-16 mx-auto text-muted-foreground" />
                     <div>
-                      <h3 className="text-lg font-semibold">Reader Loading...</h3>
-                      <p className="text-muted-foreground">Preparing your reading experience</p>
+                      <h3 className="text-lg font-semibold">Book Not Available</h3>
+                      <p className="text-muted-foreground">This book hasn't been processed yet</p>
+                      <p className="text-sm text-muted-foreground mt-2">Only parsed database content is supported</p>
                     </div>
                   </div>
                 </div>
