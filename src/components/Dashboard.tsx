@@ -76,7 +76,7 @@ const Dashboard = () => {
       
       // Load stats
       const [devicesData, childrenData, alertsData] = await Promise.all([
-        supabase.from('devices').select('id, status').eq('parent_id', user.id),
+        supabase.from('devices').select('id, status').eq('parent_id', user.id).is('deleted_at', null),
         supabase.from('children').select('id').eq('parent_id', user.id),
         supabase
           .from('alerts')

@@ -8,7 +8,7 @@ export async function getChildren() {
 }
 
 export async function getDeviceStatus(deviceCode: string) {
-  const { data, error } = await supabase.from('devices').select('*').eq('device_code', deviceCode).maybeSingle();
+  const { data, error } = await supabase.from('devices').select('*').eq('device_code', deviceCode).is('deleted_at', null).maybeSingle();
   if (error) throw error;
   return data;
 }

@@ -5,17 +5,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import EducationTab from '@/components/dashboard-v2/EducationTab';
 import SEOHead from '@/components/SEOHead';
-import { getChildrenWithParentAddr } from '@/lib/dashboardV2Api';
+import { getChildren } from '@/lib/api';
 import { edu } from '@/lib/educationApi';
 import { getWallet } from '@/lib/rewardsApi';
 import { yearAndKeyStageFromDOB } from '@/lib/ukSchoolYear';
 
 export default function EducationPage() {
   const { data: children, isLoading } = useQuery({
-    queryKey: ['children-with-parent'],
-    queryFn: async () => {
-      return getChildrenWithParentAddr();
-    }
+    queryKey: ['children'],
+    queryFn: getChildren
   });
 
   const [openId, setOpenId] = useState<string>("");
@@ -148,9 +146,6 @@ export default function EducationPage() {
                   <h2 className="text-xl font-semibold">{child.name}</h2>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                     <span>Coins: {wallets[child.id]?.coins ?? 0}</span>
-                    {child.birthday_today && (
-                      <span className="text-primary font-medium">🎂 Birthday today!</span>
-                    )}
                     {child.dob && <span>DOB: {child.dob}</span>}
                     {yearGroup && <span>Year: {yearGroup}</span>}
                     {keyStage && <span>Key Stage: {keyStage}</span>}
@@ -214,7 +209,7 @@ export default function EducationPage() {
                 <EducationTab 
                   childId={child.id}
                   childAge={child.age ?? undefined}
-                  hint={child.postcode ?? ''}
+                  hint={''}
                 />
               </div>
             )}

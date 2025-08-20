@@ -4,11 +4,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wifi, WifiOff, Shield, Smartphone, Monitor, Battery, Zap } from 'lucide-react';
+import { Wifi, WifiOff, Shield, Smartphone, Monitor, Battery, Zap, Trash2 } from 'lucide-react';
 import { getChildren } from '@/lib/api';
 import DeviceChildAssignmentDialog from './DeviceChildAssignmentDialog';
 import PairDeviceDialog from './PairDeviceDialog';
 import MobileDevicePairingDialog from './MobileDevicePairingDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 const DeviceList = () => {
   const { data: devices, isLoading: devicesLoading, refetch: refetchDevices } = useQuery({
@@ -23,6 +35,7 @@ const DeviceList = () => {
             name
           )
         `)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -41,6 +54,19 @@ const DeviceList = () => {
 
   const handleDevicePaired = () => {
     refetchDevices();
+  };
+
+  const handleRemoveDevice = async (deviceId: string, deviceName: string) => {
+    try {
+      const { error } = await supabase.rpc('rpc_remove_device', { _device: deviceId });
+      if (error) throw error;
+      
+      toast.success(`Device "${deviceName}" removed successfully`);
+      refetchDevices();
+    } catch (error) {
+      console.error('Error removing device:', error);
+      toast.error('Failed to remove device');
+    }
   };
 
   const getPlatformIcon = (platform: string) => {
@@ -161,12 +187,37 @@ const DeviceList = () => {
                       </div>
                     )}
 
-                    <div className="pt-2">
+                    <div className="pt-2 flex gap-2">
                       <DeviceChildAssignmentDialog
                         device={device}
                         children={children}
                         onAssignmentChanged={handleAssignmentChanged}
                       />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove Device</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to remove "{device.device_name || device.device_code}"? 
+                              This will deactivate the device and remove all child assignments.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleRemoveDevice(device.id, device.device_name || device.device_code)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </CardContent>
                 </Card>
@@ -263,12 +314,37 @@ const DeviceList = () => {
                       </div>
                     )}
 
-                    <div className="pt-2">
+                    <div className="pt-2 flex gap-2">
                       <DeviceChildAssignmentDialog
                         device={device}
                         children={children}
                         onAssignmentChanged={handleAssignmentChanged}
                       />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove Device</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to remove "{device.device_name || `${device.platform} Device`}"? 
+                              This will deactivate the device and remove all child assignments.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleRemoveDevice(device.id, device.device_name || `${device.platform} Device`)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </CardContent>
                 </Card>

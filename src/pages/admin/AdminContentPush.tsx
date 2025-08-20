@@ -39,6 +39,7 @@ export default function AdminContentPush() {
       const { data, error } = await supabase
         .from('devices')
         .select('*')
+        .is('deleted_at', null)
         .order('device_name');
       
       if (error) throw error;

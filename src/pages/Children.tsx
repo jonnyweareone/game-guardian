@@ -103,6 +103,7 @@ export default function Children() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['children-with-devices'] });
+      queryClient.invalidateQueries({ queryKey: ['children'] }); // Also invalidate children query
       toast({
         title: "Child profile removed",
         description: "The child profile has been permanently deleted.",
@@ -291,6 +292,7 @@ export default function Children() {
           editingChild={editingChild}
           onChildAdded={() => {
             queryClient.invalidateQueries({ queryKey: ['children-with-devices'] });
+            queryClient.invalidateQueries({ queryKey: ['children'] }); // Also invalidate children query
             setShowAddDialog(false);
             setEditingChild(null);
           }}

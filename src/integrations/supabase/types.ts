@@ -1440,6 +1440,7 @@ export type Database = {
           build_id: string | null
           child_id: string | null
           created_at: string
+          deleted_at: string | null
           device_code: string
           device_jwt: string | null
           device_name: string | null
@@ -1472,6 +1473,7 @@ export type Database = {
           build_id?: string | null
           child_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           device_code: string
           device_jwt?: string | null
           device_name?: string | null
@@ -1504,6 +1506,7 @@ export type Database = {
           build_id?: string | null
           child_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           device_code?: string
           device_jwt?: string | null
           device_name?: string | null
@@ -3052,6 +3055,10 @@ export type Database = {
           processed_at: string | null
           status: string
         }
+      }
+      rpc_remove_device: {
+        Args: { _device: string }
+        Returns: boolean
       }
       rpc_set_active_child: {
         Args: { _child: string; _device: string }
