@@ -1,68 +1,30 @@
-
 project_id = "xzxjwuzwltoapifcyzww"
 
-[functions.auth-2fa]
-verify_jwt = true
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
 
-[functions.device-activate]
-verify_jwt = true
+[db]
+port = 54322
 
-[functions.identity-verify]
-verify_jwt = true
+[studio]
+enabled = true
+port = 54323
 
-[functions.location-verify]
-verify_jwt = true
-
-[functions.youtube-upload]
-verify_jwt = true
-
-# Existing: bind-device requires parent JWT
-[functions.bind-device]
-verify_jwt = true
-
-# Existing: device-status is public (device polls without auth)
-[functions.device-status]
+[functions.nova-verify-child]
 verify_jwt = false
 
-# New: device-config (device_jwt; we verify manually)
-[functions.device-config]
-verify_jwt = false
-
-# New: device-heartbeat (device_jwt; we verify manually)
-[functions.device-heartbeat]
-verify_jwt = false
-
-# New: device-app-manifest (device_jwt; we verify manually)
-[functions.device-app-manifest]
-verify_jwt = false
-
-# New: device-refresh (device_jwt; we verify manually)
-[functions.device-refresh]
-verify_jwt = false
-
-# New: rotate-device-token (parent-auth required)
-[functions.rotate-device-token]
+[functions.nova-start-session]
 verify_jwt = true
 
-# New: stripe-webhook (public endpoint from Stripe; we verify signature)
-[functions.stripe-webhook]
-verify_jwt = false
-
-# Admin functions (parent/admin auth required)
-[functions.device-config-admin]
+[functions.nova-end-session]
 verify_jwt = true
 
-[functions.admin-list-devices]
+[functions.nova-chunk]
 verify_jwt = true
 
-# NextDNS profile management (parent auth required)
-[functions.nextdns-profile-manager]
+[functions.nova-mint-child-token]
 verify_jwt = true
-
-# Mobile device registration (public for mobile apps)
-[functions.mobile-device-registration]
-verify_jwt = false
-
-# Mobile activation status (public for mobile apps)
-[functions.mobile-activation-status]
-verify_jwt = false

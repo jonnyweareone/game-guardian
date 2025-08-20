@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,17 +25,34 @@ export default function NovaLearning() {
 
   // Handle child token authentication
   useEffect(() => {
-    const childId = searchParams.get('child_id');
-    const childToken = searchParams.get('ct');
-
-    if (childId && childToken) {
-      // TODO: Verify child token via edge function
-      // For now, assume valid if user is authenticated
-      if (user) {
-        setActiveChildId(childId);
-        setIsValidated(true);
-        sessionStorage.setItem('nova_active_child', childId);
-      }
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (token) {
+      // Verify token and get child info
+      supabase.functions.invoke('nova-verify-child', {
+        body: { token }
+      }).then(({ data, error }) => {
+        if (error) {
+          console.error('Token verification failed:', error);
+          // Fall back to regular authentication
+          const savedChild = sessionStorage.getItem('nova_active_child');
+          if (savedChild) {
+            setActiveChildId(savedChild);
+            setIsValidated(true);
+          }
+          return;
+        }
+        
+        if (data?.child) {
+          setActiveChildId(data.child.id);
+          setIsValidated(true);
+          // Store in session for future use
+          sessionStorage.setItem('nova_active_child', data.child.id);
+          // Clean URL
+          window.history.replaceState({}, '', '/novalearning');
+        }
+      });
     } else {
       // Load from session storage or show child picker
       const savedChild = sessionStorage.getItem('nova_active_child');
@@ -42,7 +61,7 @@ export default function NovaLearning() {
         setIsValidated(true);
       }
     }
-  }, [searchParams, user]);
+  }, [user]);
 
   // Load children for picker
   useEffect(() => {
