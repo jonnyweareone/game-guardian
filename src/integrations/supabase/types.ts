@@ -463,6 +463,45 @@ export type Database = {
         }
         Relationships: []
       }
+      books: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          author: string | null
+          category: string | null
+          created_at: string | null
+          id: string
+          ks: string | null
+          source_url: string | null
+          subject: string | null
+          title: string
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          author?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          ks?: string | null
+          source_url?: string | null
+          subject?: string | null
+          title: string
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          author?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          ks?: string | null
+          source_url?: string | null
+          subject?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       child_app_groups: {
         Row: {
           action: Database["public"]["Enums"]["rule_action"]
@@ -1743,6 +1782,76 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_activities: {
+        Row: {
+          child_id: string
+          coins_earned: number | null
+          created_at: string | null
+          duration_minutes: number | null
+          evidence_url: string | null
+          id: string
+          ks: string | null
+          meta: Json | null
+          passed: boolean | null
+          score: number | null
+          source: string | null
+          subject: string
+          topic: string | null
+        }
+        Insert: {
+          child_id: string
+          coins_earned?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          evidence_url?: string | null
+          id?: string
+          ks?: string | null
+          meta?: Json | null
+          passed?: boolean | null
+          score?: number | null
+          source?: string | null
+          subject: string
+          topic?: string | null
+        }
+        Update: {
+          child_id?: string
+          coins_earned?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          evidence_url?: string | null
+          id?: string
+          ks?: string | null
+          meta?: Json | null
+          passed?: boolean | null
+          score?: number | null
+          source?: string | null
+          subject?: string
+          topic?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_activities_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_activities_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "learning_activities_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       location_match_results: {
         Row: {
           created_at: string
@@ -2022,6 +2131,58 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_timeline: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          detail: Json | null
+          id: string
+          kind: Database["public"]["Enums"]["event_kind"]
+          parent_user_id: string
+          title: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          detail?: Json | null
+          id?: string
+          kind: Database["public"]["Enums"]["event_kind"]
+          parent_user_id: string
+          title: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          detail?: Json | null
+          id?: string
+          kind?: Database["public"]["Enums"]["event_kind"]
+          parent_user_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "parent_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       pending_requests: {
         Row: {
           app_id: string
@@ -2153,6 +2314,86 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reading_sessions: {
+        Row: {
+          ai_difficulty: string | null
+          ai_flags: Json | null
+          ai_summary: string | null
+          book_id: string | null
+          child_id: string
+          coins_earned: number | null
+          created_at: string | null
+          ended_at: string | null
+          id: string
+          pages_completed: number | null
+          pages_target: number | null
+          started_at: string
+          transcript_ms: number | null
+          words_estimated: number | null
+        }
+        Insert: {
+          ai_difficulty?: string | null
+          ai_flags?: Json | null
+          ai_summary?: string | null
+          book_id?: string | null
+          child_id: string
+          coins_earned?: number | null
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          pages_completed?: number | null
+          pages_target?: number | null
+          started_at?: string
+          transcript_ms?: number | null
+          words_estimated?: number | null
+        }
+        Update: {
+          ai_difficulty?: string | null
+          ai_flags?: Json | null
+          ai_summary?: string | null
+          book_id?: string | null
+          child_id?: string
+          coins_earned?: number | null
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          pages_completed?: number | null
+          pages_target?: number | null
+          started_at?: string
+          transcript_ms?: number | null
+          words_estimated?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_sessions_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
       }
       reward_redemptions: {
         Row: {
@@ -2742,6 +2983,10 @@ export type Database = {
       }
     }
     Functions: {
+      award_coins: {
+        Args: { p_child: string; p_delta: number }
+        Returns: undefined
+      }
       cleanup_expired_verification_codes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2837,6 +3082,7 @@ export type Database = {
         | "uploaded"
         | "failed"
       device_kind: "os" | "mobile"
+      event_kind: "reading" | "learning" | "reward" | "store" | "system"
       platform_type: "linux-desktop" | "linux-mobile" | "android" | "web-pwa"
       release_channel_type: "stable" | "beta" | "alpha" | "nightly"
       reward_status: "requested" | "approved" | "rejected" | "fulfilled"
@@ -2987,6 +3233,7 @@ export const Constants = {
         "failed",
       ],
       device_kind: ["os", "mobile"],
+      event_kind: ["reading", "learning", "reward", "store", "system"],
       platform_type: ["linux-desktop", "linux-mobile", "android", "web-pwa"],
       release_channel_type: ["stable", "beta", "alpha", "nightly"],
       reward_status: ["requested", "approved", "rejected", "fulfilled"],

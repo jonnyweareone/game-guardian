@@ -2,11 +2,32 @@
 import { supabase } from '@/integrations/supabase/client';
 
 const baseUrl = `https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/guardian-education`;
+const eduUrl = `https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/nova-edu`;
 
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   
   const response = await fetch(`${baseUrl}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session?.access_token}`,
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eGp3dXp3bHRvYXBpZmN5end3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NTQwNzksImV4cCI6MjA3MDEzMDA3OX0.w4QLWZSKig3hdoPOyq4dhTS6sleGsObryIolphhi9yo',
+      ...options.headers,
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+  
+  return response.json();
+}
+
+async function eduApiCall(endpoint: string, options: RequestInit = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  const response = await fetch(`${eduUrl}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -88,5 +109,54 @@ export const edu = {
       method: 'POST',
       body: JSON.stringify(doc),
     });
+  },
+
+  // Nova Education API
+  listBooks: async (ks?: string) => {
+    const url = ks ? `/books?ks=${encodeURIComponent(ks)}` : "/books";
+    return (await eduApiCall(url)).items;
+  },
+
+  startReading: async (child_id: string, book_id?: string, pages_target?: number) => {
+    return (await eduApiCall("/reading/start", {
+      method: "POST",
+      body: JSON.stringify({ child_id, book_id, pages_target }),
+    })).session;
+  },
+
+  stopReading: async (payload: {
+    session_id: string;
+    pages_completed: number;
+    transcript_ms?: number;
+    ai_difficulty?: string;
+    ai_summary?: string;
+    ai_flags?: any;
+  }) => {
+    return eduApiCall("/reading/stop", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  recordLearning: async (payload: {
+    child_id: string;
+    subject: string;
+    topic?: string;
+    ks?: string;
+    source?: string;
+    duration_minutes?: number;
+    score?: number;
+    passed?: boolean;
+    evidence_url?: string;
+    meta?: any;
+  }) => {
+    return eduApiCall("/learning/record", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  parentTimeline: async () => {
+    return (await eduApiCall("/timeline")).items;
   }
 };
