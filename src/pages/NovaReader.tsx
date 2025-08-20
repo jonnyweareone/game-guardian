@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Volume2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, Volume2, Download } from 'lucide-react';
 import { useNovaSession } from '@/hooks/useNovaSession';
 import { NovaCoach } from '@/components/nova/NovaCoach';
 import { ProblemWords } from '@/components/nova/ProblemWords';
@@ -14,6 +14,7 @@ import { EpubReader } from '@/components/nova/EpubReader';
 import { TextToSpeechPlayer } from '@/components/nova/TextToSpeechPlayer';
 import { ReadingRewards } from '@/components/nova/ReadingRewards';
 import { BookRenderer } from '@/components/nova/BookRenderer';
+import { BookIngestionDialog } from '@/components/BookIngestionDialog';
 import { generateDemoInsights, getSampleBookContent } from '@/utils/demoBooksData';
 
 export default function NovaReader() {
@@ -147,6 +148,21 @@ export default function NovaReader() {
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                   <span className="text-sm">AI Listening</span>
                 </div>
+              )}
+              
+              {!book.ingested && (
+                <BookIngestionDialog
+                  trigger={
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Ingest Book
+                    </Button>
+                  }
+                  onIngestionComplete={() => {
+                    // Refresh the book data
+                    window.location.reload();
+                  }}
+                />
               )}
               
               {(book as any).has_audio && (

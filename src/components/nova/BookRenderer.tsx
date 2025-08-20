@@ -40,36 +40,48 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Load book pages - using raw query since types haven't updated yet
+  // Load book pages using edge function
   useEffect(() => {
     const loadPages = async () => {
       try {
-        const { data, error } = await supabase
-          .rpc('get_book_pages', { book_id_param: bookId });
+        // First try the edge function
+        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('get-book-pages', {
+          body: { book_id: bookId }
+        });
 
-        if (error) {
-          console.error('Error loading pages via RPC:', error);
-          // Fallback to direct query
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('book_pages' as any)
-            .select('*')
-            .eq('book_id', bookId)
-            .order('page_index');
-
-          if (fallbackError) {
-            console.error('Error loading pages:', fallbackError);
-            toast({
-              title: "Error",
-              description: "Failed to load book pages",
-              variant: "destructive",
-            });
-            return;
-          }
-          
-          setPages(fallbackData || []);
-        } else {
-          setPages(data || []);
+        if (edgeError) {
+          console.error('Error loading pages via edge function:', edgeError);
         }
+
+        if (edgeData?.data && Array.isArray(edgeData.data)) {
+          setPages(edgeData.data.map(page => ({
+            ...page,
+            tokens: page.tokens as Array<{word: string; start: number; end: number}> | null
+          })));
+          return;
+        }
+
+        // Fallback to direct query if edge function fails
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('book_pages')
+          .select('*')
+          .eq('book_id', bookId)
+          .order('page_index');
+
+        if (fallbackError) {
+          console.error('Error loading pages:', fallbackError);
+          toast({
+            title: "Error",
+            description: "Failed to load book pages",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        setPages((fallbackData || []).map(page => ({
+          ...page,
+          tokens: page.tokens as Array<{word: string; start: number; end: number}> | null
+        })));
       } catch (err) {
         console.error('Error in loadPages:', err);
         toast({
@@ -85,12 +97,12 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
     }
   }, [bookId, toast]);
 
-  // Load reading progress - using raw query for now
+  // Load reading progress
   useEffect(() => {
     const loadProgress = async () => {
       try {
         const { data } = await supabase
-          .from('child_reading_sessions' as any)
+          .from('child_reading_sessions')
           .select('current_locator')
           .eq('book_id', bookId)
           .eq('child_id', childId)
@@ -118,7 +130,7 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
     try {
       // Update reading session
       await supabase
-        .from('child_reading_sessions' as any)
+        .from('child_reading_sessions')
         .upsert({
           child_id: childId,
           book_id: bookId,
@@ -126,10 +138,10 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
           updated_at: new Date().toISOString()
         });
 
-      // Update page progress and award coins - using raw query
+      // Update page progress and award coins
       if (readPercent === 100) {
         const { data: progressData } = await supabase
-          .from('child_page_progress' as any)
+          .from('child_page_progress')
           .upsert({
             child_id: childId,
             book_id: bookId,
@@ -141,7 +153,7 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
           .select()
           .maybeSingle();
 
-        if (progressData?.coins_awarded) {
+        if (progressData && 'coins_awarded' in progressData) {
           onCoinsAwarded?.(progressData.coins_awarded);
           toast({
             title: "Page Complete! 🎉",
