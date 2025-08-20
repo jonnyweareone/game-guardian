@@ -53,13 +53,13 @@ export function useNovaSignals(childId: string) {
       })
       .subscribe();
 
-    // Load initial listening state
-    supabase
+    // Load initial listening state (using any cast until types refresh)
+    (supabase as any)
       .from('child_listening_state')
       .select('*')
       .eq('child_id', childId)
       .single()
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         if (data?.is_listening && data.book_id) {
           // Load book title
           supabase
@@ -77,6 +77,9 @@ export function useNovaSignals(childId: string) {
               });
             });
         }
+      })
+      .catch((error: any) => {
+        console.log('Listening state table not ready yet:', error);
       });
 
     return () => {

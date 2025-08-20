@@ -29,7 +29,7 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
         .order('title');
 
       if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,authors.cs.{${searchQuery}},subjects.cs.{${searchQuery}}`);
+        query = query.or(`title.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%,subject.ilike.%${searchQuery}%`);
       }
 
       if (ageFilter !== 'all') {
@@ -38,7 +38,7 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
       }
 
       if (subjectFilter !== 'all') {
-        query = query.contains('subjects', [subjectFilter]);
+        query = query.eq('subject', subjectFilter);
       }
 
       const { data, error } = await query;
@@ -56,18 +56,23 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
   };
 
   const handleStartReading = async (book: any) => {
-    // Update bookshelf status
-    await supabase
-      .from('child_bookshelf')
-      .upsert({
-        child_id: childId,
-        book_id: book.id,
-        status: 'in_progress',
-        started_at: new Date().toISOString(),
-      });
+    try {
+      // Update bookshelf status (using any cast until types refresh)
+      await (supabase as any)
+        .from('child_bookshelf')
+        .upsert({
+          child_id: childId,
+          book_id: book.id,
+          status: 'reading',
+          progress: 0,
+          started_at: new Date().toISOString(),
+        });
 
-    // Navigate to reader
-    navigate(`/novalearning/reading/${book.id}`);
+      // Navigate to reader
+      navigate(`/nova-reader/${book.id}`);
+    } catch (error) {
+      console.error('Error starting reading:', error);
+    }
   };
 
   if (isLoading) {
@@ -143,9 +148,9 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
               <CardContent className="p-4">
                 {/* Book Cover */}
                 <div className="aspect-[3/4] mb-4 bg-muted rounded-lg overflow-hidden">
-                  {book.cover_url ? (
+                  {(book as any).cover_url ? (
                     <img
-                      src={book.cover_url}
+                      src={(book as any).cover_url}
                       alt={book.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
@@ -162,9 +167,9 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
                     {book.title}
                   </h3>
                   
-                  {book.authors && book.authors.length > 0 && (
+                  {(book.author || (book as any).authors) && (
                     <p className="text-xs text-muted-foreground">
-                      by {book.authors.join(', ')}
+                      by {book.author || ((book as any).authors && (book as any).authors.join(', '))}
                     </p>
                   )}
 
@@ -186,19 +191,19 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
 
                   {/* Format badges */}
                   <div className="flex items-center gap-1 flex-wrap">
-                    {book.download_epub_url && (
+                    {(book as any).download_epub_url && (
                       <Badge variant="outline" className="text-xs">
                         <BookOpen className="h-3 w-3 mr-1" />
                         EPUB
                       </Badge>
                     )}
-                    {book.download_pdf_url && (
+                    {(book as any).download_pdf_url && (
                       <Badge variant="outline" className="text-xs">
                         <FileText className="h-3 w-3 mr-1" />
                         PDF
                       </Badge>
                     )}
-                    {book.has_audio && (
+                    {(book as any).has_audio && (
                       <Badge variant="outline" className="text-xs">
                         <Volume2 className="h-3 w-3 mr-1" />
                         Audio

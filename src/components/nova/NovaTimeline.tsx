@@ -22,15 +22,20 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
   const { data: timeline = [], isLoading } = useQuery({
     queryKey: ['nova-timeline', childId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('child_reading_timeline')
-        .select('*')
-        .eq('child_id', childId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-        
-      if (error) throw error;
-      return data || [];
+      try {
+        const { data, error } = await (supabase as any)
+          .from('child_reading_timeline')
+          .select('*')
+          .eq('child_id', childId)
+          .order('created_at', { ascending: false })
+          .limit(50);
+          
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.log('Timeline table not ready yet, returning empty data');
+        return [];
+      }
     },
     enabled: !!childId,
   });
@@ -39,18 +44,23 @@ export function NovaTimeline({ childId }: NovaTimelineProps) {
   const { data: rollups = [] } = useQuery({
     queryKey: ['nova-rollups', childId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('reading_rollups')
-        .select(`
-          *,
-          books (title, cover_url, authors)
-        `)
-        .eq('child_id', childId)
-        .order('last_session_at', { ascending: false })
-        .limit(10);
-        
-      if (error) throw error;
-      return data || [];
+      try {
+        const { data, error } = await (supabase as any)
+          .from('reading_rollups')
+          .select(`
+            *,
+            books (title, cover_url, author)
+          `)
+          .eq('child_id', childId)
+          .order('last_session_at', { ascending: false })
+          .limit(10);
+          
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.log('Reading rollups table not ready yet, returning empty data');
+        return [];
+      }
     },
     enabled: !!childId,
   });

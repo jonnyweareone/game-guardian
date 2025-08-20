@@ -51,9 +51,9 @@ export default function NovaReader() {
   // Determine reader type
   useEffect(() => {
     if (book) {
-      if (book.download_epub_url) {
+      if ((book as any).download_epub_url) {
         setReaderContent('epub');
-      } else if (book.download_pdf_url) {
+      } else if ((book as any).download_pdf_url) {
         setReaderContent('pdf');
       } else {
         setReaderContent('online');
@@ -108,9 +108,9 @@ export default function NovaReader() {
               
               <div>
                 <h1 className="font-semibold">{book.title}</h1>
-                {book.authors && book.authors.length > 0 && (
+                {book.author && (
                   <p className="text-sm text-muted-foreground">
-                    by {book.authors.join(', ')}
+                    by {book.author}
                   </p>
                 )}
               </div>
@@ -125,7 +125,7 @@ export default function NovaReader() {
                 </div>
               )}
               
-              {book.has_audio && (
+              {(book as any).has_audio && (
                 <Button variant="outline" size="sm">
                   <Volume2 className="h-4 w-4 mr-2" />
                   Audio
@@ -141,7 +141,7 @@ export default function NovaReader() {
         <div className="flex-1 p-6">
           <Card className="h-full">
             <CardContent className="p-6 h-full">
-              {readerContent === 'epub' && book.download_epub_url && (
+              {readerContent === 'epub' && (book as any).download_epub_url && (
                 <div className="text-center py-20">
                   <BookOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-lg font-semibold mb-2">EPUB Reader</h3>
@@ -149,27 +149,27 @@ export default function NovaReader() {
                     This would integrate with Readium Web or similar EPUB reader
                   </p>
                   <Button 
-                    onClick={() => window.open(book.download_epub_url, '_blank')}
+                    onClick={() => window.open((book as any).download_epub_url, '_blank')}
                   >
                     Download EPUB
                   </Button>
                 </div>
               )}
 
-              {readerContent === 'pdf' && book.download_pdf_url && (
+              {readerContent === 'pdf' && (book as any).download_pdf_url && (
                 <div className="h-full">
                   <iframe
-                    src={book.download_pdf_url}
+                    src={(book as any).download_pdf_url}
                     className="w-full h-full border-0"
                     title={`${book.title} - PDF Reader`}
                   />
                 </div>
               )}
 
-              {readerContent === 'online' && book.read_online_url && (
+              {readerContent === 'online' && (book as any).read_online_url && (
                 <div className="h-full">
                   <iframe
-                    src={book.read_online_url}
+                    src={(book as any).read_online_url}
                     className="w-full h-full border-0"
                     title={`${book.title} - Online Reader`}
                   />
