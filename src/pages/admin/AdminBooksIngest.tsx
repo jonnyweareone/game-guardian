@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
-import { SEOHead } from '@/components/SEOHead';
+import SEOHead from '@/components/SEOHead';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield, RefreshCw } from 'lucide-react';
 
