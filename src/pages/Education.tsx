@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import SEOHead from '@/components/SEOHead';
 import EducationTab from '@/components/dashboard-v2/EducationTab';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import { getChildren } from '@/lib/api';
 import { getWallet } from '@/lib/rewardsApi';
@@ -136,7 +137,51 @@ export default function EducationPage() {
               </Button>
             </div>
 
-            <EducationTab childId={child.id} childAge={child.age} />
+            <Tabs defaultValue="profile" className="w-full">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="profile">👤 Profile</TabsTrigger>
+                <TabsTrigger value="timeline">📅 Timeline</TabsTrigger>
+                <TabsTrigger value="reading">📚 Reading</TabsTrigger>
+                <TabsTrigger value="courses">🎓 Books & Courses</TabsTrigger>
+                <TabsTrigger value="summary">📊 Summary</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="profile" className="mt-6">
+                <EducationTab childId={child.id} childAge={child.age} />
+              </TabsContent>
+
+              <TabsContent value="timeline" className="mt-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <p className="text-muted-foreground">Education timeline and milestones will appear here.</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="reading" className="mt-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <p className="text-muted-foreground">Reading progress and analytics will be displayed here.</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="courses" className="mt-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <p className="text-muted-foreground">Available books and courses will be shown here.</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="summary" className="mt-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <p className="text-muted-foreground">Education summary and insights will be displayed here.</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
         );

@@ -20,6 +20,7 @@ export default function Monitoring() {
   const [selectedChildId, setSelectedChildId] = useState<string | null>(query.get('child'));
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
   // Load children on mount
   useEffect(() => {
@@ -190,8 +191,13 @@ export default function Monitoring() {
             sessions={[]} // Empty for now - will be populated when device data flows
             totalTodayMinutes={0}
             unreadAlerts={unreadAlerts}
-            isExpanded={false}
-            onToggleExpanded={() => {}}
+            isExpanded={expandedCards[selectedChild.id] || false}
+            onToggleExpanded={() => {
+              setExpandedCards(prev => ({
+                ...prev,
+                [selectedChild.id]: !prev[selectedChild.id]
+              }));
+            }}
             onAddTime={() => {}}
             onPauseDevice={() => {}}
             onViewFullActivity={() => {}}
