@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -405,17 +404,16 @@ async function processIllustrateFinalizeJob(supabase: any, job: NovaJob) {
 
 async function createChaptersFromPages(supabase: any, bookId: string, pages: string[]) {
   // Simple chapter detection based on content patterns
-  const chapters = []
+  const chapters: any[] = []
   let currentChapter = 0
   let chapterStart = 0
 
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i]
+    const firstLine = (page || '').split('\n').find(l => l.trim().length > 0)?.trim() || ''
     
-    // Look for chapter markers (very basic heuristic)
-    const isChapterStart = /^(Chapter|CHAPTER)\s+\d+/i.test(page.trim()) ||
-                          /^\d+\.\s+[A-Z]/.test(page.trim()) ||
-                          (i === 0) // First page is always start of first chapter
+    // Improved chapter start detection
+    const isChapterStart = isChapterHeader(firstLine) || (i === 0)
 
     if (isChapterStart && i > chapterStart) {
       // End previous chapter
@@ -459,12 +457,26 @@ function extractChapterTitle(pageContent: string): string {
   
   // Look for chapter title patterns
   const firstLine = lines[0].trim()
-  if (/^(Chapter|CHAPTER)\s+\d+/i.test(firstLine)) {
+  if (isChapterHeader(firstLine)) {
     return firstLine
   }
   
   // Use first substantial line as title
   return lines.find(line => line.length > 5 && line.length < 100) || 'Untitled Chapter'
+}
+
+function isChapterHeader(line: string): boolean {
+  if (!line) return false
+  const trimmed = line.trim()
+  // Matches:
+  // - "CHAPTER I", "Chapter 1", "CHAPTER XII. The Something"
+  // - "I. Title", "XII. Title"
+  // - "1. Title"
+  return (
+    /^(chapter)\s+(?:\d+|[ivxlcdm]+)\b(?:[.:]\s*|\s|$)/i.test(trimmed) ||
+    /^[IVXLCDM]+\.\s+[A-Z][^\n]*$/.test(trimmed) ||
+    /^\d+\.\s+[A-Z][^\n]*$/.test(trimmed)
+  )
 }
 
 function hashString(str: string): string {
@@ -544,17 +556,53 @@ function cleanGutenbergText(content: string): string {
   // Remove footer (everything after "*** END OF")
   const endMatch = cleaned.match(/\*\*\*\s*END OF (?:THE|THIS) PROJECT GUTENBERG.*?\*\*\*/i)
   if (endMatch) {
-    cleaned = cleaned.substring(0, endMatch.index)
+    cleaned = cleaned.substring(0, endMatch.index!)
   }
   
-  // Normalize whitespace
+  // Normalize whitespace early
   cleaned = cleaned
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
+    .replace(/\t/g, ' ')
+    .replace(/[ \u00A0]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
-  
+
+  // Strip front matter (preface, contents, title pages) up to first real chapter
+  cleaned = stripFrontMatter(cleaned)
+
   return cleaned
+}
+
+function stripFrontMatter(content: string): string {
+  const text = content || ''
+  const patterns = [
+    /^(?:chapter)\s+(?:\d+|[ivxlcdm]+)\b[^\n]*$/gim,   // "Chapter 1" / "CHAPTER I"
+    /^[IVXLCDM]+\.\s+[A-Z][^\n]*$/gm,                  // "I. Title"
+    /^\d+\.\s+[A-Z][^\n]*$/gm                          // "1. Title"
+  ]
+
+  let firstIdx = -1
+  for (const re of patterns) {
+    const m = re.exec(text)
+    if (m && (firstIdx === -1 || m.index < firstIdx)) {
+      firstIdx = m.index
+    }
+  }
+
+  if (firstIdx > 0) {
+    const sliced = text.slice(firstIdx)
+    return sliced.trim()
+  }
+
+  // Fallback: if a "CONTENTS" section exists and "CHAPTER" appears later, jump to first "CHAPTER"
+  const contentsIdx = text.search(/^\s*CONTENTS\s*$/im)
+  const chapterIdx = text.search(/^\s*CHAPTER\s+/im)
+  if (contentsIdx >= 0 && chapterIdx > contentsIdx) {
+    return text.slice(chapterIdx).trim()
+  }
+
+  return text.trim()
 }
 
 function paginateContent(content: string): string[] {
@@ -563,13 +611,23 @@ function paginateContent(content: string): string[] {
   
   // Split by double newlines (paragraphs)
   const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim())
-  
+
   let currentPage = ''
   let currentWordCount = 0
-  
-  for (const paragraph of paragraphs) {
-    const paragraphWords = paragraph.trim().split(/\s+/).length
-    
+
+  const nextWordCount = (txt: string) => txt.trim().split(/\s+/).filter(Boolean).length
+
+  for (let i = 0; i < paragraphs.length; i++) {
+    let paragraph = paragraphs[i].trim()
+
+    // Attach chapter headers to the following paragraph so they don't become standalone pages
+    if (isChapterHeader(paragraph) && i + 1 < paragraphs.length) {
+      paragraph = paragraph + '\n\n' + paragraphs[i + 1].trim()
+      i++ // skip the next paragraph as it's merged
+    }
+
+    const paragraphWords = nextWordCount(paragraph)
+
     // If adding this paragraph would exceed target and we have content, start new page
     if (currentWordCount > 0 && currentWordCount + paragraphWords > targetWordsPerPage) {
       pages.push(currentPage.trim())
@@ -589,8 +647,30 @@ function paginateContent(content: string): string[] {
   if (currentPage.trim()) {
     pages.push(currentPage.trim())
   }
-  
-  return pages
+
+  // Post-process: merge tiny pages into previous to avoid header-only pages
+  const MIN_WORDS = 100
+  const merged: string[] = []
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i]
+    const wc = nextWordCount(page)
+    if (wc < MIN_WORDS && merged.length > 0) {
+      merged[merged.length - 1] = (merged[merged.length - 1] + '\n\n' + page).trim()
+    } else {
+      merged.push(page)
+    }
+  }
+
+  // Edge case: first page tiny, merge forward if possible
+  if (merged.length >= 2) {
+    const firstWc = nextWordCount(merged[0])
+    if (firstWc < MIN_WORDS) {
+      merged[1] = (merged[0] + '\n\n' + merged[1]).trim()
+      merged.shift()
+    }
+  }
+
+  return merged
 }
 
 function tokenizeContent(content: string): any[] {
