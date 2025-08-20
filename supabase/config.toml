@@ -37,3 +37,9 @@ verify_jwt = false
 
 [functions.books-batch-reingest]
 verify_jwt = true
+
+[functions.tts-analyze]
+verify_jwt = true
+
+[functions.tts-render]
+verify_jwt = true

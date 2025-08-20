@@ -1,0 +1,30 @@
+{
+  "multi_voice_mapping": {
+    "narrator": "verse",
+    "child": "junior",
+    "teen": "breeze",
+    "adult_male": "baritone",
+    "adult_female": "verse",
+    "elder_male": "sage",
+    "elder_female": "grace",
+    "creature_robot": "robot"
+  },
+  "single_voice_presets": {
+    "storybook": {
+      "name": "Storybook",
+      "voice": "verse",
+      "description": "Warm narrator voice for storytelling"
+    },
+    "playful": {
+      "name": "Playful",
+      "voice": "junior",
+      "description": "Energetic, child-like voice"
+    },
+    "calm": {
+      "name": "Calm",
+      "voice": "grace",
+      "description": "Gentle, soothing voice"
+    }
+  },
+  "fallback_voice": "verse"
+}
