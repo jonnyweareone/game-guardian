@@ -792,6 +792,194 @@ export type Database = {
           },
         ]
       }
+      child_listening_state: {
+        Row: {
+          book_id: string | null
+          child_id: string
+          is_listening: boolean
+          session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          book_id?: string | null
+          child_id: string
+          is_listening?: boolean
+          session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string | null
+          child_id?: string
+          is_listening?: boolean
+          session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_listening_state_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_listening_state_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_listening_state_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_listening_state_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_listening_state_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "child_reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      child_reading_sessions: {
+        Row: {
+          book_id: string
+          child_id: string
+          created_at: string
+          current_locator: string | null
+          ended_at: string | null
+          id: string
+          started_at: string
+          total_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          child_id: string
+          created_at?: string
+          current_locator?: string | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          total_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          child_id?: string
+          created_at?: string
+          current_locator?: string | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          total_seconds?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_reading_sessions_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
+      child_reading_timeline: {
+        Row: {
+          book_id: string
+          child_id: string
+          created_at: string
+          event_type: string
+          id: string
+          session_id: string | null
+        }
+        Insert: {
+          book_id: string
+          child_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          session_id?: string | null
+        }
+        Update: {
+          book_id?: string
+          child_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_reading_timeline_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_reading_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_reading_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_reading_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_reading_timeline_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "child_reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       child_time_policies: {
         Row: {
           bedtime: unknown | null
@@ -2017,6 +2205,58 @@ export type Database = {
           },
         ]
       }
+      nova_child_tokens: {
+        Row: {
+          child_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          parent_user_id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          parent_user_id: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          parent_user_id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nova_child_tokens_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nova_child_tokens_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "nova_child_tokens_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       parent_notifications: {
         Row: {
           action_required: boolean | null
@@ -2317,6 +2557,137 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reading_chunks: {
+        Row: {
+          book_id: string
+          child_id: string
+          created_at: string
+          id: string
+          locator: string | null
+          raw_text: string | null
+          session_id: string
+        }
+        Insert: {
+          book_id: string
+          child_id: string
+          created_at?: string
+          id?: string
+          locator?: string | null
+          raw_text?: string | null
+          session_id: string
+        }
+        Update: {
+          book_id?: string
+          child_id?: string
+          created_at?: string
+          id?: string
+          locator?: string | null
+          raw_text?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_chunks_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_chunks_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_chunks_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reading_chunks_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reading_chunks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "child_reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reading_rollups: {
+        Row: {
+          book_id: string
+          child_id: string
+          created_at: string
+          last_session_at: string | null
+          last_summary: string | null
+          rollup_date: string
+          sessions: number
+          total_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          child_id: string
+          created_at?: string
+          last_session_at?: string | null
+          last_summary?: string | null
+          rollup_date: string
+          sessions?: number
+          total_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          child_id?: string
+          created_at?: string
+          last_session_at?: string | null
+          last_summary?: string | null
+          rollup_date?: string
+          sessions?: number
+          total_seconds?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_rollups_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_rollups_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_rollups_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reading_rollups_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
       }
       reading_sessions: {
         Row: {

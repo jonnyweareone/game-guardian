@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0';
 
@@ -91,6 +92,9 @@ serve(async (req) => {
 
     console.log(`Nova child token minted: ${token} for child ${child_id}`);
 
+    // Return relative URL that works regardless of domain
+    const novaUrl = `/novalearning?token=${token}`;
+
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -98,7 +102,7 @@ serve(async (req) => {
         child_id,
         child_name: child.name,
         expires_at: expiresAt,
-        nova_url: `${req.headers.get('origin') || 'https://app.example.com'}/novalearning?token=${token}`
+        nova_url: novaUrl
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
