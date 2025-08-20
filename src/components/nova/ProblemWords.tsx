@@ -17,15 +17,18 @@ export const ProblemWords: React.FC<ProblemWordsProps> = ({ sessionId, childId }
 
   // Fetch problem words for this session
   const { data: problemWords } = useQuery({
-    queryKey: ['problem-words', sessionId],
+    queryKey: ['nova-problem-words', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('problem_words' as any)
+        .from('nova_problem_words')
         .select('*')
         .eq('session_id', sessionId)
         .order('count', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching problem words:', error);
+        return [];
+      }
       return data || [];
     },
     enabled: !!sessionId,
@@ -122,32 +125,42 @@ export const ProblemWords: React.FC<ProblemWordsProps> = ({ sessionId, childId }
                     Phonetics
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {word?.ipa && (
+                    {word?.phonetics && (
                       <Badge variant="outline" className="text-xs font-mono">
-                        /{word.ipa}/
+                        {word.phonetics}
                       </Badge>
                     )}
-                    {word?.syllables && (
+                    {word?.syllables && word.syllables.length > 0 && (
                       <Badge variant="outline" className="text-xs">
-                        {word.syllables} syllable{word.syllables !== 1 ? 's' : ''}
+                        {word.syllables.join('-')}
                       </Badge>
                     )}
                   </div>
                 </div>
 
-                {/* Phonemes */}
-                {word?.phonemes && word.phonemes.length > 0 && (
+                {/* Sounds */}
+                {word?.sounds && word.sounds.length > 0 && (
                   <div>
                     <div className="text-xs font-medium text-muted-foreground mb-1">
                       Sounds
                     </div>
                     <div className="flex items-center gap-1 flex-wrap">
-                      {word.phonemes.map((phoneme: string, index: number) => (
+                      {word.sounds.map((sound: string, index: number) => (
                         <Badge key={index} variant="secondary" className="text-xs font-mono">
-                          {phoneme}
+                          {sound}
                         </Badge>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Definition */}
+                {word?.definition && (
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground mb-1">
+                      Definition
+                    </div>
+                    <p className="text-xs text-muted-foreground">{word.definition}</p>
                   </div>
                 )}
 

@@ -10,6 +10,9 @@ import { NovaCoach } from '@/components/nova/NovaCoach';
 import { ProblemWords } from '@/components/nova/ProblemWords';
 import VoiceInterface from '@/components/nova/VoiceInterface';
 import { EpubReader } from '@/components/nova/EpubReader';
+import { TextToSpeechPlayer } from '@/components/nova/TextToSpeechPlayer';
+import { ReadingRewards } from '@/components/nova/ReadingRewards';
+import { generateDemoInsights, getSampleBookContent } from '@/utils/demoBooksData';
 
 export default function NovaReader() {
   const { bookId } = useParams<{ bookId: string }>();
@@ -45,12 +48,24 @@ export default function NovaReader() {
     enabled: !!bookId,
   });
 
-  // Nova session management
+  // Nova session management with demo data generation
   const { sessionId, isListening, startSession, endSession } = useNovaSession(
     activeChildId || '',
     bookId || '',
     book?.title
   );
+
+  // Generate demo data when session starts
+  useEffect(() => {
+    if (sessionId && activeChildId && bookId && book?.title) {
+      console.log('Generating demo data for Nova coaching');
+      
+      // Generate demo insights and problem words after a short delay
+      setTimeout(() => {
+        generateDemoInsights(sessionId, activeChildId, bookId);
+      }, 3000); // 3 second delay to simulate AI processing
+    }
+  }, [sessionId, activeChildId, bookId, book?.title]);
 
   // Determine reader type
   useEffect(() => {
@@ -186,8 +201,28 @@ export default function NovaReader() {
           </div>
         </div>
 
-        {/* Right Sidebar - AI Coach and Voice Interface */}
+        {/* Right Sidebar - AI Coach, Voice Interface, and Rewards */}
         <div className="w-80 bg-muted/50 p-4 space-y-4 overflow-y-auto">
+          {/* Reading Rewards */}
+          <ReadingRewards 
+            childId={activeChildId}
+            sessionId={sessionId}
+            bookId={bookId}
+            onProgressUpdate={(progress) => {
+              console.log('Reading progress:', progress);
+            }}
+          />
+
+          {/* Text-to-Speech Player */}
+          <TextToSpeechPlayer 
+            bookId={bookId || ''}
+            bookTitle={book?.title || ''}
+            bookContent={getSampleBookContent(book?.title || '')}
+            onProgressUpdate={(progress) => {
+              console.log('TTS progress:', progress);
+            }}
+          />
+          
           {/* Voice Interface */}
           <VoiceInterface 
             onSpeakingChange={setAiSpeaking}

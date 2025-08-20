@@ -2403,6 +2403,138 @@ export type Database = {
           },
         ]
       }
+      nova_insights: {
+        Row: {
+          ai_summary: string
+          book_id: string
+          child_id: string
+          comprehension_questions: string[] | null
+          created_at: string
+          difficulty_level: string | null
+          emotional_tone: string | null
+          id: string
+          key_points: string[] | null
+          reading_level_assessment: string | null
+          scope: string
+          session_id: string
+        }
+        Insert: {
+          ai_summary: string
+          book_id: string
+          child_id: string
+          comprehension_questions?: string[] | null
+          created_at?: string
+          difficulty_level?: string | null
+          emotional_tone?: string | null
+          id?: string
+          key_points?: string[] | null
+          reading_level_assessment?: string | null
+          scope?: string
+          session_id: string
+        }
+        Update: {
+          ai_summary?: string
+          book_id?: string
+          child_id?: string
+          comprehension_questions?: string[] | null
+          created_at?: string
+          difficulty_level?: string | null
+          emotional_tone?: string | null
+          id?: string
+          key_points?: string[] | null
+          reading_level_assessment?: string | null
+          scope?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
+      nova_problem_words: {
+        Row: {
+          child_id: string
+          count: number | null
+          created_at: string
+          definition: string | null
+          difficulty_reason: string | null
+          hints: string[] | null
+          id: string
+          phonetics: string | null
+          session_id: string
+          sounds: string[] | null
+          syllables: string[] | null
+          word: string
+        }
+        Insert: {
+          child_id: string
+          count?: number | null
+          created_at?: string
+          definition?: string | null
+          difficulty_reason?: string | null
+          hints?: string[] | null
+          id?: string
+          phonetics?: string | null
+          session_id: string
+          sounds?: string[] | null
+          syllables?: string[] | null
+          word: string
+        }
+        Update: {
+          child_id?: string
+          count?: number | null
+          created_at?: string
+          definition?: string | null
+          difficulty_reason?: string | null
+          hints?: string[] | null
+          id?: string
+          phonetics?: string | null
+          session_id?: string
+          sounds?: string[] | null
+          syllables?: string[] | null
+          word?: string
+        }
+        Relationships: []
+      }
+      nova_reading_progress: {
+        Row: {
+          book_id: string
+          child_id: string
+          comprehension_score: number | null
+          created_at: string
+          id: string
+          pages_read: number | null
+          reading_time_minutes: number | null
+          session_id: string
+          total_pages: number | null
+          updated_at: string
+          words_read: number | null
+        }
+        Insert: {
+          book_id: string
+          child_id: string
+          comprehension_score?: number | null
+          created_at?: string
+          id?: string
+          pages_read?: number | null
+          reading_time_minutes?: number | null
+          session_id: string
+          total_pages?: number | null
+          updated_at?: string
+          words_read?: number | null
+        }
+        Update: {
+          book_id?: string
+          child_id?: string
+          comprehension_score?: number | null
+          created_at?: string
+          id?: string
+          pages_read?: number | null
+          reading_time_minutes?: number | null
+          session_id?: string
+          total_pages?: number | null
+          updated_at?: string
+          words_read?: number | null
+        }
+        Relationships: []
+      }
       parent_notifications: {
         Row: {
           action_required: boolean | null

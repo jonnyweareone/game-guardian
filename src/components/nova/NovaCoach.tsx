@@ -12,10 +12,10 @@ interface NovaCoachProps {
 export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
   // Fetch latest AI insights for this session
   const { data: latestInsight } = useQuery({
-    queryKey: ['ai-insights', sessionId],
+    queryKey: ['nova-insights', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ai_reading_insights' as any)
+        .from('nova_insights')
         .select('*')
         .eq('session_id', sessionId)
         .eq('scope', 'chunk')
@@ -23,7 +23,10 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
         .limit(1)
         .single();
       
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching Nova insights:', error);
+        return null;
+      }
       return data;
     },
     enabled: !!sessionId,
@@ -65,25 +68,25 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {insight?.summary && (
+          {insight?.ai_summary && (
             <div>
               <p className="text-sm text-muted-foreground">
-                {insight.summary}
+                {insight.ai_summary}
               </p>
             </div>
           )}
 
-          {insight?.difficulty && (
+          {insight?.difficulty_level && (
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-orange-500" />
               <span className="text-sm">Difficulty:</span>
               <Badge variant={
-                insight.difficulty <= 3 ? 'default' :
-                insight.difficulty <= 6 ? 'secondary' :
+                insight.difficulty_level === 'easy' ? 'default' :
+                insight.difficulty_level === 'medium' ? 'secondary' :
                 'destructive'
               }>
-                {insight.difficulty <= 3 ? 'Easy' :
-                 insight.difficulty <= 6 ? 'Medium' :
+                {insight.difficulty_level === 'easy' ? 'Easy' :
+                 insight.difficulty_level === 'medium' ? 'Medium' :
                  'Challenging'}
               </Badge>
             </div>
@@ -114,7 +117,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
       )}
 
       {/* Comprehension Questions */}
-      {insight?.questions && insight.questions.length > 0 && (
+      {insight?.comprehension_questions && insight.comprehension_questions.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
@@ -124,7 +127,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {insight.questions.slice(0, 2).map((question: string, index: number) => (
+              {insight.comprehension_questions.slice(0, 2).map((question: string, index: number) => (
                 <div key={index} className="p-3 bg-muted/50 rounded-lg">
                   <p className="text-sm font-medium mb-1">Question {index + 1}:</p>
                   <p className="text-sm text-muted-foreground">{question}</p>
