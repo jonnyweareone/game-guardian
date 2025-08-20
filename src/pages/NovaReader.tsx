@@ -177,12 +177,26 @@ export default function NovaReader() {
               )}
               
               {(readerContent === 'pdf' || readerContent === 'online') && (
-                <div className="w-full h-full">
+                <div className="w-full h-full relative">
                   <iframe
-                    src={book.download_pdf_url || book.read_online_url}
+                    src={
+                      (readerContent === 'pdf' && (book as any).download_pdf_url)
+                        ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(String((book as any).download_pdf_url))}`
+                        : String((book as any).read_online_url)
+                    }
                     className="w-full h-full border-0 rounded-lg"
                     title={`${book.title} Reader`}
+                    referrerPolicy="no-referrer"
                   />
+                  <div className="absolute bottom-3 right-3 flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => window.open(String((book as any).download_pdf_url || (book as any).read_online_url), '_blank', 'noopener')}
+                    >
+                      Open in new tab
+                    </Button>
+                  </div>
                 </div>
               )}
               
