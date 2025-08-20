@@ -38,6 +38,9 @@ export default function EducationPage() {
   }, [children]);
 
   const handleNovaLearning = async (child: any) => {
+    // Pre-open blank tab to avoid popup blockers
+    const novaTab = window.open('', '_blank');
+    
     try {
       // Mint a child token for Nova Learning access
       const { data, error } = await supabase.functions.invoke('nova-mint-child-token', {
@@ -46,17 +49,25 @@ export default function EducationPage() {
 
       if (error) throw error;
 
-      if (data?.nova_url) {
-        // Open Nova Learning in new tab with the token
-        window.open(data.nova_url, '_blank');
+      if (data?.nova_url && novaTab) {
+        // Navigate the pre-opened tab to Nova Learning
+        novaTab.location.href = data.nova_url;
         
         toast({
           title: "Nova Learning Opened",
           description: `${child.name} can now access Nova Learning directly.`,
         });
+      } else if (!novaTab) {
+        throw new Error('Failed to open new tab');
       }
     } catch (error) {
       console.error('Error opening Nova Learning:', error);
+      
+      // Close the blank tab if it was opened
+      if (novaTab) {
+        novaTab.close();
+      }
+      
       toast({
         title: "Error",
         description: "Failed to open Nova Learning. Please try again.",
