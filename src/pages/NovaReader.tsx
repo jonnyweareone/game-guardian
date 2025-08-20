@@ -1,25 +1,26 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, BookOpen, Volume2 } from 'lucide-react';
 import { useNovaSession } from '@/hooks/useNovaSession';
 import { NovaCoach } from '@/components/nova/NovaCoach';
 import { ProblemWords } from '@/components/nova/ProblemWords';
-import VoiceInterface from '@/components/nova/VoiceInterface';
 import RealtimeVoiceInterface from '@/components/nova/RealtimeVoiceInterface';
 import { EpubReader } from '@/components/nova/EpubReader';
 import { TextToSpeechPlayer } from '@/components/nova/TextToSpeechPlayer';
 import { ReadingRewards } from '@/components/nova/ReadingRewards';
+import { BookRenderer } from '@/components/nova/BookRenderer';
 import { generateDemoInsights, getSampleBookContent } from '@/utils/demoBooksData';
 
 export default function NovaReader() {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
   const [activeChildId, setActiveChildId] = useState<string>('');
-  const [readerContent, setReaderContent] = useState<'epub' | 'pdf' | 'online'>('epub');
+  const [readerContent, setReaderContent] = useState<'epub' | 'pdf' | 'online' | 'ingested'>('ingested');
   const [aiSpeaking, setAiSpeaking] = useState(false);
   const [transcript, setTranscript] = useState('');
 
@@ -68,11 +69,12 @@ export default function NovaReader() {
     }
   }, [sessionId, activeChildId, bookId, book?.title]);
 
-  // Determine reader type
+  // Determine reader type - prioritize ingested content
   useEffect(() => {
     if (book) {
-      // Prefer PDF (most reliable to embed), then online, then EPUB (simulated)
-      if ((book as any).download_pdf_url) {
+      if (book.ingested) {
+        setReaderContent('ingested');
+      } else if ((book as any).download_pdf_url) {
         setReaderContent('pdf');
       } else if ((book as any).read_online_url) {
         setReaderContent('online');
@@ -162,8 +164,21 @@ export default function NovaReader() {
         {/* Main reader area */}
         <div className="flex-1 p-6">
           <div className="h-full flex flex-col">
-            {/* Reader Content */}
+            {/* Reader Content - Use our custom renderer for ingested books */}
             <div className="flex-1 bg-background rounded-lg border">
+              {readerContent === 'ingested' && book.ingested && (
+                <BookRenderer
+                  bookId={bookId!}
+                  childId={activeChildId}
+                  onProgressUpdate={(page, readPercent) => {
+                    console.log(`Page ${page + 1} progress: ${readPercent}%`);
+                  }}
+                  onCoinsAwarded={(coins) => {
+                    console.log(`Awarded ${coins} coins!`);
+                  }}
+                />
+              )}
+
               {readerContent === 'epub' && book.download_epub_url && (
                 <EpubReader
                   bookUrl={book.download_epub_url}

@@ -15,7 +15,7 @@ interface BookPage {
     word: string;
     start: number;
     end: number;
-  }>;
+  }> | null;
   image_url?: string;
 }
 
@@ -37,30 +37,47 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [isReading, setIsReading] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [readingSpeed, setReadingSpeed] = useState(150); // words per minute
   const contentRef = useRef<HTMLDivElement>(null);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Load book pages
+  // Load book pages - using raw query since types haven't updated yet
   useEffect(() => {
     const loadPages = async () => {
-      const { data, error } = await supabase
-        .from('book_pages')
-        .select('*')
-        .eq('book_id', bookId)
-        .order('page_index');
+      try {
+        const { data, error } = await supabase
+          .rpc('get_book_pages', { book_id_param: bookId });
 
-      if (error) {
-        console.error('Error loading pages:', error);
+        if (error) {
+          console.error('Error loading pages via RPC:', error);
+          // Fallback to direct query
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('book_pages' as any)
+            .select('*')
+            .eq('book_id', bookId)
+            .order('page_index');
+
+          if (fallbackError) {
+            console.error('Error loading pages:', fallbackError);
+            toast({
+              title: "Error",
+              description: "Failed to load book pages",
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          setPages(fallbackData || []);
+        } else {
+          setPages(data || []);
+        }
+      } catch (err) {
+        console.error('Error in loadPages:', err);
         toast({
           title: "Error",
-          description: "Failed to load book pages",
+          description: "Failed to load book content",
           variant: "destructive",
         });
-        return;
       }
-
-      setPages(data || []);
     };
 
     if (bookId) {
@@ -68,27 +85,32 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
     }
   }, [bookId, toast]);
 
-  // Load reading progress
+  // Load reading progress - using raw query for now
   useEffect(() => {
     const loadProgress = async () => {
-      const { data } = await supabase
-        .from('reading_sessions')
-        .select('current_page')
-        .eq('book_id', bookId)
-        .eq('child_id', childId)
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .single();
+      try {
+        const { data } = await supabase
+          .from('child_reading_sessions' as any)
+          .select('current_locator')
+          .eq('book_id', bookId)
+          .eq('child_id', childId)
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (data?.current_page) {
-        setCurrentPage(data.current_page);
+        if (data?.current_locator) {
+          const pageIndex = parseInt(data.current_locator) || 0;
+          setCurrentPage(Math.min(pageIndex, pages.length - 1));
+        }
+      } catch (error) {
+        console.error('Error loading progress:', error);
       }
     };
 
-    if (bookId && childId) {
+    if (bookId && childId && pages.length > 0) {
       loadProgress();
     }
-  }, [bookId, childId]);
+  }, [bookId, childId, pages.length]);
 
   const currentPageData = pages[currentPage];
 
@@ -96,35 +118,36 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
     try {
       // Update reading session
       await supabase
-        .from('reading_sessions')
+        .from('child_reading_sessions' as any)
         .upsert({
-          user_id: (await supabase.auth.getUser()).data.user?.id,
           child_id: childId,
           book_id: bookId,
-          current_page: pageIndex,
-          tokens_read: Math.floor((currentPageData?.tokens?.length || 0) * readPercent / 100)
+          current_locator: pageIndex.toString(),
+          updated_at: new Date().toISOString()
         });
 
-      // Update page progress and award coins
-      const { data: progressData } = await supabase
-        .from('child_page_progress')
-        .upsert({
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          child_id: childId,
-          book_id: bookId,
-          page_index: pageIndex,
-          read_percent: readPercent,
-          coins_awarded: readPercent === 100 ? 5 : 0 // 5 coins per completed page
-        })
-        .select()
-        .single();
+      // Update page progress and award coins - using raw query
+      if (readPercent === 100) {
+        const { data: progressData } = await supabase
+          .from('child_page_progress' as any)
+          .upsert({
+            child_id: childId,
+            book_id: bookId,
+            page_index: pageIndex,
+            read_percent: readPercent,
+            coins_awarded: 5, // 5 coins per completed page
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .maybeSingle();
 
-      if (progressData?.coins_awarded && readPercent === 100) {
-        onCoinsAwarded?.(progressData.coins_awarded);
-        toast({
-          title: "Page Complete! 🎉",
-          description: `You earned ${progressData.coins_awarded} coins!`,
-        });
+        if (progressData?.coins_awarded) {
+          onCoinsAwarded?.(progressData.coins_awarded);
+          toast({
+            title: "Page Complete! 🎉",
+            description: `You earned ${progressData.coins_awarded} coins!`,
+          });
+        }
       }
 
       onProgressUpdate?.(pageIndex, readPercent);

@@ -463,6 +463,80 @@ export type Database = {
         }
         Relationships: []
       }
+      book_ingests: {
+        Row: {
+          book_id: string | null
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          source_url: string
+          started_at: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          book_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          source_url: string
+          started_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          book_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          source_url?: string
+          started_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      book_pages: {
+        Row: {
+          book_id: string
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          page_index: number
+          tokens: Json | null
+        }
+        Insert: {
+          book_id: string
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          page_index: number
+          tokens?: Json | null
+        }
+        Update: {
+          book_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          page_index?: number
+          tokens?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_pages_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_topics: {
         Row: {
           book_id: string
@@ -505,8 +579,10 @@ export type Database = {
           description: string | null
           download_epub_url: string | null
           download_pdf_url: string | null
+          gutenberg_id: number | null
           has_audio: boolean | null
           id: string
+          ingested: boolean
           is_fiction: boolean | null
           ks: string | null
           language: string | null
@@ -533,8 +609,10 @@ export type Database = {
           description?: string | null
           download_epub_url?: string | null
           download_pdf_url?: string | null
+          gutenberg_id?: number | null
           has_audio?: boolean | null
           id?: string
+          ingested?: boolean
           is_fiction?: boolean | null
           ks?: string | null
           language?: string | null
@@ -561,8 +639,10 @@ export type Database = {
           description?: string | null
           download_epub_url?: string | null
           download_pdf_url?: string | null
+          gutenberg_id?: number | null
           has_audio?: boolean | null
           id?: string
+          ingested?: boolean
           is_fiction?: boolean | null
           ks?: string | null
           language?: string | null
@@ -968,6 +1048,68 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "child_reading_sessions"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      child_page_progress: {
+        Row: {
+          book_id: string
+          child_id: string
+          coins_awarded: number
+          created_at: string
+          id: string
+          page_index: number
+          read_percent: number
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          child_id: string
+          coins_awarded?: number
+          created_at?: string
+          id?: string
+          page_index: number
+          read_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          child_id?: string
+          coins_awarded?: number
+          created_at?: string
+          id?: string
+          page_index?: number
+          read_percent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_page_progress_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_page_progress_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_page_progress_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_page_progress_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
           },
         ]
       }
