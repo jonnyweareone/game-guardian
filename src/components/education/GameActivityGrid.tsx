@@ -67,6 +67,18 @@ const GAME_ACTIVITIES: GameActivityItem[] = [
     launchUrl: '/play/antura'
   },
   {
+    id: 'spacetrek',
+    title: 'SpaceTrek VR',
+    kind: 'activity',
+    subject: 'Science',
+    description: 'Explore space in virtual reality and complete educational quizzes about the cosmos.',
+    icon: '🚀',
+    difficulty: 'Medium',
+    estimatedTime: '20-30 min',
+    xpReward: '25-40 XP',
+    launchUrl: '/play/spacetrek'
+  },
+  {
     id: 'novabooks',
     title: 'Nova Books',
     kind: 'activity', 

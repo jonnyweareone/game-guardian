@@ -34,6 +34,7 @@ import BlocklyMaze from './pages/play/BlocklyMaze';
 import Turtlestitch from './pages/play/Turtlestitch';
 import TuxMath from './pages/play/TuxMath';
 import Antura from './pages/play/Antura';
+import SpaceTrek from './pages/play/SpaceTrek';
 
 const queryClient = new QueryClient();
 
