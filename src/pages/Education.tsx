@@ -4,8 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import ChildEducationTabs from '@/components/education/ChildEducationTabs';
 import SEOHead from '@/components/SEOHead';
+import EducationTab from '@/components/dashboard-v2/EducationTab';
 
 import { getChildren } from '@/lib/api';
 import { getWallet } from '@/lib/rewardsApi';
@@ -136,7 +136,7 @@ export default function EducationPage() {
               </Button>
             </div>
 
-            <ChildEducationTabs childId={child.id} />
+            <EducationTab childId={child.id} childAge={child.age} />
           </CardContent>
         </Card>
         );
