@@ -168,7 +168,7 @@ serve(async (req) => {
         await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
       }
 
-      const audioUrl = `data:audio/mp3;base64,${audioBase64}`;
+      const audioUrl = `data:audio/mpeg;base64,${audioBase64}`;
       
       manifest.push({
         audioUrl,

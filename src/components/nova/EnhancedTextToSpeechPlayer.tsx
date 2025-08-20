@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Play, Pause, Volume2, VolumeX, SkipForward, SkipBack, Mic, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getSampleBookContent } from '@/utils/demoBooksData';
 
 interface EnhancedTextToSpeechPlayerProps {
   bookId: string;
@@ -101,13 +102,34 @@ export const EnhancedTextToSpeechPlayer: React.FC<EnhancedTextToSpeechPlayerProp
   };
 
   // Preload next audio segments
+  const toBlobUrl = (dataUri: string) => {
+    try {
+      if (!dataUri.startsWith('data:')) return dataUri;
+      const [header, base64] = dataUri.split(',');
+      const mimeMatch = header.match(/data:(.*);base64/);
+      const mime = mimeMatch ? mimeMatch[1] : 'audio/mpeg';
+      const binary = atob(base64);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: mime });
+      return URL.createObjectURL(blob);
+    } catch {
+      return dataUri;
+    }
+  };
+
   const preloadAudio = (segments: AudioSegment[], currentIndex: number) => {
     const preloadedAudio: { [index: number]: HTMLAudioElement } = {};
     
     // Preload current and next 2 segments
     for (let i = currentIndex; i < Math.min(currentIndex + 3, segments.length); i++) {
       if (!audioQueue.preloadedAudio[i]) {
-        const audio = new Audio(segments[i].audioUrl);
+        let src = segments[i].audioUrl;
+        if (src.startsWith('data:audio')) {
+          src = toBlobUrl(src);
+        }
+        const audio = new Audio(src);
         audio.volume = isMuted ? 0 : volume;
         audio.preload = 'auto';
         preloadedAudio[i] = audio;
@@ -116,7 +138,6 @@ export const EnhancedTextToSpeechPlayer: React.FC<EnhancedTextToSpeechPlayerProp
     
     return preloadedAudio;
   };
-
   // Analyze and render audio
   const prepareAudio = async () => {
     setIsPreparing(true);
@@ -145,9 +166,13 @@ export const EnhancedTextToSpeechPlayer: React.FC<EnhancedTextToSpeechPlayerProp
             segments = bookPages[0].tts_segments;
             console.log('Using pre-computed TTS segments from database');
           }
-        } else {
-          throw new Error('No book content found - please ingest the book first');
-        }
+          } else {
+            // Fallback to sample content if DB has no pages yet
+            textContent = getSampleBookContent(bookTitle) || '';
+            if (!textContent) {
+              throw new Error('No book content found - please ingest the book first');
+            }
+          }
       }
 
       if (!textContent) {
@@ -227,6 +252,13 @@ export const EnhancedTextToSpeechPlayer: React.FC<EnhancedTextToSpeechPlayerProp
 
     const audio = preloadedAudio[currentIndex];
     currentAudioRef.current = audio;
+    
+    // Ensure the element is ready in Safari/iOS
+    try { audio.load(); } catch {}
+    audio.onerror = (e) => {
+      console.error('Audio element error:', e);
+      toast({ title: 'Playback Error', description: 'Audio failed to load or is unsupported.', variant: 'destructive' });
+    };
 
     audio.onended = () => {
       // Move to next segment

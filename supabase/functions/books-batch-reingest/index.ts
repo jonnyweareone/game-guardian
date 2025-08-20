@@ -193,11 +193,14 @@ serve(async (req) => {
 
     const { limit = 20, force = false } = await req.json().catch(() => ({ limit: 20, force: false }))
 
-    // Pick books: either all with source_url (force) or only not ingested yet
-    const query = serviceClient.from('books').select('id, source_url, ingested').not('source_url', 'is', null)
+    // Pick books: either all with a usable URL (force) or only not ingested yet
+    const baseQuery = serviceClient
+      .from('books')
+      .select('id, source_url, read_online_url, ingested')
+      .or('source_url.not.is.null,read_online_url.not.is.null');
     const { data: candidates, error: selErr } = force
-      ? await query.limit(limit)
-      : await query.eq('ingested', false).limit(limit)
+      ? await baseQuery.limit(limit)
+      : await baseQuery.eq('ingested', false).limit(limit)
 
     if (selErr) throw selErr
 
@@ -212,7 +215,7 @@ serve(async (req) => {
           .single()
         if (ingestErr) throw ingestErr
 
-        const res = await ingestSingle(serviceClient, b.source_url, b.id)
+        const res = await ingestSingle(serviceClient, (b as any).source_url || (b as any).read_online_url, b.id)
 
         await serviceClient
           .from('book_ingests')
