@@ -3,11 +3,9 @@ import { HomeIcon, ShieldIcon, Users, Settings, Smartphone, ShoppingBag, UserChe
 import Index from "./pages/Index";
 import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/Dashboard";
-import DashboardV2 from "./pages/DashboardV2";
 import DevicesPage from "./pages/DevicesPage";
 import Children from "./pages/Children";
 import Account from "./pages/Account";
-import Products from "./pages/Products";
 import About from "./pages/About";
 import HowToGuide from "./pages/HowToGuide";
 import Auth from "./pages/Auth";
@@ -73,13 +71,6 @@ export const navItems: NavItem[] = [
     requiresAuth: true,
   },
   {
-    title: "Monitoring",
-    to: "/dashboard-v2",
-    icon: <ShieldIcon className="h-4 w-4" />,
-    page: <DashboardV2 />,
-    requiresAuth: true,
-  },
-  {
     title: "Education",
     to: "/education",
     icon: <GraduationCap className="h-4 w-4" />,
@@ -120,13 +111,6 @@ export const navItems: NavItem[] = [
     icon: <Users className="h-4 w-4" />,
     page: <Account />,
     requiresAuth: true,
-  },
-  {
-    title: "Products",
-    to: "/products",
-    icon: <Package className="h-4 w-4" />,
-    page: <Products />,
-    requiresAuth: false,
   },
   {
     title: "About",

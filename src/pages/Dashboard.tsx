@@ -1,34 +1,30 @@
-// MOBILE APP: Legacy dashboard - Consider using DashboardV2 for mobile instead
-// If used in mobile: Focus on real-time alerts, quick device status, simplified navigation
-// Key mobile features: Pull-to-refresh, push notifications, offline alert history
-
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Shield, 
   Users, 
   AlertTriangle, 
-  MessageSquare, 
   Activity,
-  TrendingUp,
-  Clock,
+  GraduationCap,
+  Coins,
+  BookOpen,
+  Plus,
   Eye,
   Wifi,
-  WifiOff
+  WifiOff,
+  Gift
 } from 'lucide-react';
 import { getChildren } from '@/lib/api';
+import { getWallet, listRewards, listRedemptions } from '@/lib/rewardsApi';
+import { edu } from '@/lib/educationApi';
 import PairDeviceDialog from '@/components/PairDeviceDialog';
-import DeviceChildAssignmentDialog from '@/components/DeviceChildAssignmentDialog';
 import AlertCard from '@/components/AlertCard';
-import AIInsightCards from '@/components/AIInsightCards';
-import ConversationViewer from '@/components/ConversationViewer';
-import ActivationWizard from '@/components/ActivationWizard';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -42,21 +38,6 @@ interface Alert {
   confidence_score: number;
   is_reviewed: boolean;
   flagged_at: string;
-  child_name?: string;
-}
-
-interface ConversationData {
-  id: string;
-  platform: string;
-  session_start: string;
-  session_end?: string;
-  total_messages: number;
-  risk_assessment: string;
-  child_id: string;
-  participants: string[];
-  sentiment_score: number;
-  conversation_type: string;
-  transcript: any[];
   child_name?: string;
 }
 
@@ -74,299 +55,163 @@ interface Device {
   } | null;
 }
 
+interface ChildData {
+  id: string;
+  name: string;
+  age?: number;
+  avatar_url?: string;
+  parent_id: string;
+  created_at: string;
+  coins?: number;
+  unread_alerts?: number;
+  recent_education?: any[];
+}
+
 const Dashboard = () => {
-  console.log('Dashboard component rendering...');
-  
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [showActivationWizard, setShowActivationWizard] = useState(false);
-  const [activationDeviceId, setActivationDeviceId] = useState('');
-  const [activationDeviceCode, setActivationDeviceCode] = useState('');
-  
+  const [children, setChildren] = useState<ChildData[]>([]);
+  const [wallets, setWallets] = useState<Record<string, any>>({});
+  const [timeline, setTimeline] = useState<any[]>([]);
   const { toast } = useToast();
 
-  // Check for activation parameters on component mount
-  useEffect(() => {
-    console.log('Dashboard: Checking URL parameters...');
-    console.log('Current search params:', Object.fromEntries(searchParams.entries()));
-    
-    const shouldActivate = searchParams.get('activate') === '1';
-    const deviceId = searchParams.get('device_id');
-    const deviceCode = searchParams.get('device_code');
-    
-    console.log('Activation check:', { shouldActivate, deviceId, deviceCode });
-    
-    if (shouldActivate && deviceId) {
-      if (!deviceCode) {
-        console.log('Dashboard: Looking up device code for device ID:', deviceId);
-        lookupDeviceCode(deviceId);
-      } else {
-        console.log('Dashboard: Opening activation wizard for device:', deviceId, deviceCode);
-        setActivationDeviceId(deviceId);
-        setActivationDeviceCode(deviceCode);
-        setShowActivationWizard(true);
-        clearUrlParams();
-      }
-    } else {
-      console.log('Dashboard: Activation conditions not met');
-    }
-  }, [searchParams, setSearchParams]);
-
-  const lookupDeviceCode = async (deviceId: string) => {
-    try {
-      console.log('Looking up device code for device ID:', deviceId);
+  // Fetch devices
+  const { data: devices = [], isLoading: devicesLoading, refetch: refetchDevices } = useQuery({
+    queryKey: ['devices'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('devices')
-        .select('device_code')
-        .eq('id', deviceId)
-        .single();
+        .select(`
+          id,
+          device_code,
+          device_name,
+          is_active,
+          status,
+          last_seen,
+          child_id,
+          children (
+            id,
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Device[];
+    },
+  });
+
+  // Fetch children with enhanced data
+  const { data: childrenData = [], isLoading: childrenLoading } = useQuery({
+    queryKey: ['dashboard-children'],
+    queryFn: async () => {
+      const childrenResult = await getChildren();
+      
+      // Enhance children with wallet and alert data
+      const enhancedChildren: ChildData[] = [];
+      
+      for (const child of childrenResult) {
+        // Get wallet data
+        let coins = 0;
+        try {
+          const wallet = await getWallet(child.id);
+          coins = wallet.coins || 0;
+        } catch (error) {
+          console.warn(`Could not load wallet for child ${child.id}`);
+        }
+
+        // Get unread alerts count
+        const { data: alertsData } = await supabase
+          .from('alerts')
+          .select('id')
+          .eq('child_id', child.id)
+          .eq('is_reviewed', false);
+
+        enhancedChildren.push({
+          ...child,
+          coins,
+          unread_alerts: alertsData?.length || 0
+        });
+      }
+
+      return enhancedChildren;
+    },
+  });
+
+  // Fetch alerts
+  const { data: alertsData = [], isLoading: alertsLoading } = useQuery({
+    queryKey: ['alerts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('alerts')
+        .select(`
+          id,
+          alert_type,
+          risk_level,
+          ai_summary,
+          flagged_at,
+          transcript_snippet,
+          confidence_score,
+          is_reviewed,
+          child_id,
+          children:children!alerts_child_id_fkey ( name )
+        `)
+        .order('flagged_at', { ascending: false })
+        .limit(10);
       
       if (error) throw error;
       
-      if (data?.device_code) {
-        console.log('Found device code:', data.device_code);
-        setActivationDeviceId(deviceId);
-        setActivationDeviceCode(data.device_code);
-        setShowActivationWizard(true);
-        clearUrlParams();
-      } else {
-        console.error('Device not found or no device code');
-        toast({
-          title: 'Device not found',
-          description: 'Could not find the device to activate.',
-          variant: 'destructive'
-        });
-      }
-    } catch (error: any) {
-      console.error('Error looking up device:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to look up device information.',
-        variant: 'destructive'
-      });
-    }
-  };
+      return data.map(alert => ({
+        ...alert,
+        child_name: (alert.children as any)?.name
+      })) as Alert[];
+    },
+  });
 
-  const clearUrlParams = () => {
-    setSearchParams(prev => {
-      const newParams = new URLSearchParams(prev);
-      newParams.delete('activate');
-      newParams.delete('device_id');
-      newParams.delete('device_code');
-      console.log('Clearing URL parameters...');
-      return newParams;
-    });
-  };
-
-  const { data: devicesData, isLoading: devicesLoading, error: devicesError, refetch: refetchDevices } = useQuery({
-    queryKey: ['devices'],
+  // Fetch parent timeline
+  const { data: timelineData = [] } = useQuery({
+    queryKey: ['parent-timeline'],
     queryFn: async () => {
-      console.log('Fetching devices...');
       try {
-        const { data, error } = await supabase
-          .from('devices')
-          .select(`
-            id,
-            device_code,
-            device_name,
-            is_active,
-            status,
-            last_seen,
-            child_id,
-            children (
-              id,
-              name
-            )
-          `)
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('Devices query error:', error);
-          throw error;
-        }
-        console.log('Devices fetched successfully:', data);
-        return data as Device[];
-      } catch (err) {
-        console.error('Error in devices query:', err);
-        throw err;
+        return await edu.parentTimeline();
+      } catch (error) {
+        console.warn('Could not load parent timeline');
+        return [];
       }
     },
   });
 
-  // Update local devices state when query data changes
+  // Update children state when data changes
   useEffect(() => {
-    if (devicesData) {
-      console.log('Updating local devices state:', devicesData);
-      setDevices(devicesData);
+    if (childrenData) {
+      setChildren(childrenData);
     }
-  }, [devicesData]);
-
-  // Add realtime subscription for device updates
-  useEffect(() => {
-    console.log('Setting up realtime subscription...');
-    const channel = supabase
-      .channel('devices-realtime')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'devices' 
-      }, (payload) => {
-        console.log('Device realtime update:', payload);
-        if (payload.new && typeof payload.new === 'object' && 'id' in payload.new) {
-          setDevices((prev) => 
-            prev.map(d => 
-              d.id === (payload.new as any).id 
-                ? { ...d, ...(payload.new as any) } 
-                : d
-            )
-          );
-        }
-      })
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up realtime subscription...');
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const { data: children = [], isLoading: childrenLoading, error: childrenError } = useQuery({
-    queryKey: ['children'],
-    queryFn: async () => {
-      console.log('Fetching children...');
-      try {
-        const result = await getChildren();
-        console.log('Children fetched successfully:', result);
-        return result;
-      } catch (err) {
-        console.error('Error fetching children:', err);
-        throw err;
-      }
-    },
-  });
-
-  const { data: alertsData = [], isLoading: alertsLoading, error: alertsError } = useQuery({
-    queryKey: ['alerts'],
-    queryFn: async () => {
-      console.log('Fetching alerts...');
-      try {
-        const { data, error } = await supabase
-          .from('alerts')
-          .select(`
-            id,
-            alert_type,
-            risk_level,
-            ai_summary,
-            flagged_at,
-            transcript_snippet,
-            confidence_score,
-            is_reviewed,
-            child_id,
-            children:children!alerts_child_id_fkey ( name )
-          `)
-          .order('flagged_at', { ascending: false })
-          .limit(10);
-        
-        if (error) {
-          console.error('Alerts query error:', error);
-          throw error;
-        }
-        
-        const result = data.map(alert => ({
-          ...alert,
-          child_name: (alert.children as any)?.name
-        })) as Alert[];
-        
-        console.log('Alerts fetched successfully:', result);
-        return result;
-      } catch (err) {
-        console.error('Error fetching alerts:', err);
-        throw err;
-      }
-    },
-  });
-
-  const { data: conversations = [], refetch: refetchConversations, isLoading: conversationsLoading, error: conversationsError } = useQuery({
-    queryKey: ['conversations'],
-    queryFn: async () => {
-      console.log('Fetching conversations...');
-      try {
-        const { data, error } = await supabase
-          .from('conversations')
-          .select(`
-            id,
-            platform,
-            session_start,
-            session_end,
-            total_messages,
-            risk_assessment,
-            child_id,
-            participants,
-            sentiment_score,
-            conversation_type,
-            transcript,
-            children:children!conversations_child_id_fkey ( name )
-          `)
-          .order('session_start', { ascending: false })
-          .limit(20);
-        
-        if (error) {
-          console.error('Conversations query error:', error);
-          throw error;
-        }
-        
-        const result = data.map(conv => ({
-          ...conv,
-          child_name: (conv.children as any)?.name || 'Unknown Child'
-        })) as ConversationData[];
-        
-        console.log('Conversations fetched successfully:', result);
-        return result;
-      } catch (err) {
-        console.error('Error fetching conversations:', err);
-        throw err;
-      }
-    },
-    enabled: children.length > 0,
-  });
+  }, [childrenData]);
 
   const handleDevicePaired = () => {
-    console.log('Device paired, refetching...');
     refetchDevices();
-  };
-
-  const handleAssignmentChanged = () => {
-    console.log('Assignment changed, refetching...');
-    refetchDevices();
-  };
-
-  const handleActivationComplete = () => {
-    console.log('Activation wizard completed');
-    setShowActivationWizard(false);
-    setActivationDeviceId('');
-    setActivationDeviceCode('');
-    
-    refetchDevices();
-    
     toast({
-      title: 'Device activated successfully!',
-      description: 'Your Guardian AI device is now protecting your family.'
+      title: 'Device paired successfully!',
+      description: 'Your new device is now connected to Guardian.'
     });
   };
 
   const handleMarkReviewed = async (alertId: string) => {
     try {
-      console.log('Marking alert as reviewed:', alertId);
       const { error } = await supabase
         .from('alerts')
         .update({ is_reviewed: true, reviewed_at: new Date().toISOString() })
         .eq('id', alertId);
       
       if (error) throw error;
-      console.log('Alert marked as reviewed successfully');
+      
+      // Refetch alerts to update the list
+      // This will be handled automatically by React Query
     } catch (error) {
       console.error('Failed to mark alert as reviewed:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to mark alert as reviewed',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -391,41 +236,8 @@ const Dashboard = () => {
     return formatDistanceToNow(new Date(device.last_seen), { addSuffix: true });
   };
 
-  // Mock insights data with proper structure
-  const mockInsights = {
-    weeklyStats: {
-      totalSessions: conversations.length,
-      positiveInteractions: conversations.filter(c => c.risk_assessment === 'low').length,
-      concerningInteractions: conversations.filter(c => c.risk_assessment === 'medium').length,
-      criticalAlerts: alertsData.filter(a => a.risk_level === 'critical').length,
-      averageSentiment: 0.65,
-    },
-    talkingPoints: [
-      "Ask Jake about his new gaming friends from last week's Minecraft session",
-      "Discuss with Lily about the positive leadership she showed in her team games",
-      "Check in on Alex's gaming time - he's been playing longer sessions recently"
-    ],
-    emotionalTrends: [
-      {
-        child: "Jake",
-        trend: "positive",
-        description: "Showing increased confidence and making new friends"
-      },
-      {
-        child: "Lily", 
-        trend: "concerning",
-        description: "Had some negative interactions that affected her mood"
-      }
-    ],
-    onlineFriends: {
-      "Jake": ["MinecraftMaster", "BlockBuilder99", "CraftingKid"],
-      "Lily": ["GamerGirl2024", "PuzzleSolver", "TeamLeader"]
-    }
-  };
-
   // Show loading state
   if (devicesLoading || childrenLoading) {
-    console.log('Showing loading state');
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-center min-h-[200px]">
@@ -438,41 +250,17 @@ const Dashboard = () => {
     );
   }
 
-  // Show error state
-  if (devicesError || childrenError) {
-    console.log('Showing error state', { devicesError, childrenError });
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-center min-h-[200px]">
-          <div className="text-center">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 font-medium">Failed to load dashboard</p>
-            <p className="text-muted-foreground text-sm mt-2">
-              {devicesError?.message || childrenError?.message || 'Unknown error occurred'}
-            </p>
-            <Button 
-              onClick={() => {
-                refetchDevices();
-              }} 
-              className="mt-4"
-            >
-              Try Again
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  console.log('Rendering dashboard content');
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Family Dashboard</h1>
+          <p className="text-muted-foreground">Monitor, educate, and reward your children's digital activities</p>
+        </div>
         <PairDeviceDialog children={children} onDevicePaired={handleDevicePaired} />
       </div>
 
+      {/* Overview Stats */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -497,7 +285,22 @@ const Dashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{children.length}</div>
             <p className="text-xs text-muted-foreground">
-              profiles created
+              {children.filter(c => c.unread_alerts && c.unread_alerts > 0).length} need attention
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Coins</CardTitle>
+            <Coins className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {children.reduce((total, child) => total + (child.coins || 0), 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              across all children
             </p>
           </CardContent>
         </Card>
@@ -509,127 +312,191 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {alertsData.filter(a => !a.is_reviewed).length}
+              {alertsData?.filter(a => !a.is_reviewed).length || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              require attention
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sessions Today</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {conversations.filter(c => {
-                const today = new Date();
-                const sessionDate = new Date(c.session_start);
-                return sessionDate.toDateString() === today.toDateString();
-              }).length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              gaming sessions
+              {alertsData?.filter(a => a.risk_level === 'critical').length || 0} critical
             </p>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="children">Children</TabsTrigger>
           <TabsTrigger value="alerts">Alerts</TabsTrigger>
-          <TabsTrigger value="conversations">Conversations</TabsTrigger>
-          <TabsTrigger value="insights">AI Insights</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Recent Devices */}
+          {/* Quick Actions */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardHeader className="text-center">
+                <GraduationCap className="h-8 w-8 mx-auto text-primary" />
+                <CardTitle className="text-lg">Education</CardTitle>
+                <CardDescription>View reading sessions and learning activities</CardDescription>
+              </CardHeader>
+            </Card>
+            
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardHeader className="text-center">
+                <Gift className="h-8 w-8 mx-auto text-primary" />
+                <CardTitle className="text-lg">Rewards</CardTitle>
+                <CardDescription>Manage coin rewards and redemptions</CardDescription>
+              </CardHeader>
+            </Card>
+            
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardHeader className="text-center">
+                <Shield className="h-8 w-8 mx-auto text-primary" />
+                <CardTitle className="text-lg">Devices</CardTitle>
+                <CardDescription>Monitor and manage connected devices</CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+
+          {/* Recent Activity Summary */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Devices</CardTitle>
-              <CardDescription>Your connected Guardian AI devices</CardDescription>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Latest events across your family's digital activities</CardDescription>
             </CardHeader>
             <CardContent>
-              {devicesLoading ? (
+              {timelineData.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No recent activity to display</p>
+              ) : (
                 <div className="space-y-3">
-                  <div className="animate-pulse h-16 bg-muted rounded"></div>
-                  <div className="animate-pulse h-16 bg-muted rounded"></div>
-                </div>
-              ) : devices && devices.length > 0 ? (
-                <div className="space-y-3">
-                  {devices.slice(0, 3).map((device) => (
-                    <div key={device.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  {timelineData.slice(0, 5).map((event: any) => (
+                    <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {event.kind === 'reading' && <BookOpen className="h-4 w-4 text-blue-500" />}
+                        {event.kind === 'learning' && <GraduationCap className="h-4 w-4 text-green-500" />}
+                        {event.kind === 'reward' && <Gift className="h-4 w-4 text-purple-500" />}
                         <div>
-                          <p className="font-medium">{device.device_name || device.device_code}</p>
+                          <p className="font-medium">{event.title}</p>
                           <p className="text-sm text-muted-foreground">
-                            {device.children ? `Assigned to ${device.children.name}` : 'Unassigned'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Last seen: {getLastSeenText(device)}
+                            {event.detail?.subject || event.detail?.pages_completed ? 
+                              `${event.detail.subject || 'Reading'} - ${event.detail.pages_completed || event.detail.duration_minutes || 0} ${event.detail.pages_completed ? 'pages' : 'minutes'}` : 
+                              'Activity completed'
+                            }
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        {getStatusBadge(device)}
-                        <DeviceChildAssignmentDialog
-                          device={device}
-                          children={children}
-                          onAssignmentChanged={handleAssignmentChanged}
-                        />
-                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
+                      </span>
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No devices paired yet</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Recent Alerts */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Alerts</CardTitle>
-              <CardDescription>Latest AI-detected incidents requiring attention</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {alertsData.length > 0 ? (
-                <div className="space-y-4">
-                  {alertsData.slice(0, 3).map((alert) => (
-                    <AlertCard
-                      key={alert.id}
-                      alert={alert}
-                      onMarkReviewed={handleMarkReviewed}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No alerts to show</p>
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
+        <TabsContent value="children" className="space-y-6">
+          {children.length === 0 ? (
+            <Card className="p-12">
+              <div className="text-center space-y-4">
+                <Users className="h-16 w-16 text-muted-foreground mx-auto" />
+                <div>
+                  <h3 className="text-lg font-medium">No children profiles found</h3>
+                  <p className="text-muted-foreground">
+                    Add a child profile to start monitoring their digital activity
+                  </p>
+                </div>
+                <Button asChild>
+                  <a href="/children">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Child Profile
+                  </a>
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {children.map((child) => (
+                <Card key={child.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={child.avatar_url} alt={child.name} />
+                          <AvatarFallback>
+                            {child.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {child.name}
+                            {child.age && (
+                              <Badge variant="outline" className="text-xs">
+                                {child.age} years old
+                              </Badge>
+                            )}
+                          </CardTitle>
+                          <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Coins className="h-3 w-3 text-yellow-500" />
+                              <span>{child.coins || 0} coins</span>
+                            </div>
+                            {child.unread_alerts && child.unread_alerts > 0 && (
+                              <div className="flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3 text-orange-500" />
+                                <span>{child.unread_alerts} alerts</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {child.unread_alerts && child.unread_alerts > 0 && (
+                        <Badge variant="destructive" className="text-xs">
+                          {child.unread_alerts}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <Button variant="outline" size="sm" asChild>
+                        <a href="/education">
+                          <GraduationCap className="h-4 w-4 mr-1" />
+                          Education
+                        </a>
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <a href="/rewards">
+                          <Gift className="h-4 w-4 mr-1" />
+                          Rewards
+                        </a>
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Monitor
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
         <TabsContent value="alerts" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Security Alerts</h2>
-            <Badge variant="outline">
-              {alertsData.filter(a => !a.is_reviewed).length} unreviewed
-            </Badge>
-          </div>
-          
-          {alertsData.length > 0 ? (
+          {alertsData.length === 0 ? (
+            <Card className="p-12">
+              <div className="text-center space-y-4">
+                <Shield className="h-16 w-16 text-green-500 mx-auto" />
+                <div>
+                  <h3 className="text-lg font-medium">All Clear!</h3>
+                  <p className="text-muted-foreground">
+                    No alerts detected. Your children are safely browsing.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ) : (
             <div className="space-y-4">
               {alertsData.map((alert) => (
                 <AlertCard
@@ -639,116 +506,47 @@ const Dashboard = () => {
                 />
               ))}
             </div>
-          ) : (
-            <Card>
-              <CardContent className="text-center py-8">
-                <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No alerts to show</p>
-              </CardContent>
-            </Card>
           )}
         </TabsContent>
 
-        <TabsContent value="conversations" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Gaming Conversations</h2>
-            <Badge variant="outline">
-              {conversations.length} total sessions
-            </Badge>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Sessions</CardTitle>
-                <CardDescription>Latest gaming conversations monitored</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {conversations.length > 0 ? (
-                  <div className="space-y-3">
-                    {conversations.slice(0, 10).map((conversation) => (
-                      <div
-                        key={conversation.id}
-                        className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
-                        onClick={() => setSelectedConversation(conversation)}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <MessageSquare className="h-4 w-4 text-primary" />
-                          <div>
-                            <p className="font-medium">{conversation.platform}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {conversation.child_name} • {conversation.total_messages} messages
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={
-                            conversation.risk_assessment === 'critical' ? 'destructive' :
-                            conversation.risk_assessment === 'high' ? 'destructive' :
-                            conversation.risk_assessment === 'medium' ? 'secondary' : 'outline'
-                          }>
-                            {conversation.risk_assessment}
-                          </Badge>
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {formatDistanceToNow(new Date(conversation.session_start), { addSuffix: true })}
-                          </div>
-                        </div>
+        <TabsContent value="timeline" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Family Timeline</CardTitle>
+              <CardDescription>Complete history of education, rewards, and activities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {timelineData.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No timeline events yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {timelineData.map((event: any) => (
+                    <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                      <div className="flex-shrink-0 mt-1">
+                        {event.kind === 'reading' && <BookOpen className="h-4 w-4 text-blue-500" />}
+                        {event.kind === 'learning' && <GraduationCap className="h-4 w-4 text-green-500" />}
+                        {event.kind === 'reward' && <Gift className="h-4 w-4 text-purple-500" />}
+                        {event.kind === 'system' && <Shield className="h-4 w-4 text-gray-500" />}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No conversations to show</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {selectedConversation && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
-                    Conversation Details
-                  </CardTitle>
-                  <CardDescription>
-                    {selectedConversation.platform} session with {selectedConversation.child_name}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ConversationViewer 
-                    conversation={selectedConversation}
-                    childName={selectedConversation.child_name || 'Unknown'}
-                    onClose={() => setSelectedConversation(null)}
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="insights" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">AI Insights</h2>
-            <Badge variant="outline">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Weekly Summary
-            </Badge>
-          </div>
-          
-          <AIInsightCards insights={mockInsights} />
+                      <div className="flex-1">
+                        <p className="font-medium">{event.title}</p>
+                        {event.detail && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {JSON.stringify(event.detail, null, 2)}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Activation Wizard */}
-      <ActivationWizard
-        deviceId={activationDeviceId}
-        deviceCode={activationDeviceCode}
-        isOpen={showActivationWizard}
-        onClose={handleActivationComplete}
-      />
     </div>
   );
 };
