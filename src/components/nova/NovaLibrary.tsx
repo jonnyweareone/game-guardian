@@ -19,36 +19,82 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
   const [ageFilter, setAgeFilter] = useState<string>('all');
   const [subjectFilter, setSubjectFilter] = useState<string>('all');
 
-  // Load curriculum books
-  const { data: curriculumBooks = [], isLoading: loadingCurriculum } = useQuery({
-    queryKey: ['nova-curriculum-books'],
+  // Fetch child data to get their key stage
+  const { data: child } = useQuery({
+    queryKey: ['child', childId],
     queryFn: async () => {
       const { data, error } = await supabase
+        .from('children')
+        .select('id, dob, name')
+        .eq('id', childId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Get child's key stage from education profile
+  const { data: educationProfile } = useQuery({
+    queryKey: ['education-profile', childId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('education_profiles')
+        .select('*')
+        .eq('child_id', childId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!childId,
+  });
+
+  // Load curriculum books filtered by child's key stage
+  const { data: curriculumBooks = [], isLoading: loadingCurriculum } = useQuery({
+    queryKey: ['nova-curriculum-books', educationProfile?.key_stage],
+    queryFn: async () => {
+      let query = supabase
         .from('books')
         .select('*')
         .eq('category', 'curriculum')
         .order('title')
         .limit(10);
 
+      // Filter by key stage if available
+      if (educationProfile?.key_stage) {
+        query = query.eq('ks', educationProfile.key_stage);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
+    enabled: !!educationProfile,
   });
 
-  // Load fiction books
+  // Load fiction books filtered by child's age range
   const { data: fictionBooks = [], isLoading: loadingFiction } = useQuery({
-    queryKey: ['nova-fiction-books'],
+    queryKey: ['nova-fiction-books', child?.dob],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('books')
         .select('*')
         .eq('category', 'fiction')
         .order('title')
         .limit(10);
 
+      // Filter by age if child's DOB is available
+      if (child?.dob) {
+        const age = new Date().getFullYear() - new Date(child.dob).getFullYear();
+        query = query.lte('age_min', age).gte('age_max', age);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
+    enabled: !!child,
   });
 
   // Load all books for search
@@ -74,7 +120,12 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
       }
 
       if (subjectFilter !== 'all') {
-        query = query.eq('subject', subjectFilter);
+        // Use 'ks' column for key stage filtering, 'subject' for others
+        if (subjectFilter.startsWith('KS')) {
+          query = query.eq('ks', subjectFilter);
+        } else {
+          query = query.eq('subject', subjectFilter);
+        }
       }
 
       const { data, error } = await query;
@@ -265,7 +316,9 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
             <Card>
               <CardContent className="py-8 text-center">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No curriculum books available yet.</p>
+                <p className="text-muted-foreground">
+                  No curriculum books available for {educationProfile?.key_stage || 'this key stage'} yet.
+                </p>
               </CardContent>
             </Card>
           ) : (
@@ -286,7 +339,9 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
             <Card>
               <CardContent className="py-8 text-center">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No fiction books available yet.</p>
+                <p className="text-muted-foreground">
+                  No fiction books available for {child?.name || 'this child'}'s age yet.
+                </p>
               </CardContent>
             </Card>
           ) : (
