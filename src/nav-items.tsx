@@ -1,4 +1,4 @@
-import { HomeIcon, ShieldIcon, Users, Settings, Smartphone, ShoppingBag, UserCheck, FileText, Briefcase, Megaphone, BookOpen, Package, GraduationCap } from "lucide-react";
+import { HomeIcon, ShieldIcon, Users, Settings, Smartphone, ShoppingBag, UserCheck, FileText, Briefcase, Megaphone, BookOpen, Package, GraduationCap, Gift } from "lucide-react";
 
 import Index from "./pages/Index";
 import HomePage from "./pages/HomePage";
@@ -25,6 +25,7 @@ import AppStore from "./pages/AppStore";
 import HomeworkHelper from "./pages/HomeworkHelper";
 import GuardianNova from "./pages/GuardianNova";
 import Education from "./pages/Education";
+import Rewards from "./pages/Rewards";
 
 export interface NavItem {
   title: string;
@@ -83,6 +84,13 @@ export const navItems: NavItem[] = [
     to: "/education",
     icon: <GraduationCap className="h-4 w-4" />,
     page: <Education />,
+    requiresAuth: true,
+  },
+  {
+    title: "Rewards",
+    to: "/rewards",
+    icon: <Gift className="h-4 w-4" />,
+    page: <Rewards />,
     requiresAuth: true,
   },
   {

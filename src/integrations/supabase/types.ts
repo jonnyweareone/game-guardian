@@ -1992,6 +1992,36 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_rewards: {
+        Row: {
+          active: boolean
+          coin_cost: number
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          parent_user_id: string
+        }
+        Insert: {
+          active?: boolean
+          coin_cost: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          parent_user_id: string
+        }
+        Update: {
+          active?: boolean
+          coin_cost?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          parent_user_id?: string
+        }
+        Relationships: []
+      }
       pending_requests: {
         Row: {
           app_id: string
@@ -2123,6 +2153,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reward_redemptions: {
+        Row: {
+          child_id: string
+          coins_spent: number | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          note: string | null
+          reward_id: string
+          status: Database["public"]["Enums"]["reward_status"]
+        }
+        Insert: {
+          child_id: string
+          coins_spent?: number | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string | null
+          reward_id: string
+          status?: Database["public"]["Enums"]["reward_status"]
+        }
+        Update: {
+          child_id?: string
+          coins_spent?: number | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string | null
+          reward_id?: string
+          status?: Database["public"]["Enums"]["reward_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_redemptions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "parent_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schools: {
         Row: {
@@ -2379,6 +2474,46 @@ export type Database = {
         }
         Relationships: []
       }
+      wallets: {
+        Row: {
+          child_id: string
+          coins: number
+          updated_at: string | null
+        }
+        Insert: {
+          child_id: string
+          coins?: number
+          updated_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          coins?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallets_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallets_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "wallets_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       webauthn_challenges: {
         Row: {
           challenge: string
@@ -2611,6 +2746,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      decide_reward: {
+        Args: {
+          p_approve: boolean
+          p_decided_by: string
+          p_note?: string
+          p_redemption: string
+        }
+        Returns: {
+          coins_left: number
+          ok: boolean
+        }[]
+      }
+      ensure_wallet: {
+        Args: { p_child: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2629,6 +2780,10 @@ export type Database = {
       mark_devices_offline_if_stale: {
         Args: { grace_seconds: number }
         Returns: undefined
+      }
+      request_reward: {
+        Args: { p_child: string; p_note?: string; p_reward: string }
+        Returns: string
       }
       rpc_assign_child_to_device: {
         Args: { _child: string; _device: string; _is_active?: boolean }
@@ -2684,6 +2839,7 @@ export type Database = {
       device_kind: "os" | "mobile"
       platform_type: "linux-desktop" | "linux-mobile" | "android" | "web-pwa"
       release_channel_type: "stable" | "beta" | "alpha" | "nightly"
+      reward_status: "requested" | "approved" | "rejected" | "fulfilled"
       risk_level: "low" | "medium" | "high" | "critical"
       rule_action: "allow" | "block" | "timebox"
     }
@@ -2833,6 +2989,7 @@ export const Constants = {
       device_kind: ["os", "mobile"],
       platform_type: ["linux-desktop", "linux-mobile", "android", "web-pwa"],
       release_channel_type: ["stable", "beta", "alpha", "nightly"],
+      reward_status: ["requested", "approved", "rejected", "fulfilled"],
       risk_level: ["low", "medium", "high", "critical"],
       rule_action: ["allow", "block", "timebox"],
     },
