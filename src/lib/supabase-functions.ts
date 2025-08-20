@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface FunctionResponse<T = any> {
@@ -39,3 +38,15 @@ export async function invokeEdgeFunction<T = any>(
     return { data: null, error };
   }
 }
+
+export const ingestBook = async (sourceUrl: string, bookId?: string) => {
+  const { data, error } = await supabase.functions.invoke('book-ingest', {
+    body: { 
+      source_url: sourceUrl,
+      book_id: bookId 
+    }
+  });
+
+  if (error) throw error;
+  return data;
+};
