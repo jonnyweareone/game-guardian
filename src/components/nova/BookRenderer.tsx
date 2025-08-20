@@ -244,12 +244,12 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
       </Card>
 
       {/* Text-to-speech player */}
-      {currentPageData && (
+      {currentPageData && book && (
         <TextToSpeechPlayer
-          text={currentPageData.content}
-          isPlaying={isPlaying}
-          onPlayingChange={setIsPlaying}
-          voiceSpans={currentPageData.voice_spans}
+          bookId={bookId}
+          bookTitle={book.title}
+          bookContent={currentPageData.content}
+          onProgressUpdate={onProgressUpdate ? (progress) => onProgressUpdate(currentPage, progress) : undefined}
         />
       )}
 
