@@ -61,7 +61,10 @@ export function NovaShelf({ childId }: NovaShelfProps) {
   };
 
   const handleContinueReading = (item: any) => {
-    navigate(`/nova-reader/${item.books?.id || item.book_id}?child=${childId}`);
+    // Set active child in sessionStorage
+    sessionStorage.setItem('nova_active_child', childId);
+    
+    navigate(`/novalearning/reading/${item.books?.id || item.book_id}`);
   };
 
   if (isLoading) {

@@ -175,8 +175,11 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
           started_at: new Date().toISOString(),
         });
 
+      // Set active child in sessionStorage
+      sessionStorage.setItem('nova_active_child', childId);
+      
       // Navigate to reader
-      navigate(`/nova-reader/${book.id}?child=${childId}`);
+      navigate(`/novalearning/reading/${book.id}`);
     } catch (error) {
       console.error('Error starting reading:', error);
     }
