@@ -612,12 +612,17 @@ export type Database = {
       book_pages: {
         Row: {
           book_id: string
+          chapter_index: number | null
+          chapter_title: string | null
           content: string
           created_at: string
           id: string
+          illustration_caption: string | null
+          illustration_inline_at: number | null
           illustration_prompt: string | null
           illustration_url: string | null
           image_url: string | null
+          is_front_matter: boolean
           page_index: number
           tokens: Json | null
           tts_segments: Json | null
@@ -625,12 +630,17 @@ export type Database = {
         }
         Insert: {
           book_id: string
+          chapter_index?: number | null
+          chapter_title?: string | null
           content: string
           created_at?: string
           id?: string
+          illustration_caption?: string | null
+          illustration_inline_at?: number | null
           illustration_prompt?: string | null
           illustration_url?: string | null
           image_url?: string | null
+          is_front_matter?: boolean
           page_index: number
           tokens?: Json | null
           tts_segments?: Json | null
@@ -638,12 +648,17 @@ export type Database = {
         }
         Update: {
           book_id?: string
+          chapter_index?: number | null
+          chapter_title?: string | null
           content?: string
           created_at?: string
           id?: string
+          illustration_caption?: string | null
+          illustration_inline_at?: number | null
           illustration_prompt?: string | null
           illustration_url?: string | null
           image_url?: string | null
+          is_front_matter?: boolean
           page_index?: number
           tokens?: Json | null
           tts_segments?: Json | null

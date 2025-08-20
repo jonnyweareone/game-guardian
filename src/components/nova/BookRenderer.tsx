@@ -4,8 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Loader2 } from 'lucide-react';
-import { TextToSpeechPlayer } from './TextToSpeechPlayer';
+import { ChevronLeft, ChevronRight, RotateCcw, Loader2, BookOpen } from 'lucide-react';
+import { PageContent } from './PageContent';
+import ReadToMeDock from './ReadToMeDock';
+import { useNovaSignals } from '@/hooks/useNovaSignals';
 
 interface BookRendererProps {
   bookId: string;
@@ -18,8 +20,11 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
   const [currentPage, setCurrentPage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [visitedChapters, setVisitedChapters] = useState(new Set<number>());
+  const [currentTokenIndex, setCurrentTokenIndex] = useState<number | undefined>();
+  const [showFrontMatter, setShowFrontMatter] = useState(false);
   const queryClient = useQueryClient();
+  
+  const { isListening, startListening, stopListening } = useNovaSignals(childId);
 
   // Load book details
   const { data: book, isLoading: bookLoading } = useQuery({
@@ -36,8 +41,8 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
     },
   });
 
-  // Load book pages
-  const { data: pages, isLoading: pagesLoading, refetch: refetchPages } = useQuery({
+  // Load book pages (filter front matter by default)
+  const { data: allPages, isLoading: pagesLoading, refetch: refetchPages } = useQuery({
     queryKey: ['book-pages', bookId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -49,24 +54,11 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
       if (error) throw error;
       return data || [];
     },
-    refetchInterval: book && !book.ingested ? 5000 : false, // Poll if not ingested
+    refetchInterval: book && !book.ingested ? 5000 : false,
   });
 
-  // Load book chapters
-  const { data: chapters } = useQuery({
-    queryKey: ['book-chapters', bookId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('book_chapters')
-        .select('*')
-        .eq('book_id', bookId)
-        .order('chapter_index');
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!bookId,
-  });
+  // Filter pages based on front matter setting
+  const pages = allPages?.filter(page => showFrontMatter || !page.is_front_matter) || [];
 
   // Create reading session mutation
   const createSessionMutation = useMutation({
@@ -89,7 +81,7 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
     },
   });
 
-  // Update session on unmount or page change
+  // Update session on page change
   const updateSessionMutation = useMutation({
     mutationFn: async ({ sessionId, currentLocator, totalSeconds }: {
       sessionId: string;
@@ -109,20 +101,16 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
     },
   });
 
-  // Ensure slot 2 generation mutation
-  const ensureSlot2Mutation = useMutation({
-    mutationFn: async ({ bookId, chapterIndex }: { bookId: string; chapterIndex: number }) => {
-      const { data, error } = await supabase.functions.invoke('nova-illustrations-ensure-slot2', {
-        body: { book_id: bookId, chapter_index: chapterIndex }
-      });
+  // Handle reader mount/unmount for listening state
+  useEffect(() => {
+    if (bookId && childId) {
+      startListening(bookId);
       
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      console.log('Slot 2 generation queued:', data);
-    },
-  });
+      return () => {
+        stopListening();
+      };
+    }
+  }, [bookId, childId]);
 
   // Create session on component mount
   useEffect(() => {
@@ -141,30 +129,10 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
     }
   }, [sessionId, currentPage]);
 
-  // Trigger slot 2 generation when entering a new chapter
-  useEffect(() => {
-    if (chapters && pages && currentPage < pages.length) {
-      // Find which chapter this page belongs to
-      const currentChapter = chapters.find(ch => 
-        currentPage >= (ch.first_page_index || 0) && 
-        currentPage <= (ch.last_page_index || pages.length - 1)
-      );
-
-      if (currentChapter && !visitedChapters.has(currentChapter.chapter_index)) {
-        setVisitedChapters(prev => new Set([...prev, currentChapter.chapter_index]));
-        
-        // Queue slot 2 generation for this chapter
-        ensureSlot2Mutation.mutate({
-          bookId,
-          chapterIndex: currentChapter.chapter_index
-        });
-      }
-    }
-  }, [currentPage, chapters, pages, bookId]);
-
   const handlePageChange = useCallback((newPage: number) => {
     if (pages && newPage >= 0 && newPage < pages.length) {
       setCurrentPage(newPage);
+      setCurrentTokenIndex(undefined); // Reset token highlighting
       onProgressUpdate?.(newPage, ((newPage + 1) / pages.length) * 100);
     }
   }, [pages, onProgressUpdate]);
@@ -176,146 +144,177 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
   const handleRestart = useCallback(() => {
     setCurrentPage(0);
     setIsPlaying(false);
+    setCurrentTokenIndex(undefined);
   }, []);
 
   // Show loading state
   if (bookLoading || pagesLoading) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardContent className="p-8 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading book...</p>
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading book...</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   // Show message if book not ingested yet
   if (book && !book.ingested) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardContent className="p-8 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Preparing your book...</h3>
-          <p className="text-muted-foreground">
-            We're getting "{book.title}" ready for you. This usually takes just a minute or two.
-          </p>
-          <Button 
-            variant="outline" 
-            onClick={() => refetchPages()} 
-            className="mt-4"
-          >
-            Check Again
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Preparing your book...</h3>
+            <p className="text-muted-foreground">
+              We're getting "{book.title}" ready for you. This usually takes just a minute or two.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => refetchPages()} 
+              className="mt-4"
+            >
+              Check Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   // Show message if no pages available yet
   if (!pages || pages.length === 0) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardContent className="p-8 text-center">
-          <div className="text-muted-foreground mb-4">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-              📚
+      <div className="w-full max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="text-muted-foreground mb-4">
+              <BookOpen className="w-16 h-16 mx-auto mb-4" />
             </div>
-          </div>
-          <h3 className="text-lg font-semibold mb-2">No pages available yet</h3>
-          <p className="text-muted-foreground mb-4">
-            This book is still being processed. Please try again in a few moments.
-          </p>
-          <Button variant="outline" onClick={() => refetchPages()}>
-            Refresh
-          </Button>
-        </CardContent>
-      </Card>
+            {allPages?.length === 0 ? (
+              <>
+                <h3 className="text-lg font-semibold mb-2">No pages available yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  This book is still being processed. Please try again in a few moments.
+                </p>
+                <Button variant="outline" onClick={() => refetchPages()}>
+                  Refresh
+                </Button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-semibold mb-2">Only front matter available</h3>
+                <p className="text-muted-foreground mb-4">
+                  This book contains only introductory content. Would you like to view it?
+                </p>
+                <Button variant="outline" onClick={() => setShowFrontMatter(true)}>
+                  Show Front Matter
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   const currentPageData = pages[currentPage];
+  const hasChapters = allPages?.some(p => p.chapter_index !== null);
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* Header with controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 0}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          
-          <span className="text-sm text-muted-foreground">
-            Page {currentPage + 1} of {pages.length}
-          </span>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === pages.length - 1}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+    <div className="w-full max-w-4xl mx-auto space-y-6 pb-24">
+      {/* Sticky top navigation bar */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <span className="text-sm font-medium">
+              Page {currentPage + 1} of {pages.length}
+            </span>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === pages.length - 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRestart}
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
+            {currentPageData?.chapter_title && (
+              <span className="text-sm text-muted-foreground">
+                • {currentPageData.chapter_title}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {hasChapters && (
+              <Button variant="outline" size="sm">
+                📑 Chapters
+              </Button>
+            )}
+            
+            {allPages?.some(p => p.is_front_matter) && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowFrontMatter(!showFrontMatter)}
+              >
+                {showFrontMatter ? 'Hide' : 'Show'} Front Matter
+              </Button>
+            )}
+            
+            <Button variant="outline" size="sm" onClick={handleRestart}>
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Main content */}
-      <Card>
-        <CardContent className="p-8">
-          {/* Show illustration if available */}
-          {currentPageData?.illustration_url && (
-            <div className="mb-6 text-center">
-              <img 
-                src={currentPageData.illustration_url} 
-                alt={currentPageData.illustration_prompt || "Chapter illustration"}
-                className="max-w-full h-auto rounded-lg shadow-md mx-auto max-h-64"
-              />
-            </div>
-          )}
-          
-          <div className="prose prose-lg max-w-none">
-            {currentPageData?.content.split('\n').map((paragraph, index) => (
-              <p key={index} className="mb-4 leading-relaxed">
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Text-to-speech player */}
-      {currentPageData && book && (
-        <TextToSpeechPlayer
-          bookId={bookId}
-          bookTitle={book.title}
-          bookContent={currentPageData.content}
-          onProgressUpdate={onProgressUpdate ? (progress) => onProgressUpdate(currentPage, progress) : undefined}
+      {/* Main content area - remove card wrapper for cleaner look */}
+      <div className="px-4">
+        <PageContent
+          content={currentPageData?.content || ''}
+          tokens={currentPageData?.tokens || []}
+          illustration_url={currentPageData?.illustration_url}
+          illustration_caption={currentPageData?.illustration_caption}
+          illustration_inline_at={currentPageData?.illustration_inline_at}
+          currentTokenIndex={currentTokenIndex}
+          className="mx-auto"
         />
-      )}
+      </div>
 
       {/* Progress indicator */}
-      <div className="w-full bg-muted rounded-full h-2">
+      <div className="w-full bg-muted rounded-full h-1 mx-4">
         <div
-          className="bg-primary h-2 rounded-full transition-all duration-300"
+          className="bg-primary h-1 rounded-full transition-all duration-300"
           style={{ width: `${((currentPage + 1) / pages.length) * 100}%` }}
         />
       </div>
+
+      {/* Read to Me dock - always rendered at bottom */}
+      <ReadToMeDock
+        bookTitle={book?.title}
+        isPlaying={isPlaying}
+        onPlay={handlePlayPause}
+        onPause={handlePlayPause}
+        onStop={() => setIsPlaying(false)}
+        progress={currentPage}
+        duration={pages.length - 1}
+        onSeek={(position) => handlePageChange(Math.round(position))}
+      />
     </div>
   );
 }

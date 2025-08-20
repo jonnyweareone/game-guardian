@@ -1,91 +1,106 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-
-interface NovaState {
-  isListening: boolean;
-  currentBook?: {
-    id: string;
-    title?: string;
-  };
-}
+import { toast } from 'sonner';
 
 export function useNovaSignals(childId: string) {
-  const [state, setState] = useState<NovaState>({
-    isListening: false,
-    currentBook: undefined,
-  });
-  const { toast } = useToast();
+  const [isListening, setIsListening] = useState(false);
+  const [currentBookId, setCurrentBookId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!childId) return;
 
-    // Subscribe to Nova signals for this child
-    const channel = supabase.channel(`nova_child_${childId}`);
-
-    channel
+    // Subscribe to real-time events for this child
+    const channel = supabase.channel(`nova_child_${childId}`)
       .on('broadcast', { event: 'nova' }, ({ payload }) => {
-        if (payload.type === 'listening_on') {
-          setState({
-            isListening: true,
-            currentBook: {
-              id: payload.book_id,
-              title: payload.title,
-            },
-          });
-          toast({
-            title: "Listening started",
-            description: `Nova is now listening for "${payload.title || 'Current book'}"`,
-          });
-        } else if (payload.type === 'listening_off') {
-          setState({
-            isListening: false,
-            currentBook: undefined,
-          });
-          toast({
-            title: "Listening stopped",
-            description: "Nova has stopped listening",
-          });
-        } else if (payload.type === 'progress') {
-          // Optional: Handle progress updates
-          console.log('Reading progress:', payload.progress);
+        console.log('Nova signal received:', payload);
+        
+        switch (payload.type) {
+          case 'listening_on':
+            toast.success('AI Listening started');
+            setIsListening(true);
+            setCurrentBookId(payload.book_id || null);
+            break;
+          case 'listening_off':
+            toast.info('AI Listening stopped');
+            setIsListening(false);
+            setCurrentBookId(null);
+            break;
+          default:
+            console.log('Unknown nova signal:', payload.type);
         }
       })
       .subscribe();
 
-    // Load initial listening state (using any cast until types refresh)
-    (supabase as any)
-      .from('child_listening_state')
-      .select('*')
-      .eq('child_id', childId)
-      .single()
-      .then(({ data }: any) => {
-        if (data?.is_listening && data.book_id) {
-          // Load book title
-          supabase
-            .from('books')
-            .select('title')
-            .eq('id', data.book_id)
-            .single()
-            .then(({ data: book }) => {
-              setState({
-                isListening: true,
-                currentBook: {
-                  id: data.book_id,
-                  title: book?.title,
-                },
-              });
-            });
+    // Load initial listening state
+    const loadListeningState = async () => {
+      try {
+        const { data } = await supabase
+          .from('child_listening_state')
+          .select('is_listening, book_id')
+          .eq('child_id', childId)
+          .single();
+        
+        if (data) {
+          setIsListening(data.is_listening);
+          setCurrentBookId(data.book_id);
         }
-      })
-      .catch((error: any) => {
-        console.log('Listening state table not ready yet:', error);
-      });
+      } catch (error) {
+        console.error('Failed to load listening state:', error);
+      }
+    };
+
+    loadListeningState();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [childId, toast]);
+  }, [childId]);
 
-  return state;
+  const startListening = async (bookId: string) => {
+    try {
+      await supabase.from('child_listening_state').upsert({
+        child_id: childId,
+        is_listening: true,
+        book_id: bookId,
+        updated_at: new Date().toISOString()
+      });
+
+      supabase.channel(`nova_child_${childId}`).send({
+        type: 'broadcast',
+        event: 'nova',
+        payload: { type: 'listening_on', child_id: childId, book_id: bookId }
+      });
+    } catch (error) {
+      console.error('Failed to start listening:', error);
+      toast.error('Failed to start AI listening');
+    }
+  };
+
+  const stopListening = async () => {
+    try {
+      await supabase.from('child_listening_state').upsert({
+        child_id: childId,
+        is_listening: false,
+        book_id: null,
+        updated_at: new Date().toISOString()
+      });
+
+      supabase.channel(`nova_child_${childId}`).send({
+        type: 'broadcast',
+        event: 'nova',
+        payload: { type: 'listening_off', child_id: childId }
+      });
+    } catch (error) {
+      console.error('Failed to stop listening:', error);
+      toast.error('Failed to stop AI listening');
+    }
+  };
+
+  return {
+    isListening,
+    currentBookId,
+    startListening,
+    stopListening
+  };
 }
