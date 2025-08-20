@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { navItems } from "./nav-items";
 import { AuthProvider } from "@/hooks/useAuth";
 import AuthGuard from "@/components/AuthGuard";
+import AdminRoute from "@/components/AdminRoute";
 import DocsRoutes from "@/pages/docs/routes";
 import Navigation from "@/components/Navigation";
 
@@ -81,9 +82,9 @@ const App = () => (
                     element={
                       <AuthGuard requireAuth={requiresAuth}>
                         {requiresAdmin ? (
-                          <AuthGuard requireAuth={true}>
+                          <AdminRoute>
                             {page}
-                          </AuthGuard>
+                          </AdminRoute>
                         ) : (
                           page
                         )}

@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Menu, Shield, User, LogOut, Settings, Home, BookOpen, Package, Zap, Users, Gift } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 
 const Navigation = () => {
@@ -13,6 +14,7 @@ const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
 
   // Hide navigation on Nova Learning routes (child experience)
   const isNovaRoute = location.pathname.startsWith('/novalearning');
@@ -62,23 +64,38 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             {user ? (
-              protectedNavItems.map((item) => {
-                const Icon = item.icon;
-                return (
+              <>
+                {protectedNavItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive(item.href)
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                     >
+                       <Icon className="h-4 w-4" />
+                       {item.label}
+                     </Link>
+                  );
+                })}
+                {isAdmin && (
                   <Link
-                    key={item.href}
-                    to={item.href}
+                    to="/admin"
                     className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive(item.href)
+                      isActive('/admin')
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
-                   >
-                     <Icon className="h-4 w-4" />
-                     {item.label}
-                   </Link>
-                );
-              })
+                  >
+                    <Settings className="h-4 w-4" />
+                    Admin
+                  </Link>
+                )}
+              </>
             ) : (
               publicNavItems.map((item) => {
                 const Icon = item.icon;
@@ -134,24 +151,40 @@ const Navigation = () => {
               <SheetContent side="right" className="w-80">
                 <div className="flex flex-col gap-4 mt-8">
                   {user ? (
-                    protectedNavItems.map((item) => {
-                      const Icon = item.icon;
-                      return (
+                    <>
+                      {protectedNavItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            to={item.href}
+                            onClick={() => setMobileOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                              isActive(item.href)
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                            }`}
+                           >
+                             <Icon className="h-4 w-4" />
+                             {item.label}
+                           </Link>
+                        );
+                      })}
+                      {isAdmin && (
                         <Link
-                          key={item.href}
-                          to={item.href}
+                          to="/admin"
                           onClick={() => setMobileOpen(false)}
                           className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                            isActive(item.href)
+                            isActive('/admin')
                               ? 'bg-primary text-primary-foreground'
                               : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                           }`}
-                         >
-                           <Icon className="h-4 w-4" />
-                           {item.label}
-                         </Link>
-                      );
-                    })
+                        >
+                          <Settings className="h-4 w-4" />
+                          Admin
+                        </Link>
+                      )}
+                    </>
                   ) : (
                     publicNavItems.map((item) => {
                       const Icon = item.icon;
