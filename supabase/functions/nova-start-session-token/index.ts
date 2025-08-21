@@ -63,6 +63,28 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Log start event and ensure bookshelf entry
+    const { error: startTimelineError } = await supabase
+      .from('child_reading_timeline')
+      .insert({ child_id: childId, book_id: bookId, session_id: session.id, event_type: 'started' });
+    if (startTimelineError) {
+      console.error('Error logging start event:', startTimelineError);
+    }
+
+    const { error: shelfError } = await supabase
+      .from('child_bookshelf')
+      .upsert({
+        child_id: childId,
+        book_id: bookId,
+        status: 'reading',
+        progress: 0,
+        started_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'child_id,book_id' });
+    if (shelfError) {
+      console.error('Error upserting bookshelf:', shelfError);
+    }
+
     // Update listening state
     const { error: listenError } = await supabase
       .from('child_listening_state')
@@ -79,12 +101,16 @@ Deno.serve(async (req) => {
       console.error('Error updating listening state:', listenError);
     }
 
-    // Broadcast listening state change
-    await supabase.channel('nova').send({
-      type: 'broadcast',
-      event: 'listening_started',
-      payload: { child_id: childId, book_id: bookId, session_id: session.id }
-    });
+    // Broadcast listening state change for this child
+    try {
+      await supabase.channel(`nova_child_${childId}`).send({
+        type: 'broadcast',
+        event: 'nova',
+        payload: { type: 'listening_on', child_id: childId, book_id: bookId, session_id: session.id }
+      });
+    } catch (e) {
+      console.error('Broadcast error:', e);
+    }
 
     return new Response(
       JSON.stringify({

@@ -79,12 +79,64 @@ Deno.serve(async (req) => {
       console.error('Error updating listening state:', listenError);
     }
 
-    // Broadcast listening state change
-    await supabase.channel('nova').send({
-      type: 'broadcast',
-      event: 'listening_stopped',
-      payload: { child_id: childId, session_id: sessionId }
-    });
+    // Compute duration and update session total_seconds
+    try {
+      const startedAt = session?.started_at ? new Date(session.started_at as string) : null;
+      const endedAt = session?.ended_at ? new Date(session.ended_at as string) : new Date();
+      if (startedAt) {
+        const totalSeconds = Math.max(0, Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000));
+        const { error: updateDurationError } = await supabase
+          .from('child_reading_sessions')
+          .update({ total_seconds: totalSeconds })
+          .eq('id', sessionId);
+        if (updateDurationError) {
+          console.error('Error updating total_seconds:', updateDurationError);
+        }
+      }
+    } catch (e) {
+      console.error('Error computing duration:', e);
+    }
+
+    // Update bookshelf progress if provided
+    try {
+      if (typeof progress === 'number' && session?.book_id) {
+        const pct = Number(progress) || 0;
+        await supabase.from('child_bookshelf').upsert({
+          child_id: childId,
+          book_id: session.book_id,
+          status: pct >= 100 ? 'finished' : 'reading',
+          progress: pct,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'child_id,book_id' });
+      }
+    } catch (e) {
+      console.error('Error updating bookshelf:', e);
+    }
+
+    // Log finished event
+    try {
+      if (session?.book_id) {
+        await supabase.from('child_reading_timeline').insert({
+          child_id: childId,
+          book_id: session.book_id,
+          session_id: sessionId,
+          event_type: 'finished'
+        });
+      }
+    } catch (e) {
+      console.error('Error logging finished event:', e);
+    }
+
+    // Broadcast listening state change (new channel for UI)
+    try {
+      await supabase.channel(`nova_child_${childId}`).send({
+        type: 'broadcast',
+        event: 'nova',
+        payload: { type: 'listening_off', child_id: childId, session_id: sessionId }
+      });
+    } catch (e) {
+      console.error('Broadcast error:', e);
+    }
 
     return new Response(
       JSON.stringify({

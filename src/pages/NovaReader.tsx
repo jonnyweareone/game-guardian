@@ -25,6 +25,7 @@ export default function NovaReader() {
   const [isSessionLoading, setIsSessionLoading] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
   const [voiceActive, setVoiceActive] = useState(false);
+  const [transcript, setTranscript] = useState('');
   
   // Token mode: uses different hooks and edge functions
   const isTokenMode = !!token;
@@ -116,7 +117,7 @@ export default function NovaReader() {
       if (isTokenMode && token) {
         navigate(`/novalearning?token=${token}`);
       } else {
-        navigate('/nova-learning');
+        navigate('/novalearning');
       }
     },
     onError: (error) => {
@@ -168,7 +169,7 @@ export default function NovaReader() {
     } else {
       stopListening();
       setVoiceActive(false);
-      navigate('/nova-learning');
+      navigate('/novalearning');
     }
   };
 
@@ -257,6 +258,7 @@ export default function NovaReader() {
             token={token}
             sessionId={sessionId}
             paused={!!overlayState}
+            transcript={transcript}
             onProgressUpdate={(page, percent) => {
               console.log(`Reading progress: page ${page + 1}, ${percent.toFixed(1)}%`);
               setCurrentProgress(percent);
@@ -285,8 +287,9 @@ export default function NovaReader() {
             onSpeakingChange={(speaking) => {
               console.log('AI speaking:', speaking);
             }}
-            onTranscriptUpdate={(transcript) => {
-              console.log('AI transcript:', transcript);
+            onTranscriptUpdate={(t) => {
+              console.log('AI transcript:', t);
+              setTranscript(t);
             }}
           />
           <WordHunt

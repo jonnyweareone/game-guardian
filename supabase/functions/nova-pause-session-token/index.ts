@@ -78,13 +78,18 @@ Deno.serve(async (req) => {
       console.error('Failed to log pause event:', timelineError);
     }
 
-    // Broadcast listening stopped event
+    // Broadcast events on both legacy and new channels
     const channelName = `child_listening:${child_id}`;
     try {
       await supabase.channel(channelName).send({
         type: 'broadcast',
         event: 'listening_stopped',
         payload: { child_id, book_id, session_id: sessionId, reason: 'paused' }
+      });
+      await supabase.channel(`nova_child_${child_id}`).send({
+        type: 'broadcast',
+        event: 'nova',
+        payload: { type: 'listening_off', child_id, book_id, session_id: sessionId, reason: 'paused' }
       });
     } catch (broadcastError) {
       console.error('Failed to broadcast pause event:', broadcastError);

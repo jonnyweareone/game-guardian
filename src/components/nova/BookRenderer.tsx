@@ -16,6 +16,7 @@ interface BookRendererProps {
   token?: string | null;
   sessionId?: string | null;
   paused?: boolean;
+  transcript?: string;
   onProgressUpdate?: (page: number, readPercent: number) => void;
   onCoinsAwarded?: (coins: number) => void;
   onSessionCreated?: (sessionId: string) => void;
@@ -28,6 +29,7 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
   token, 
   sessionId: externalSessionId, 
   paused = false,
+  transcript,
   onProgressUpdate, 
   onCoinsAwarded, 
   onSessionCreated, 
@@ -350,6 +352,20 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
       parsedTokens = [];
     }
   }
+
+  // Highlight follow-along based on transcript last word
+  useEffect(() => {
+    if (!transcript || paused) return;
+    try {
+      const words = transcript.trim().split(/\s+/);
+      const last = (words[words.length - 1] || '').toLowerCase().replace(/[^a-z0-9']/gi, '');
+      if (!last) return;
+      const idx = parsedTokens.findIndex((t: any) => String(t?.text || '').toLowerCase().replace(/[^a-z0-9']/gi, '') === last);
+      if (idx >= 0) setCurrentTokenIndex(idx);
+    } catch (e) {
+      // ignore
+    }
+  }, [transcript, paused, parsedTokens]);
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 pb-24">

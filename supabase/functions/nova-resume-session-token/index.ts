@@ -78,13 +78,18 @@ Deno.serve(async (req) => {
       console.error('Failed to log resume event:', timelineError);
     }
 
-    // Broadcast listening started event
+    // Broadcast events on both legacy and new channels
     const channelName = `child_listening:${child_id}`;
     try {
       await supabase.channel(channelName).send({
         type: 'broadcast',
         event: 'listening_started',
         payload: { child_id, book_id, session_id: sessionId, reason: 'resumed' }
+      });
+      await supabase.channel(`nova_child_${child_id}`).send({
+        type: 'broadcast',
+        event: 'nova',
+        payload: { type: 'listening_on', child_id, book_id, session_id: sessionId, reason: 'resumed' }
       });
     } catch (broadcastError) {
       console.error('Failed to broadcast resume event:', broadcastError);
