@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BookOpen, RefreshCw, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { BookOpen, RefreshCw, Clock, CheckCircle, XCircle, Loader2, Play } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminBooksIngest() {
@@ -104,6 +104,36 @@ export default function AdminBooksIngest() {
     },
   });
 
+  // Trigger job worker mutation
+  const runWorkerMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('nova-job-worker', {
+        body: {}
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Job worker triggered successfully');
+      queryClient.invalidateQueries({ queryKey: ['nova-jobs'] });
+    },
+    onError: (error) => {
+      console.error('Worker error:', error);
+      toast.error(error.message || 'Failed to trigger job worker');
+    },
+  });
+
+  // Auto-trigger worker when there are queued jobs
+  useEffect(() => {
+    const queuedJobs = jobs?.filter(job => job.status === 'queued') || [];
+    
+    if (queuedJobs.length > 0 && !runWorkerMutation.isPending) {
+      console.log(`Found ${queuedJobs.length} queued jobs, triggering worker...`);
+      runWorkerMutation.mutate();
+    }
+  }, [jobs, runWorkerMutation.isPending]);
+
   const handleAddBook = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBookUrl.trim() || !newBookTitle.trim()) {
@@ -132,16 +162,30 @@ export default function AdminBooksIngest() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Books & Ingestion Management</h1>
-        <Button
-          variant="outline"
-          onClick={() => {
-            queryClient.invalidateQueries({ queryKey: ['admin-books'] });
-            queryClient.invalidateQueries({ queryKey: ['nova-jobs'] });
-          }}
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => runWorkerMutation.mutate()}
+            disabled={runWorkerMutation.isPending}
+          >
+            {runWorkerMutation.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4 mr-2" />
+            )}
+            Run Worker
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['admin-books'] });
+              queryClient.invalidateQueries({ queryKey: ['nova-jobs'] });
+            }}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Add new book */}
