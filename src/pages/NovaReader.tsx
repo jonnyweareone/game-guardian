@@ -5,251 +5,129 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BookRenderer } from '@/components/nova/BookRenderer';
 import { NovaCoach } from '@/components/nova/NovaCoach';
-import RealtimeVoiceInterface from '@/components/nova/RealtimeVoiceInterface';
-import { WordHunt } from '@/components/nova/games/WordHunt';
 import { CoinsDisplay } from '@/components/nova/CoinsDisplay';
 import { SessionOverlay } from '@/components/nova/SessionOverlay';
 import { useNovaSignals } from '@/hooks/useNovaSignals';
-import { useNovaListening } from '@/hooks/useNovaListening';
-import { startNovaSession, recordPageTurn, stopNovaSession, NovaSessionIDs } from '@/lib/novaSession';
 import StartReadingOverlay from '@/components/nova/StartReadingOverlay';
+import { SafeBoundary } from '@/components/common/SafeBoundary';
 import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
+type NovaSession = { id: string; childId: string; bookId: string };
 
 export default function NovaReader() {
   const { bookId } = useParams<{ bookId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const childId = searchParams.get('child') || '';
-  const urlToken = searchParams.get('token');
-  
-  // Fall back to sessionStorage if token not in URL
-  const effectiveToken = urlToken || sessionStorage.getItem('nova_token');
-  const isTokenMode = !!effectiveToken;
-  
-  console.log('NovaReader initialized:', { 
-    bookId, 
-    childId, 
-    hasUrlToken: !!urlToken, 
-    hasStorageToken: !!sessionStorage.getItem('nova_token'),
-    isTokenMode 
-  });
+
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [currentPageContent, setCurrentPageContent] = useState<string>('');
+  const [hasStarted, setHasStarted] = useState(false);
   const [overlayState, setOverlayState] = useState<'start' | 'paused' | 'ending' | null>('start');
   const [isSessionLoading, setIsSessionLoading] = useState(false);
-  const [currentProgress, setCurrentProgress] = useState(0);
-  const [voiceActive, setVoiceActive] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [novaIds, setNovaIds] = useState<NovaSessionIDs | null>(null);
-  const [hasStarted, setHasStarted] = useState(false);
-  
-  // Initialize AI listening for this reading session
+
+  // Token mode (if present)
+  const urlToken = searchParams.get('token');
+  const effectiveToken = urlToken || sessionStorage.getItem('nova_token');
+  const isTokenMode = !!effectiveToken;
+
+  // Signals (unconditional hook call — safe)
   const { startListening, stopListening } = useNovaSignals(childId, isTokenMode);
   
-  // Nova listening hook (always called, gates internally)
-  const listeningEnabled = import.meta.env.VITE_NOVA_LISTENING_ENABLED === 'true';
-  useNovaListening(novaIds?.childId || '', novaIds?.bookId || '', hasStarted && listeningEnabled);
-  
-  // Session management mutations
-  const createTokenSessionMutation = useMutation({
-    mutationFn: async () => {
-      if (!effectiveToken || !bookId) throw new Error('Token and bookId required');
-      
-      const { data, error } = await supabase.functions.invoke('nova-start-session-token', {
-        body: { token: effectiveToken, bookId }
-      });
-      
-      if (error) throw error;
-      console.log('Token session created:', data);
-      return data;
-    },
-    onSuccess: (data) => {
-      console.log('Token session created:', data.session_id);
-      setSessionId(data.session_id);
-      setOverlayState(null);
-      setVoiceActive(true);
-    },
-    onError: (error) => {
-      console.error('Failed to create token session:', error);
-      setIsSessionLoading(false);
-    },
-  });
-
-  const pauseSessionMutation = useMutation({
-    mutationFn: async () => {
-      if (!effectiveToken || !sessionId) throw new Error('Token and sessionId required');
-      
-      const { data, error } = await supabase.functions.invoke('nova-pause-session-token', {
-        body: { token: effectiveToken, sessionId }
-      });
-      
-      if (error) throw error;
-      console.log('Session paused:', data);
-      return data;
-    },
-    onSuccess: () => {
-      setOverlayState('paused');
-      setIsSessionLoading(false);
-      setVoiceActive(false);
-    },
-    onError: (error) => {
-      console.error('Failed to pause session:', error);
-      setIsSessionLoading(false);
-    },
-  });
-
-  const resumeSessionMutation = useMutation({
-    mutationFn: async () => {
-      if (!effectiveToken || !sessionId) throw new Error('Token and sessionId required');
-      
-      const { data, error } = await supabase.functions.invoke('nova-resume-session-token', {
-        body: { token: effectiveToken, sessionId }
-      });
-      
-      if (error) throw error;
-      console.log('Session resumed:', data);
-      return data;
-    },
-    onSuccess: () => {
-      setOverlayState(null);
-      setIsSessionLoading(false);
-      setVoiceActive(true);
-    },
-    onError: (error) => {
-      console.error('Failed to resume session:', error);
-      setIsSessionLoading(false);
-    },
-  });
-
-  const endSessionMutation = useMutation({
-    mutationFn: async () => {
-      if (!effectiveToken || !sessionId) throw new Error('Token and sessionId required');
-      
-      const { data, error } = await supabase.functions.invoke('nova-end-session-token', {
-        body: { token: effectiveToken, sessionId, progress: currentProgress }
-      });
-      
-      if (error) throw error;
-      console.log('Session ended:', data);
-      return data;
-    },
-    onSuccess: () => {
-      setVoiceActive(false);
-      
-      // Navigate back to /novalearning with token
-      const tokenParam = effectiveToken ? `?token=${effectiveToken}` : '';
-      navigate(`/novalearning${tokenParam}`);
-    },
-    onError: (error) => {
-      console.error('Failed to end session:', error);
-      setIsSessionLoading(false);
-    },
-  });
-
-  // Start reading handler (only called when user clicks the button)
-  const onStartReading = async () => {
-    try {
-      const ids = await startNovaSession(childId, bookId);
-      setNovaIds(ids);
-      setSessionId(ids.sessionId);
-      setHasStarted(true);
-      console.log('Nova session started:', ids.sessionId);
-    } catch (error) {
-      console.error('Failed to start Nova session:', error);
-    }
-  };
-
-  // Stop session on unmount (only if started)
-  useEffect(() => {
-    return () => {
-      if (novaIds && hasStarted) {
-        stopNovaSession(novaIds, currentProgress);
-      }
-    };
-  }, [novaIds, hasStarted, currentProgress]);
-
-  // Session control handlers
-  const handleStartSession = () => {
-    setIsSessionLoading(true);
-    if (isTokenMode) {
-      createTokenSessionMutation.mutate();
-    } else {
-      startListening(bookId);
-      setOverlayState(null);
-      setIsSessionLoading(false);
-      setVoiceActive(true);
-    }
-  };
-
-  const handlePauseSession = () => {
-    setIsSessionLoading(true);
-    if (isTokenMode) {
-      pauseSessionMutation.mutate();
-    } else {
-      // For normal mode, just show overlay
-      setOverlayState('paused');
-      setIsSessionLoading(false);
-      setVoiceActive(false);
-    }
-  };
-
-  const handleResumeSession = () => {
-    setIsSessionLoading(true);
-    if (isTokenMode) {
-      resumeSessionMutation.mutate();
-    } else {
-      setOverlayState(null);
-      setIsSessionLoading(false);
-      setVoiceActive(true);
-    }
-  };
-
-  const handleEndSession = () => {
-    setIsSessionLoading(true);
-    if (isTokenMode) {
-      endSessionMutation.mutate();
-    } else {
-      stopListening();
-      setVoiceActive(false);
-      
-      // Navigate back to /novalearning with token
-      const tokenParam = effectiveToken ? `?token=${effectiveToken}` : '';
-      navigate(`/novalearning${tokenParam}`);
-    }
-  };
-
-  // Load book to show title in header
+  // Book details (unchanged)
   const { data: book, isLoading } = useQuery({
-    queryKey: ['book-header', bookId],
+    queryKey: ['book', bookId],
     queryFn: async () => {
       if (!bookId) return null;
-      const { data, error } = await supabase
-        .from('books')
-        .select('title, author')
-        .eq('id', bookId)
-        .single();
-      
+      const { data, error } = await supabase.from('books').select('*').eq('id', bookId).maybeSingle();
       if (error) throw error;
       return data;
     },
     enabled: !!bookId,
   });
 
-  if (!bookId || !childId) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Invalid Reader URL</h1>
-          <p className="text-muted-foreground">Book ID and child ID are required.</p>
-        </div>
-      </div>
-    );
-  }
+  // Start session — only on click
+  const handleStartSession = async () => {
+    if (!childId || !bookId) return;
+    setIsSessionLoading(true);
+
+    if (isTokenMode) {
+      const { data, error } = await supabase.functions
+        .invoke('nova-start-session-token', { body: { token: effectiveToken, bookId, childId } });
+      if (!error && data?.sessionId) {
+        setSessionId(data.sessionId);
+        setHasStarted(true);
+        setOverlayState(null);
+        setIsSessionLoading(false);
+      } else {
+        console.error('Failed to start (token):', error);
+        setIsSessionLoading(false);
+      }
+    } else {
+      const { data, error } = await supabase
+        .from('child_reading_sessions')
+        .insert({ child_id: childId, book_id: bookId })
+        .select('id').single();
+      if (!error && data) {
+        setSessionId(data.id);
+        setHasStarted(true);
+        setOverlayState(null);
+        setIsSessionLoading(false);
+        await supabase.from('child_bookshelf')
+          .upsert({ child_id: childId, book_id: bookId, status: 'reading', progress: 0 });
+      } else {
+        console.error('Failed to start session:', error);
+        setIsSessionLoading(false);
+      }
+    }
+
+    // Mic/listening only after start
+    try { await startListening(bookId); } catch {}
+  };
+
+  const handlePauseSession = async () => {
+    setIsSessionLoading(true);
+    if (isTokenMode && sessionId) {
+      await supabase.functions.invoke('nova-pause-session-token', { body: { token: effectiveToken, sessionId } });
+    }
+    await stopListening();
+    setOverlayState('paused');
+    setIsSessionLoading(false);
+  };
+
+  const handleResumeSession = async () => {
+    setIsSessionLoading(true);
+    if (isTokenMode && sessionId) {
+      await supabase.functions.invoke('nova-resume-session-token', { body: { token: effectiveToken, sessionId } });
+    }
+    await startListening(bookId!);
+    setOverlayState(null);
+    setIsSessionLoading(false);
+  };
+
+  const handleEndSession = async () => {
+    setIsSessionLoading(true);
+    try {
+      if (isTokenMode && sessionId) {
+        await supabase.functions.invoke('nova-end-session-token', { body: { token: effectiveToken, sessionId } });
+      } else if (sessionId) {
+        await supabase.functions.invoke('nova-end-session', { body: { session_id: sessionId } });
+        await supabase.from('child_bookshelf')
+          .upsert({ child_id: childId, book_id: bookId, status: 'finished', progress: 100 });
+      }
+    } finally {
+      await stopListening();
+      setOverlayState('ending');
+      setHasStarted(false);
+      setSessionId(null);
+      setIsSessionLoading(false);
+    }
+  };
+
+  if (!bookId) return null;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Session Overlay */}
+      {/* Overlay controller */}
       {overlayState && (
         <SessionOverlay
           state={overlayState}
@@ -268,94 +146,42 @@ export default function NovaReader() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold">
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading...
-                  </div>
-                ) : (
-                  book?.title || 'Nova Reader'
-                )}
+                {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Loading…</> : (book?.title || 'Reader')}
               </h1>
-              {book?.author && (
-                <p className="text-sm text-muted-foreground">by {book.author}</p>
-              )}
+              <p className="text-xs text-muted-foreground">{book?.author}</p>
             </div>
-            {sessionId && !overlayState && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handlePauseSession}
-                disabled={isSessionLoading}
-              >
-                Pause Session
-              </Button>
-            )}
+            <CoinsDisplay childId={childId} />
           </div>
         </div>
       </header>
 
-      {/* Main content with sidebar */}
-      <div className="flex">
-        <main className="flex-1 container mx-auto px-4 py-6">
-          <BookRenderer
-            bookId={bookId}
-            childId={childId}
-            token={effectiveToken}
-            sessionId={sessionId}
-            paused={!!overlayState}
-            transcript={transcript}
-            onProgressUpdate={(page, percent) => {
-              console.log(`Reading progress: page ${page + 1}, ${percent.toFixed(1)}%`);
-              setCurrentProgress(percent);
-            }}
-            onCoinsAwarded={(coins) => {
-              console.log(`Awarded ${coins} coins for reading`);
-            }}
-            onSessionCreated={(newSessionId) => {
-              setSessionId(newSessionId);
-            }}
-            onPageChange={(content, pageIndex) => {
-              setCurrentPageContent(content);
-              // Record page turn for Nova session
-              if (novaIds && content) {
-                recordPageTurn(novaIds, pageIndex || 0, content);
-              }
-            }}
-          />
-        </main>
-        
-        {/* AI Sidebar */}
-        <aside className="w-80 border-l bg-muted/20 p-4 space-y-4">
-          <CoinsDisplay childId={childId} />
-          <RealtimeVoiceInterface
-            sessionId={sessionId}
-            childId={childId}
-            bookId={bookId}
-            active={voiceActive}
-            showControls={false}
-            onSpeakingChange={(speaking) => {
-              console.log('AI speaking:', speaking);
-            }}
-            onTranscriptUpdate={(t) => {
-              console.log('AI transcript:', t);
-              setTranscript(t);
-            }}
-          />
-          <WordHunt
-            pageText={currentPageContent}
-            childId={childId}
-            bookId={bookId}
-          />
-          <NovaCoach
-            sessionId={sessionId || ''}
-            childId={childId}
-          />
+      {/* Main */}
+      <div className="container mx-auto p-4 grid gap-6 lg:grid-cols-4">
+        <div className="lg:col-span-3">
+          <SafeBoundary>
+            {/* Mount the heavy subtree only AFTER start */}
+            {hasStarted && sessionId && (
+              <BookRenderer
+                bookId={bookId}
+                childId={childId}
+                sessionId={sessionId}
+                onPageChange={(content, pageIndex) => {
+                  // Page turn → insights + timeline handled inside BookRenderer already
+                }}
+                onProgressUpdate={() => {}}
+                onCoinsAwarded={() => {}}
+              />
+            )}
+          </SafeBoundary>
+        </div>
+
+        <aside className="space-y-6">
+          <NovaCoach sessionId={sessionId || ''} childId={childId} />
         </aside>
       </div>
 
-      {/* Show overlay until the user opts in */}
-      {!hasStarted && <StartReadingOverlay onStart={onStartReading} />}
+      {/* Don't allow anything to mount until start */}
+      {!hasStarted && <StartReadingOverlay onStart={handleStartSession} />}
     </div>
   );
 }
