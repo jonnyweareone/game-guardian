@@ -197,7 +197,7 @@
         q:'A pyramid with a square base has how many faces?',
         choices:['4','5 ✅','6'], correct:1
       }},
-      { name:'King's Chamber', x: ORIGIN.x-6, y: ORIGIN.y+12, z: ORIGIN.z-8, quiz:{
+      { name:"King's Chamber", x: ORIGIN.x-6, y: ORIGIN.y+12, z: ORIGIN.z-8, quiz:{
         q:'3/4 is equal to how many quarters?',
         choices:['2','3 ✅','4'], correct:1
       }},
