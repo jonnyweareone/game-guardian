@@ -15,9 +15,10 @@ interface BookRendererProps {
   childId: string;
   onProgressUpdate?: (page: number, readPercent: number) => void;
   onCoinsAwarded?: (coins: number) => void;
+  onSessionCreated?: (sessionId: string) => void;
 }
 
-export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded }: BookRendererProps) {
+export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded, onSessionCreated }: BookRendererProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -96,6 +97,7 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
     },
     onSuccess: (session) => {
       setSessionId(session.id);
+      onSessionCreated?.(session.id);
       console.log('Reading session created:', session.id);
     },
   });
@@ -138,15 +140,37 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
     }
   }, [bookId, childId]);
 
-  // Update session when page changes
+  // Update session when page changes and generate insights
   useEffect(() => {
     if (sessionId && pages && pages.length > 0) {
       updateSessionMutation.mutate({
         sessionId,
         currentLocator: `page-${currentPage}`,
       });
+
+      // Generate insights for this page (debounced)
+      const timer = setTimeout(async () => {
+        const pageContent = pages[currentPage]?.content;
+        if (pageContent && pageContent.length > 50) { // Only for substantial content
+          try {
+            await supabase.functions.invoke('nova-generate-insights', {
+              body: {
+                session_id: sessionId,
+                child_id: childId,
+                book_id: bookId,
+                text_content: pageContent
+              }
+            });
+            console.log('Generated insights for page', currentPage);
+          } catch (error) {
+            console.error('Error generating insights:', error);
+          }
+        }
+      }, 2000);
+
+      return () => clearTimeout(timer);
     }
-  }, [sessionId, currentPage]);
+  }, [sessionId, currentPage, pages, childId, bookId]);
 
   const handlePageChange = useCallback((newPage: number) => {
     if (pages && newPage >= 0 && newPage < pages.length) {

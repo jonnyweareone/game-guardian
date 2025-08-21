@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,43 +8,35 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('Nova Generate Insights function called');
-  
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { session_id, child_id, book_id, text_content } = await req.json();
-    
+
     if (!session_id || !child_id || !book_id || !text_content) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }), 
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Missing required parameters: session_id, child_id, book_id, text_content');
     }
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      console.error('OPENAI_API_KEY not found');
-      return new Response(
-        JSON.stringify({ error: 'OpenAI API key not configured' }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not configured');
     }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log('Generating AI insights for text:', text_content.substring(0, 100) + '...');
+    console.log('Generating insights for session:', session_id);
 
-    // Generate AI insights using OpenAI
+    // Call OpenAI to generate insights
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -52,115 +44,109 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are Nova, an AI reading coach for children. Analyze the text and provide educational insights. 
-            
-            Respond with a JSON object containing:
-            - summary: Brief summary of what happened in this text chunk
-            - difficulty_level: "easy", "medium", or "challenging" 
-            - key_points: Array of 2-3 important learning points
-            - comprehension_questions: Array of 1-2 age-appropriate questions
-            - problem_words: Array of difficult words with their phonetics, syllables, and hints
-            
-            Focus on helping children understand and learn from what they're reading.`
+            content: `You are an AI reading coach for children. Analyze the provided text and generate educational insights in JSON format:
+{
+  "summary": "Brief summary of the text (2-3 sentences)",
+  "difficulty": "easy|medium|hard",
+  "key_points": ["list", "of", "3-5", "key", "learning", "points"],
+  "comprehension_questions": ["question1", "question2", "question3"],
+  "problem_words": [
+    {"word": "difficult_word", "difficulty": 1-5, "definition": "simple explanation"}
+  ]
+}`
           },
           {
             role: 'user',
-            content: `Analyze this text for a child reader: "${text_content}"`
+            content: `Analyze this text from a children's book:\n\n${text_content}`
           }
         ],
-        max_tokens: 1000,
         temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
-      console.error('OpenAI API error:', await response.text());
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate insights' }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const errorText = await response.text();
+      throw new Error(`OpenAI API error: ${errorText}`);
     }
 
-    const aiResponse = await response.json();
-    console.log('Received AI response');
+    const data = await response.json();
+    const aiResponse = data.choices[0].message.content;
 
-    let analysisData;
+    console.log('AI Response:', aiResponse);
+
+    // Parse the JSON response
+    let insights;
     try {
-      analysisData = JSON.parse(aiResponse.choices[0].message.content);
-    } catch (error) {
-      console.error('Failed to parse AI response as JSON:', error);
-      // Fallback to basic analysis
-      analysisData = {
-        summary: aiResponse.choices[0].message.content.substring(0, 200),
-        difficulty_level: 'medium',
-        key_points: ['Continue reading to learn more!'],
-        comprehension_questions: ['What do you think will happen next?'],
+      insights = JSON.parse(aiResponse);
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError);
+      // Fallback with basic insights
+      insights = {
+        summary: 'Reading progress recorded',
+        difficulty: 'medium',
+        key_points: ['Continue reading', 'Ask questions if needed'],
+        comprehension_questions: [],
         problem_words: []
       };
     }
 
-    // Insert insights into nova_insights table
-    const { error: insightsError } = await supabase
+    // Insert insights into database
+    const { error: insightError } = await supabase
       .from('nova_insights')
       .insert({
         session_id,
         child_id,
         book_id,
         scope: 'chunk',
-        ai_summary: analysisData.summary || 'Reading analysis complete',
-        difficulty_level: analysisData.difficulty_level || 'medium',
-        key_points: analysisData.key_points || [],
-        comprehension_questions: analysisData.comprehension_questions || [],
-        emotional_tone: 'positive',
-        reading_level_assessment: `Suitable for current reading level`
+        ai_summary: insights.summary,
+        difficulty_level: insights.difficulty,
+        key_points: insights.key_points,
+        comprehension_questions: insights.comprehension_questions,
+        created_at: new Date().toISOString()
       });
 
-    if (insightsError) {
-      console.error('Error inserting insights:', insightsError);
-    } else {
-      console.log('Successfully inserted Nova insights');
+    if (insightError) {
+      console.error('Error inserting insights:', insightError);
+      throw new Error(`Database error: ${insightError.message}`);
     }
 
-    // Insert problem words if any
-    if (analysisData.problem_words && Array.isArray(analysisData.problem_words)) {
-      for (const word of analysisData.problem_words) {
-        if (typeof word === 'object' && word.word) {
-          const { error: wordError } = await supabase
-            .from('nova_problem_words')
-            .insert({
-              session_id,
-              child_id,
-              word: word.word,
-              phonetics: word.phonetics || '',
-              syllables: word.syllables || [word.word],
-              sounds: word.sounds || [],
-              difficulty_reason: word.reason || 'Complex word',
-              hints: word.hints || ['Break it down into smaller parts'],
-              definition: word.definition || ''
-            });
+    // Insert problem words
+    for (const word of (insights.problem_words || [])) {
+      const { error: wordError } = await supabase
+        .from('nova_problem_words')
+        .insert({
+          session_id,
+          child_id,
+          book_id,
+          word: word.word,
+          context: text_content.substring(0, 100),
+          difficulty_level: word.difficulty || 2,
+          definition: word.definition,
+          created_at: new Date().toISOString()
+        });
 
-          if (wordError) {
-            console.error('Error inserting problem word:', wordError);
-          }
-        }
+      if (wordError) {
+        console.warn('Error inserting problem word:', wordError);
       }
-      console.log(`Inserted ${analysisData.problem_words.length} problem words`);
     }
+
+    console.log('Insights generated successfully');
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        insights: analysisData,
-        message: 'AI insights generated successfully'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, insights }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
 
   } catch (error) {
     console.error('Error in nova-generate-insights:', error);
     return new Response(
-      JSON.stringify({ error: error.message }), 
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
   }
 });

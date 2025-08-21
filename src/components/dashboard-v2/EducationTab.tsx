@@ -61,6 +61,25 @@ export default function EducationTab({ childId, childAge = 7, hint = '' }: Props
     refetchInterval: 20000, // light polling so Libre/OS links show up shortly
   });
 
+  // Reading insights query
+  const readingInsightsQ = useQuery({
+    queryKey: ['reading-insights', childId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nova_insights')
+        .select(`
+          *,
+          books!nova_insights_book_id_fkey(title, author)
+        `)
+        .eq('child_id', childId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   // 2) Mutations
   const saveProfileM = useMutation({
     mutationFn: (body:any)=> edu.saveProfile(childId, body),
@@ -211,6 +230,56 @@ export default function EducationTab({ childId, childAge = 7, hint = '' }: Props
           <Button disabled={selectedInterests.length<3} onClick={()=>setInterestsM.mutate(selectedInterests)}>
             Save Interests
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Reading & Summary */}
+      <Card>
+        <CardHeader><CardTitle>Reading & Summary</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="text-xs text-muted-foreground">AI-generated reading insights and summaries from Nova sessions.</div>
+          <div className="space-y-3">
+            {(readingInsightsQ.data ?? []).map((insight: any) => (
+              <div key={insight.id} className="border rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-medium text-sm">
+                    {insight.books?.title || 'Unknown Book'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(insight.created_at).toLocaleDateString()}
+                  </span>
+                  {insight.difficulty_level && (
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      insight.difficulty_level === 'easy' ? 'bg-green-100 text-green-800' :
+                      insight.difficulty_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {insight.difficulty_level}
+                    </span>
+                  )}
+                </div>
+                
+                {insight.ai_summary && (
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {insight.ai_summary}
+                  </p>
+                )}
+                
+                {insight.key_points && insight.key_points.length > 0 && (
+                  <div className="text-xs">
+                    <span className="font-medium">Key points: </span>
+                    {insight.key_points.slice(0, 2).join(', ')}
+                    {insight.key_points.length > 2 && '...'}
+                  </div>
+                )}
+              </div>
+            ))}
+            {!readingInsightsQ.data?.length && (
+              <div className="text-xs text-muted-foreground">
+                No reading insights yet. Start reading with Nova to see AI-generated summaries here!
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

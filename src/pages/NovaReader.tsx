@@ -4,12 +4,15 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BookRenderer } from '@/components/nova/BookRenderer';
+import { NovaCoach } from '@/components/nova/NovaCoach';
+import RealtimeVoiceInterface from '@/components/nova/RealtimeVoiceInterface';
 import { Loader2 } from 'lucide-react';
 
 export default function NovaReader() {
   const { bookId } = useParams<{ bookId: string }>();
   const [searchParams] = useSearchParams();
   const childId = searchParams.get('child') || '';
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // Load book to show title in header
   const { data: book, isLoading } = useQuery({
@@ -64,19 +67,43 @@ export default function NovaReader() {
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="container mx-auto px-4 py-6">
-        <BookRenderer
-          bookId={bookId}
-          childId={childId}
-          onProgressUpdate={(page, percent) => {
-            console.log(`Reading progress: page ${page + 1}, ${percent.toFixed(1)}%`);
-          }}
-          onCoinsAwarded={(coins) => {
-            console.log(`Awarded ${coins} coins for reading`);
-          }}
-        />
-      </main>
+      {/* Main content with sidebar */}
+      <div className="flex">
+        <main className="flex-1 container mx-auto px-4 py-6">
+          <BookRenderer
+            bookId={bookId}
+            childId={childId}
+            onProgressUpdate={(page, percent) => {
+              console.log(`Reading progress: page ${page + 1}, ${percent.toFixed(1)}%`);
+            }}
+            onCoinsAwarded={(coins) => {
+              console.log(`Awarded ${coins} coins for reading`);
+            }}
+            onSessionCreated={(newSessionId) => {
+              setSessionId(newSessionId);
+            }}
+          />
+        </main>
+        
+        {/* AI Sidebar */}
+        <aside className="w-80 border-l bg-muted/20 p-4 space-y-4">
+          <RealtimeVoiceInterface
+            sessionId={sessionId}
+            childId={childId}
+            bookId={bookId}
+            onSpeakingChange={(speaking) => {
+              console.log('AI speaking:', speaking);
+            }}
+            onTranscriptUpdate={(transcript) => {
+              console.log('AI transcript:', transcript);
+            }}
+          />
+          <NovaCoach
+            sessionId={sessionId || ''}
+            childId={childId}
+          />
+        </aside>
+      </div>
     </div>
   );
 }

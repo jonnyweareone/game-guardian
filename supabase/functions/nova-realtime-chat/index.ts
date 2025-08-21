@@ -133,9 +133,11 @@ serve(async (req) => {
                 session_id: currentSessionId,
                 child_id: currentChildId,
                 book_id: currentBookId,
-                type: 'achievement',
-                content: `Earned ${args.points} coins: ${args.reason}`,
-                confidence: 1.0,
+                scope: 'session',
+                ai_summary: `Earned ${args.points} coins: ${args.reason}`,
+                key_points: [args.reason],
+                comprehension_questions: [],
+                difficulty_level: 'easy',
                 created_at: new Date().toISOString()
               });
             }
