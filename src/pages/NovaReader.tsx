@@ -18,7 +18,19 @@ export default function NovaReader() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const childId = searchParams.get('child') || '';
-  const token = searchParams.get('token');
+  const urlToken = searchParams.get('token');
+  
+  // Fall back to sessionStorage if token not in URL
+  const effectiveToken = urlToken || sessionStorage.getItem('nova_token');
+  const isTokenMode = !!effectiveToken;
+  
+  console.log('NovaReader initialized:', { 
+    bookId, 
+    childId, 
+    hasUrlToken: !!urlToken, 
+    hasStorageToken: !!sessionStorage.getItem('nova_token'),
+    isTokenMode 
+  });
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentPageContent, setCurrentPageContent] = useState<string>('');
   const [overlayState, setOverlayState] = useState<'start' | 'paused' | 'ending' | null>('start');
@@ -27,22 +39,20 @@ export default function NovaReader() {
   const [voiceActive, setVoiceActive] = useState(false);
   const [transcript, setTranscript] = useState('');
   
-  // Token mode: uses different hooks and edge functions
-  const isTokenMode = !!token;
-  
   // Initialize AI listening for this reading session
   const { startListening, stopListening } = useNovaSignals(childId, isTokenMode);
   
   // Session management mutations
   const createTokenSessionMutation = useMutation({
     mutationFn: async () => {
-      if (!token || !bookId) throw new Error('Token and bookId required');
+      if (!effectiveToken || !bookId) throw new Error('Token and bookId required');
       
       const { data, error } = await supabase.functions.invoke('nova-start-session-token', {
-        body: { token, bookId }
+        body: { token: effectiveToken, bookId }
       });
       
       if (error) throw error;
+      console.log('Token session created:', data);
       return data;
     },
     onSuccess: (data) => {
@@ -59,13 +69,14 @@ export default function NovaReader() {
 
   const pauseSessionMutation = useMutation({
     mutationFn: async () => {
-      if (!token || !sessionId) throw new Error('Token and sessionId required');
+      if (!effectiveToken || !sessionId) throw new Error('Token and sessionId required');
       
       const { data, error } = await supabase.functions.invoke('nova-pause-session-token', {
-        body: { token, sessionId }
+        body: { token: effectiveToken, sessionId }
       });
       
       if (error) throw error;
+      console.log('Session paused:', data);
       return data;
     },
     onSuccess: () => {
@@ -81,13 +92,14 @@ export default function NovaReader() {
 
   const resumeSessionMutation = useMutation({
     mutationFn: async () => {
-      if (!token || !sessionId) throw new Error('Token and sessionId required');
+      if (!effectiveToken || !sessionId) throw new Error('Token and sessionId required');
       
       const { data, error } = await supabase.functions.invoke('nova-resume-session-token', {
-        body: { token, sessionId }
+        body: { token: effectiveToken, sessionId }
       });
       
       if (error) throw error;
+      console.log('Session resumed:', data);
       return data;
     },
     onSuccess: () => {
@@ -103,22 +115,22 @@ export default function NovaReader() {
 
   const endSessionMutation = useMutation({
     mutationFn: async () => {
-      if (!token || !sessionId) throw new Error('Token and sessionId required');
+      if (!effectiveToken || !sessionId) throw new Error('Token and sessionId required');
       
       const { data, error } = await supabase.functions.invoke('nova-end-session-token', {
-        body: { token, sessionId, progress: currentProgress }
+        body: { token: effectiveToken, sessionId, progress: currentProgress }
       });
       
       if (error) throw error;
+      console.log('Session ended:', data);
       return data;
     },
     onSuccess: () => {
       setVoiceActive(false);
-      if (isTokenMode && token) {
-        navigate(`/novalearning?token=${token}`);
-      } else {
-        navigate('/novalearning');
-      }
+      
+      // Navigate back to /novalearning with token
+      const tokenParam = effectiveToken ? `?token=${effectiveToken}` : '';
+      navigate(`/novalearning${tokenParam}`);
     },
     onError: (error) => {
       console.error('Failed to end session:', error);
@@ -169,7 +181,10 @@ export default function NovaReader() {
     } else {
       stopListening();
       setVoiceActive(false);
-      navigate('/novalearning');
+      
+      // Navigate back to /novalearning with token
+      const tokenParam = effectiveToken ? `?token=${effectiveToken}` : '';
+      navigate(`/novalearning${tokenParam}`);
     }
   };
 
@@ -255,7 +270,7 @@ export default function NovaReader() {
           <BookRenderer
             bookId={bookId}
             childId={childId}
-            token={token}
+            token={effectiveToken}
             sessionId={sessionId}
             paused={!!overlayState}
             transcript={transcript}

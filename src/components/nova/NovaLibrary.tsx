@@ -183,8 +183,12 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
       sessionStorage.setItem('nova_active_child', childId);
       sessionStorage.setItem('nova-active-child', childId);
       
-      // Navigate to reader with child ID
-      navigate(`/novalearning/reading/${book.id}?child=${childId}`);
+      // Get token from sessionStorage if available
+      const token = sessionStorage.getItem('nova_token');
+      const tokenParam = token ? `&token=${token}` : '';
+      
+      // Navigate to reader with child ID and token
+      navigate(`/novalearning/reading/${book.id}?child=${childId}${tokenParam}`);
     } catch (error) {
       console.error('Error starting reading:', error);
     }

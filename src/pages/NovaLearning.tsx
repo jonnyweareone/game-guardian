@@ -45,11 +45,19 @@ export default function NovaLearning() {
     if (tokenResult) {
       setChildData(tokenResult);
       setTokenError(null);
+      
+      // Save token and child_id to sessionStorage for persistence
+      const token = searchParams.get('token');
+      if (token && tokenResult.child_id) {
+        sessionStorage.setItem('nova_token', token);
+        sessionStorage.setItem('nova_child_id', tokenResult.child_id);
+        console.log('Nova token saved to sessionStorage:', { token: token.slice(0, 20) + '...', child_id: tokenResult.child_id });
+      }
     } else if (error) {
       setTokenError(error.message);
       setChildData(null);
     }
-  }, [tokenResult, error]);
+  }, [tokenResult, error, searchParams]);
 
   // Show token error or no token state
   if (!searchParams.get('token')) {

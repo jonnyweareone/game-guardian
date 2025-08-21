@@ -10,6 +10,7 @@ import AuthGuard from "@/components/AuthGuard";
 import AdminRoute from "@/components/AdminRoute";
 import DocsRoutes from "@/pages/docs/routes";
 import Navigation from "@/components/Navigation";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Import product detail pages
 import ProductDevice from "./pages/ProductDevice";
@@ -48,7 +49,8 @@ const App = () => (
         <BrowserRouter>
           <div className="min-h-screen bg-background">
             <Navigation />
-            <Routes>
+            <ErrorBoundary>
+              <Routes>
               {/* Public routes */}
               <Route path="/auth" element={
                 <AuthGuard requireAuth={false}>
@@ -159,6 +161,7 @@ const App = () => (
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </ErrorBoundary>
           </div>
         </BrowserRouter>
       </TooltipProvider>

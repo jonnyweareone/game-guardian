@@ -65,7 +65,11 @@ export function NovaShelf({ childId }: NovaShelfProps) {
     sessionStorage.setItem('nova_active_child', childId);
     sessionStorage.setItem('nova-active-child', childId);
     
-    navigate(`/novalearning/reading/${item.books?.id || item.book_id}?child=${childId}`);
+    // Get token from sessionStorage if available
+    const token = sessionStorage.getItem('nova_token');
+    const tokenParam = token ? `&token=${token}` : '';
+    
+    navigate(`/novalearning/reading/${item.books?.id || item.book_id}?child=${childId}${tokenParam}`);
   };
 
   if (isLoading) {

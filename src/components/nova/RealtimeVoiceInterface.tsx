@@ -226,15 +226,29 @@ const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
       // Connect to our Nova realtime chat WebSocket
       const { isDesktopApp, getFunctionsBase, getLocalAgentBase } = await import('@/lib/env');
       
-      const base = isDesktopApp()
-        ? getLocalAgentBase().replace(/^http/i, 'ws')
-        : getFunctionsBase().replace(/^https/i, 'wss');
-      const wsUrl = isDesktopApp()
-        ? `${base}/nova-realtime-chat`
-        : `${base}/functions/v1/nova-realtime-chat`;
+      let wsUrl: string;
+      
+      try {
+        const base = isDesktopApp()
+          ? getLocalAgentBase().replace(/^http/i, 'ws')
+          : getFunctionsBase().replace(/^https/i, 'wss');
+        wsUrl = isDesktopApp()
+          ? `${base}/nova-realtime-chat`
+          : `${base}/functions/v1/nova-realtime-chat`;
+      } catch (urlError) {
+        // Fallback to known project URL if env functions fail
+        console.warn('Using fallback WebSocket URL due to env error:', urlError);
+        wsUrl = 'wss://xzxjwuzwltoapifcyzww.functions.supabase.co/functions/v1/nova-realtime-chat';
+      }
       
       console.log('Connecting to Nova realtime chat:', wsUrl);
-      wsRef.current = new WebSocket(wsUrl);
+      
+      try {
+        wsRef.current = new WebSocket(wsUrl);
+      } catch (wsError) {
+        console.error('WebSocket creation failed:', wsError);
+        throw new Error(`Failed to create WebSocket connection: ${wsError}`);
+      }
       
       wsRef.current.onopen = () => {
         console.log('Connected to Nova realtime chat');

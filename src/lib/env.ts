@@ -5,7 +5,8 @@ export const getProjectRef = (): string => {
   try { 
     return new URL(url).host.split('.')[0]; 
   } catch { 
-    return ''; 
+    // Fallback to known project ID to prevent empty returns
+    return 'xzxjwuzwltoapifcyzww'; 
   }
 };
 
