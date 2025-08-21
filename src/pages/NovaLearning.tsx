@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,12 +11,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNovaSignals } from '@/hooks/useNovaSignals';
 import DailyChallengesBanner from '@/components/DailyChallengesBanner';
 import ChildEducationTabs from '@/components/education/ChildEducationTabs';
+import ChildSwitcher from '@/components/ChildSwitcher';
 import { getWallet } from '@/lib/rewardsApi';
 import { yearAndKeyStageFromDOB } from '@/lib/ukSchoolYear';
 
 export default function NovaLearning() {
   const { user } = useAuth();
-  const { isListening, currentBookId } = useNovaSignals(user?.id || '');
+  const [searchParams] = useSearchParams();
+  
+  // Selected child and wallet
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [coins, setCoins] = useState<number>(0);
+  
+  const { isListening, currentBookId } = useNovaSignals(selectedChildId || '');
 
   // Load children for the authenticated user
   const { data: children, isLoading: childrenLoading } = useQuery({
@@ -34,15 +42,31 @@ export default function NovaLearning() {
     enabled: !!user,
   });
 
-  // Selected child and wallet
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
-  const [coins, setCoins] = useState<number>(0);
-
+  // Initialize selected child from URL params, session storage, or default to first child
   useEffect(() => {
-    if (children?.length) {
-      setSelectedChildId(children[0].id);
+    if (!children?.length) return;
+    
+    // Check URL parameter for child selection (from token)
+    const childParam = searchParams.get('child');
+    
+    // Check session storage for persisted selection
+    const storedChildId = sessionStorage.getItem('nova-active-child');
+    
+    let targetChildId: string | null = null;
+    
+    if (childParam && children.find(c => c.id === childParam)) {
+      targetChildId = childParam;
+      sessionStorage.setItem('nova-active-child', childParam);
+    } else if (storedChildId && children.find(c => c.id === storedChildId)) {
+      targetChildId = storedChildId;
+    } else {
+      // Default to first child only if no other selection method worked
+      targetChildId = children[0].id;
+      sessionStorage.setItem('nova-active-child', children[0].id);
     }
-  }, [children]);
+    
+    setSelectedChildId(targetChildId);
+  }, [children, searchParams]);
 
   useEffect(() => {
     const loadWallet = async () => {
@@ -102,6 +126,21 @@ export default function NovaLearning() {
         </Card>
       ) : (
         <div className="space-y-6">
+          {/* Child Switcher (if multiple children) */}
+          {children.length > 1 && (
+            <ChildSwitcher
+              children={children}
+              selectedChildId={selectedChildId}
+              onChildSelect={(childId) => {
+                setSelectedChildId(childId);
+                if (childId) {
+                  sessionStorage.setItem('nova-active-child', childId);
+                }
+              }}
+              alertCounts={{}}
+            />
+          )}
+          
           {(() => {
             const child = children.find((c:any) => c.id === selectedChildId) || children[0];
             const computed = yearAndKeyStageFromDOB(child?.dob);
