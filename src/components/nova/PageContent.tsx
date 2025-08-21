@@ -35,7 +35,7 @@ export function PageContent({
   const cleaned = content.replace(ILLU_RE, '');
   
   // Sentence-level highlight hook
-  const { parts, activeIdx } = useTTSHighlight(cleaned);
+  const { parts, activeIdx } = useTTSHighlight(cleaned, simpleHighlight);
   if (!tokens.length || simpleHighlight) {
     // Fallback: render plain content with optional sentence highlighting
     return (

@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { NovaSessionIDs } from '@/lib/novaSession';
 
 /**
- * Safe Nova listening hook that always calls hooks unconditionally
- * and gates effects internally to avoid React #310 errors
+ * Nova listening hook with opt-in flag support
+ * Always call unconditionally to avoid React #310 errors
  */
-export function useNovaListeningSafe(ids: NovaSessionIDs | null, enabled: boolean = false) {
+export function useNovaListening(childId: string, bookId: string, enabled: boolean = true) {
   const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -17,7 +16,7 @@ export function useNovaListeningSafe(ids: NovaSessionIDs | null, enabled: boolea
     }
 
     // Only proceed if we have valid IDs and feature is enabled
-    if (!ids || !enabled) return;
+    if (!enabled || !childId || !bookId) return;
 
     let cancelled = false;
 
@@ -27,13 +26,12 @@ export function useNovaListeningSafe(ids: NovaSessionIDs | null, enabled: boolea
         await supabase
           .from('child_listening_state')
           .upsert({ 
-            child_id: ids.childId, 
+            child_id: childId, 
             is_listening: true, 
-            book_id: ids.bookId,
-            session_id: ids.sessionId
+            book_id: bookId
           });
 
-        console.log('Nova listening state activated for session:', ids.sessionId);
+        console.log('Nova listening state activated for child:', childId);
       } catch (error) {
         console.error('Error setting up Nova listening:', error);
       }
@@ -45,10 +43,9 @@ export function useNovaListeningSafe(ids: NovaSessionIDs | null, enabled: boolea
         await supabase
           .from('child_listening_state')
           .upsert({ 
-            child_id: ids.childId, 
+            child_id: childId, 
             is_listening: false, 
-            book_id: null,
-            session_id: null
+            book_id: null
           });
         console.log('Nova listening state deactivated');
       } catch (error) {
@@ -68,7 +65,7 @@ export function useNovaListeningSafe(ids: NovaSessionIDs | null, enabled: boolea
       cancelled = true;
       teardownListening();
     };
-  }, [ids, enabled]);
+  }, [childId, bookId, enabled]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -10,8 +10,9 @@ import { WordHunt } from '@/components/nova/games/WordHunt';
 import { CoinsDisplay } from '@/components/nova/CoinsDisplay';
 import { SessionOverlay } from '@/components/nova/SessionOverlay';
 import { useNovaSignals } from '@/hooks/useNovaSignals';
-import { useNovaListeningSafe } from '@/hooks/useNovaListeningSafe';
+import { useNovaListening } from '@/hooks/useNovaListening';
 import { startNovaSession, recordPageTurn, stopNovaSession, NovaSessionIDs } from '@/lib/novaSession';
+import StartReadingOverlay from '@/components/nova/StartReadingOverlay';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -41,13 +42,14 @@ export default function NovaReader() {
   const [voiceActive, setVoiceActive] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [novaIds, setNovaIds] = useState<NovaSessionIDs | null>(null);
+  const [hasStarted, setHasStarted] = useState(false);
   
   // Initialize AI listening for this reading session
   const { startListening, stopListening } = useNovaSignals(childId, isTokenMode);
   
-  // Safe Nova listening hook (always called, gates internally)
-  const listeningEnabled = process.env.NODE_ENV === 'development'; // You can control this via env or props
-  useNovaListeningSafe(novaIds, listeningEnabled);
+  // Nova listening hook (always called, gates internally)
+  const listeningEnabled = import.meta.env.VITE_NOVA_LISTENING_ENABLED === 'true';
+  useNovaListening(novaIds?.childId || '', novaIds?.bookId || '', hasStarted && listeningEnabled);
   
   // Session management mutations
   const createTokenSessionMutation = useMutation({
@@ -145,34 +147,27 @@ export default function NovaReader() {
     },
   });
 
-  // Start Nova session when component mounts and we have the required IDs
-  useEffect(() => {
-    let mounted = true;
-    if (childId && bookId && !isTokenMode && !novaIds) {
-      (async () => {
-        try {
-          const ids = await startNovaSession(childId, bookId);
-          if (mounted) {
-            setNovaIds(ids);
-            setSessionId(ids.sessionId);
-            console.log('Nova session started:', ids.sessionId);
-          }
-        } catch (error) {
-          console.error('Failed to start Nova session:', error);
-        }
-      })();
+  // Start reading handler (only called when user clicks the button)
+  const onStartReading = async () => {
+    try {
+      const ids = await startNovaSession(childId, bookId);
+      setNovaIds(ids);
+      setSessionId(ids.sessionId);
+      setHasStarted(true);
+      console.log('Nova session started:', ids.sessionId);
+    } catch (error) {
+      console.error('Failed to start Nova session:', error);
     }
-    return () => { mounted = false; };
-  }, [childId, bookId, isTokenMode, novaIds]);
+  };
 
-  // Stop session on unmount
+  // Stop session on unmount (only if started)
   useEffect(() => {
     return () => {
-      if (novaIds) {
+      if (novaIds && hasStarted) {
         stopNovaSession(novaIds, currentProgress);
       }
     };
-  }, [novaIds, currentProgress]);
+  }, [novaIds, hasStarted, currentProgress]);
 
   // Session control handlers
   const handleStartSession = () => {
@@ -358,6 +353,9 @@ export default function NovaReader() {
           />
         </aside>
       </div>
+
+      {/* Show overlay until the user opts in */}
+      {!hasStarted && <StartReadingOverlay onStart={onStartReading} />}
     </div>
   );
 }

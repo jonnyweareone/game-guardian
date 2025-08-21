@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export function useTTSHighlight(text: string) {
+export function useTTSHighlight(text: string, enabled: boolean = true) {
   const [activeIdx, setActiveIdx] = useState<number>(-1);
   const partsRef = useRef<string[]>([]);
 
@@ -11,7 +11,7 @@ export function useTTSHighlight(text: string) {
   }, [text]);
 
   function speak() {
-    if (!('speechSynthesis' in window)) return;
+    if (!enabled || !('speechSynthesis' in window)) return;
     const parts = partsRef.current;
     let i = -1;
     const next = () => {
