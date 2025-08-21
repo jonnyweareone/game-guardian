@@ -162,17 +162,17 @@ serve(async (req) => {
       const child_id = url.searchParams.get("child_id");
       if (!child_id) return cors(new Response(JSON.stringify({ error: "child_id required" }), { status: 400 }));
       
-      // Get achievements, study sessions, and reading sessions in parallel
-      const [achResult, studyResult, readingResult] = await Promise.allSettled([
-        supabase.from("achievements").select("*").eq("child_id", child_id).order("created_at", { ascending: false }).limit(100),
-        supabase.from("study_sessions").select("*").eq("child_id", child_id).order("started_at", { ascending: false }).limit(100),
-        supabase.from("reading_sessions").select("*").eq("child_id", child_id).order("started_at", { ascending: false }).limit(100),
+      // Get reading sessions and timeline events in parallel
+      const [sessionsResult, timelineResult, bookshelfResult] = await Promise.allSettled([
+        supabase.from("child_reading_sessions").select("*").eq("child_id", child_id).order("created_at", { ascending: false }).limit(100),
+        supabase.from("child_reading_timeline").select("*, books(title, author)").eq("child_id", child_id).order("created_at", { ascending: false }).limit(100),
+        supabase.from("child_bookshelf").select("*, books(title, author)").eq("child_id", child_id).order("started_at", { ascending: false })
       ]);
 
       return cors(new Response(JSON.stringify({
-        achievements: achResult.status === 'fulfilled' ? achResult.value.data ?? [] : [],
-        study: studyResult.status === 'fulfilled' ? studyResult.value.data ?? [] : [],
-        reading: readingResult.status === 'fulfilled' ? readingResult.value.data ?? [] : []
+        sessions: sessionsResult.status === 'fulfilled' ? sessionsResult.value.data ?? [] : [],
+        timeline: timelineResult.status === 'fulfilled' ? timelineResult.value.data ?? [] : [],
+        bookshelf: bookshelfResult.status === 'fulfilled' ? bookshelfResult.value.data ?? [] : []
       }), { status: 200 }));
     }
 

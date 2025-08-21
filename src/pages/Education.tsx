@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import SEOHead from '@/components/SEOHead';
 import EducationTab from '@/components/dashboard-v2/EducationTab';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { EducationTimeline } from '@/components/education/EducationTimeline';
+import { ReadingProgress } from '@/components/education/ReadingProgress';
 
 import { getChildren } from '@/lib/api';
 import { getWallet } from '@/lib/rewardsApi';
@@ -151,19 +153,11 @@ export default function EducationPage() {
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <p className="text-muted-foreground">Education timeline and milestones will appear here.</p>
-                  </CardContent>
-                </Card>
+                <EducationTimeline childId={child.id} />
               </TabsContent>
 
               <TabsContent value="reading" className="mt-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <p className="text-muted-foreground">Reading progress and analytics will be displayed here.</p>
-                  </CardContent>
-                </Card>
+                <ReadingProgress childId={child.id} />
               </TabsContent>
 
               <TabsContent value="courses" className="mt-6">

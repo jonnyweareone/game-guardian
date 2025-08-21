@@ -113,7 +113,11 @@ export default function NovaReader() {
     },
     onSuccess: () => {
       setVoiceActive(false);
-      navigate('/nova-learning');
+      if (isTokenMode && token) {
+        navigate(`/novalearning?token=${token}`);
+      } else {
+        navigate('/nova-learning');
+      }
     },
     onError: (error) => {
       console.error('Failed to end session:', error);
