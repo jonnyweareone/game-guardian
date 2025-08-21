@@ -295,8 +295,8 @@ const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
         });
       };
 
-      wsRef.current.onclose = () => {
-        console.log('WebSocket closed');
+      wsRef.current.onclose = (event) => {
+        console.log('WebSocket closed', { code: event.code, reason: event.reason, wasClean: event.wasClean });
         setIsConnected(false);
         setIsListening(false);
         setIsSpeaking(false);

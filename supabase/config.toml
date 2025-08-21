@@ -59,3 +59,9 @@ verify_jwt = true
 
 [functions.get-book-pages]
 verify_jwt = false
+
+[functions.nova-realtime-chat]
+verify_jwt = false
+
+[functions.realtime-chat]
+verify_jwt = false
