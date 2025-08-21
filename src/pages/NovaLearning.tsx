@@ -13,17 +13,17 @@ import ChildEducationTabs from '@/components/education/ChildEducationTabs';
 import { yearAndKeyStageFromDOB } from '@/lib/ukSchoolYear';
 
 export default function NovaLearning() {
-  const [searchParams] = useSearchParams();
   const [childData, setChildData] = useState<any>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
   
-  const { isListening, currentBookId } = useNovaSignals(childData?.child_id || '');
-
+  // Always call hooks unconditionally in the same order
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  
   // Verify token and get child data
   const { data: tokenResult, isLoading: tokenLoading, error } = useQuery({
-    queryKey: ['verify-token', searchParams.get('token')],
+    queryKey: ['verify-token', token],
     queryFn: async () => {
-      const token = searchParams.get('token');
       if (!token) {
         throw new Error('No token provided');
       }
@@ -37,7 +37,7 @@ export default function NovaLearning() {
       
       return data;
     },
-    enabled: !!searchParams.get('token'),
+    enabled: !!token,
     retry: false
   });
 
@@ -47,7 +47,6 @@ export default function NovaLearning() {
       setTokenError(null);
       
       // Save token and child_id to sessionStorage for persistence
-      const token = searchParams.get('token');
       if (token && tokenResult.child_id) {
         sessionStorage.setItem('nova_token', token);
         sessionStorage.setItem('nova_child_id', tokenResult.child_id);
@@ -57,10 +56,14 @@ export default function NovaLearning() {
       setTokenError(error.message);
       setChildData(null);
     }
-  }, [tokenResult, error, searchParams]);
+  }, [tokenResult, error, token]);
+
+  // Always call useNovaSignals with stable childId - never conditional
+  const stableChildId = childData?.child_id || '';
+  const { isListening, currentBookId } = useNovaSignals(stableChildId);
 
   // Show token error or no token state
-  if (!searchParams.get('token')) {
+  if (!token) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>

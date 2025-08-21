@@ -47,13 +47,6 @@ export const navItems: NavItem[] = [
     requiresAuth: false,
   },
   {
-    title: "Index",
-    to: "/index", 
-    icon: <HomeIcon className="h-4 w-4" />,
-    page: <Index />,
-    requiresAuth: false,
-  },
-  {
     title: "Guardian Nova",
     to: "/guardian-nova",
     icon: <GraduationCap className="h-4 w-4" />,
