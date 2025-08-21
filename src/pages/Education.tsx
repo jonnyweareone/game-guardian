@@ -116,7 +116,7 @@ export default function EducationPage() {
                   <h2 className="text-xl font-semibold">{child.name}</h2>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                     <span>Coins: {wallets[child.id]?.coins ?? 0}</span>
-                    {child.dob && <span>DOB: {new Date(child.dob).toLocaleDateString('en-GB')}</span>}
+                    
                     {yearGroup && <span>Year: {yearGroup}</span>}
                     {keyStage && <span>Key Stage: {keyStage}</span>}
                     {nextYearInfo && nextYearInfo.yearGroup !== yearGroup && (

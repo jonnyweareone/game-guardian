@@ -117,7 +117,6 @@ export default function NovaLearning() {
                         <h2 className="text-xl font-semibold">{child?.name}</h2>
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mt-1">
                           <span>Coins: {coins}</span>
-                          {child?.dob && <span>DOB: {new Date(child.dob).toLocaleDateString('en-GB')}</span>}
                           {computed?.yearGroup && <span>Year: {computed.yearGroup}</span>}
                           {computed?.keyStage && <span>Key Stage: {computed.keyStage}</span>}
                         </div>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpaceTrek VR - Missing Bundle</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+        .error { background: #2d1b1b; border: 1px solid #6d2828; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .code { background: #333; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 SpaceTrek VR - Game Bundle Missing</h1>
+        <div class="error">
+            <h3>⚠️ Game files not found</h3>
+            <p>The SpaceTrek VR game bundle is not installed in this directory.</p>
+            
+            <h4>Expected files:</h4>
+            <div class="code">
+                public/vendor/spacetrek/<br>
+                ├── index.html (actual game)<br>
+                ├── build/ (game assets)<br>
+                └── assets/ (WebVR dependencies)
+            </div>
+            
+            <h4>Setup Instructions:</h4>
+            <ol style="text-align: left; margin: 20px;">
+                <li>Clone/fork the SpaceTrek repository</li>
+                <li>Build the WebVR version</li>
+                <li>Copy all build files to <code>public/vendor/spacetrek/</code></li>
+                <li>Add quiz completion event: <br>
+                    <div class="code" style="font-size: 12px;">
+window.parent.postMessage({<br>
+&nbsp;&nbsp;type: 'spacetrek-quiz-complete',<br>
+&nbsp;&nbsp;level: currentLevel,<br>
+&nbsp;&nbsp;score: quizScore,<br>
+&nbsp;&nbsp;accuracy: Math.round((correctAnswers / totalQuestions) * 100)<br>
+}, '*');
+                    </div>
+                </li>
+            </ol>
+        </div>
+        
+        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+    </div>
+    
+    <script>
+        document.getElementById('current-url').textContent = window.location.href;
+        
+        // Notify parent that bundle is missing
+        window.addEventListener('load', () => {
+            window.parent.postMessage({
+                type: 'game-bundle-missing',
+                game: 'SpaceTrek',
+                path: '/vendor/spacetrek/'
+            }, '*');
+        });
+    </script>
+</body>
+</html>

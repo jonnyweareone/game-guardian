@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antura - Missing Bundle</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+        .error { background: #2d1b1b; border: 1px solid #6d2828; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .code { background: #333; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦁 Antura - Game Bundle Missing</h1>
+        <div class="error">
+            <h3>⚠️ Game files not found</h3>
+            <p>The Antura WebGL game bundle is not installed in this directory.</p>
+            
+            <h4>Expected files:</h4>
+            <div class="code">
+                public/vendor/antura-webgl/<br>
+                ├── index.html (actual game)<br>
+                ├── Build/ (Unity WebGL build)<br>
+                ├── TemplateData/<br>
+                └── StreamingAssets/
+            </div>
+            
+            <h4>Setup Instructions:</h4>
+            <ol style="text-align: left; margin: 20px;">
+                <li>Download Antura WebGL build</li>
+                <li>Extract to <code>public/vendor/antura-webgl/</code></li>
+                <li>Ensure index.html is the game's main file</li>
+            </ol>
+        </div>
+        
+        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+    </div>
+    
+    <script>
+        document.getElementById('current-url').textContent = window.location.href;
+        
+        window.addEventListener('load', () => {
+            window.parent.postMessage({
+                type: 'game-bundle-missing',
+                game: 'Antura',
+                path: '/vendor/antura-webgl/'
+            }, '*');
+        });
+    </script>
+</body>
+</html>
