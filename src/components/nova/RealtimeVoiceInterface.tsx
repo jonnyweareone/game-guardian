@@ -8,6 +8,8 @@ interface RealtimeVoiceInterfaceProps {
   sessionId?: string;
   childId: string;
   bookId?: string;
+  active?: boolean;
+  showControls?: boolean;
   onSpeakingChange: (speaking: boolean) => void;
   onTranscriptUpdate: (transcript: string) => void;
 }
@@ -176,6 +178,8 @@ const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
   sessionId,
   childId,
   bookId,
+  active = false,
+  showControls = true,
   onSpeakingChange,
   onTranscriptUpdate
 }) => {
@@ -325,6 +329,15 @@ const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
     onTranscriptUpdate('');
   };
 
+  // Handle active prop changes
+  useEffect(() => {
+    if (active && !isConnected) {
+      startConversation();
+    } else if (!active && isConnected) {
+      endConversation();
+    }
+  }, [active, isConnected]);
+
   useEffect(() => {
     return () => {
       endConversation();
@@ -357,25 +370,27 @@ const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
         )}
       </div>
       
-      <div className="flex justify-center">
-        {!isConnected ? (
-          <Button 
-            onClick={startConversation}
-            className="bg-primary hover:bg-primary/90"
-          >
-            <Mic className="h-4 w-4 mr-2" />
-            Start Voice Chat
-          </Button>
-        ) : (
-          <Button 
-            onClick={endConversation}
-            variant="secondary"
-          >
-            <MicOff className="h-4 w-4 mr-2" />
-            End Voice Chat
-          </Button>
-        )}
-      </div>
+      {showControls && (
+        <div className="flex justify-center">
+          {!isConnected ? (
+            <Button 
+              onClick={startConversation}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Mic className="h-4 w-4 mr-2" />
+              Start Voice Chat
+            </Button>
+          ) : (
+            <Button 
+              onClick={endConversation}
+              variant="secondary"
+            >
+              <MicOff className="h-4 w-4 mr-2" />
+              End Voice Chat
+            </Button>
+          )}
+        </div>
+      )}
       
       {transcript && (
         <div className="p-3 bg-muted/50 rounded-lg">

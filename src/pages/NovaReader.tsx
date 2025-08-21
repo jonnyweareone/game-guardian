@@ -24,6 +24,7 @@ export default function NovaReader() {
   const [overlayState, setOverlayState] = useState<'start' | 'paused' | 'ending' | null>('start');
   const [isSessionLoading, setIsSessionLoading] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
+  const [voiceActive, setVoiceActive] = useState(false);
   
   // Token mode: uses different hooks and edge functions
   const isTokenMode = !!token;
@@ -47,6 +48,7 @@ export default function NovaReader() {
       console.log('Token session created:', data.session_id);
       setSessionId(data.session_id);
       setOverlayState(null);
+      setVoiceActive(true);
     },
     onError: (error) => {
       console.error('Failed to create token session:', error);
@@ -68,6 +70,7 @@ export default function NovaReader() {
     onSuccess: () => {
       setOverlayState('paused');
       setIsSessionLoading(false);
+      setVoiceActive(false);
     },
     onError: (error) => {
       console.error('Failed to pause session:', error);
@@ -89,6 +92,7 @@ export default function NovaReader() {
     onSuccess: () => {
       setOverlayState(null);
       setIsSessionLoading(false);
+      setVoiceActive(true);
     },
     onError: (error) => {
       console.error('Failed to resume session:', error);
@@ -108,6 +112,7 @@ export default function NovaReader() {
       return data;
     },
     onSuccess: () => {
+      setVoiceActive(false);
       navigate('/nova-learning');
     },
     onError: (error) => {
@@ -125,6 +130,7 @@ export default function NovaReader() {
       startListening(bookId);
       setOverlayState(null);
       setIsSessionLoading(false);
+      setVoiceActive(true);
     }
   };
 
@@ -136,6 +142,7 @@ export default function NovaReader() {
       // For normal mode, just show overlay
       setOverlayState('paused');
       setIsSessionLoading(false);
+      setVoiceActive(false);
     }
   };
 
@@ -146,6 +153,7 @@ export default function NovaReader() {
     } else {
       setOverlayState(null);
       setIsSessionLoading(false);
+      setVoiceActive(true);
     }
   };
 
@@ -155,6 +163,7 @@ export default function NovaReader() {
       endSessionMutation.mutate();
     } else {
       stopListening();
+      setVoiceActive(false);
       navigate('/nova-learning');
     }
   };
@@ -267,6 +276,8 @@ export default function NovaReader() {
             sessionId={sessionId}
             childId={childId}
             bookId={bookId}
+            active={voiceActive}
+            showControls={false}
             onSpeakingChange={(speaking) => {
               console.log('AI speaking:', speaking);
             }}
