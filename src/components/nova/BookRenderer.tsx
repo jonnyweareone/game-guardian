@@ -13,21 +13,32 @@ import { Token } from '@/lib/tokenizerUtils';
 interface BookRendererProps {
   bookId: string;
   childId: string;
+  token?: string | null;
+  sessionId?: string | null;
   onProgressUpdate?: (page: number, readPercent: number) => void;
   onCoinsAwarded?: (coins: number) => void;
   onSessionCreated?: (sessionId: string) => void;
   onPageChange?: (content: string) => void;
 }
 
-export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded, onSessionCreated, onPageChange }: BookRendererProps) {
+export function BookRenderer({ bookId, childId, token, sessionId: externalSessionId, onProgressUpdate, onCoinsAwarded, onSessionCreated, onPageChange }: BookRendererProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(externalSessionId);
   const [currentTokenIndex, setCurrentTokenIndex] = useState<number | undefined>();
   const [showFrontMatter, setShowFrontMatter] = useState(false);
   const queryClient = useQueryClient();
   
-  const { isListening, startListening, stopListening } = useNovaSignals(childId);
+  // Token mode: uses different hooks and edge functions
+  const isTokenMode = !!token;
+  const { isListening, startListening, stopListening } = useNovaSignals(childId, isTokenMode);
+  
+  // Update sessionId when external one changes
+  useEffect(() => {
+    if (externalSessionId) {
+      setSessionId(externalSessionId);
+    }
+  }, [externalSessionId]);
 
   // Emit page read events for challenges
   const emitPageRead = useCallback(async () => {
@@ -134,12 +145,12 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
     }
   }, [bookId, childId, startListening, stopListening]);
 
-  // Create session on component mount
+  // Create session on component mount (only in normal mode)
   useEffect(() => {
-    if (bookId && childId && !sessionId) {
+    if (bookId && childId && !sessionId && !isTokenMode) {
       createSessionMutation.mutate();
     }
-  }, [bookId, childId]);
+  }, [bookId, childId, isTokenMode]);
 
   // Update session when page changes and generate insights
   useEffect(() => {
@@ -188,17 +199,34 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
       onPageChange?.(pages[newPage]?.content || '');
       
       // Update child bookshelf progress
-      try {
-        await supabase.from('child_bookshelf').upsert({
-          child_id: childId,
-          book_id: bookId,
-          status: progressPercent >= 100 ? 'finished' : 'reading',
-          progress: progressPercent,
-          last_location: JSON.stringify({ page: newPage }),
-          started_at: new Date().toISOString()
-        }, { onConflict: 'child_id,book_id' });
-      } catch (error) {
-        console.error('Error updating bookshelf progress:', error);
+      if (isTokenMode && token) {
+        // In token mode, use edge function to update progress
+        try {
+          await supabase.functions.invoke('nova-update-progress-token', {
+            body: {
+              token,
+              bookId,
+              progress: progressPercent,
+              pageIndex: newPage
+            }
+          });
+        } catch (error) {
+          console.error('Error updating token progress:', error);
+        }
+      } else {
+        // In normal mode, update directly
+        try {
+          await supabase.from('child_bookshelf').upsert({
+            child_id: childId,
+            book_id: bookId,
+            status: progressPercent >= 100 ? 'finished' : 'reading',
+            progress: progressPercent,
+            last_location: JSON.stringify({ page: newPage }),
+            started_at: new Date().toISOString()
+          }, { onConflict: 'child_id,book_id' });
+        } catch (error) {
+          console.error('Error updating bookshelf progress:', error);
+        }
       }
       
       // Emit page read event when advancing (throttled)

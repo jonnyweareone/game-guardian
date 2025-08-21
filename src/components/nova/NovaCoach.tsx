@@ -57,7 +57,10 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
           <div className="text-center py-4">
             <Brain className="h-8 w-8 mx-auto mb-2 text-muted-foreground animate-pulse" />
             <p className="text-sm text-muted-foreground">
-              Reading along... AI insights coming soon!
+              {!sessionId 
+                ? "Creating reading session..." 
+                : "Reading along... AI insights coming soon!"
+              }
             </p>
           </div>
         </CardContent>

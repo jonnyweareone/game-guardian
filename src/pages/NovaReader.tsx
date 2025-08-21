@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BookRenderer } from '@/components/nova/BookRenderer';
 import { NovaCoach } from '@/components/nova/NovaCoach';
@@ -15,25 +15,56 @@ export default function NovaReader() {
   const { bookId } = useParams<{ bookId: string }>();
   const [searchParams] = useSearchParams();
   const childId = searchParams.get('child') || '';
+  const token = searchParams.get('token');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentPageContent, setCurrentPageContent] = useState<string>('');
   
-  // Initialize AI listening for this reading session
-  const { startListening, stopListening } = useNovaSignals(childId);
+  // Token mode: uses different hooks and edge functions
+  const isTokenMode = !!token;
   
-  // Start listening when component mounts and bookId is available
+  // Initialize AI listening for this reading session
+  const { startListening, stopListening } = useNovaSignals(childId, isTokenMode);
+  
+  // Create session using token-based edge function in token mode
+  const createTokenSessionMutation = useMutation({
+    mutationFn: async () => {
+      if (!token || !bookId) throw new Error('Token and bookId required');
+      
+      const { data, error } = await supabase.functions.invoke('nova-start-session-token', {
+        body: { token, bookId }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('Token session created:', data.session_id);
+      setSessionId(data.session_id);
+    },
+    onError: (error) => {
+      console.error('Failed to create token session:', error);
+    },
+  });
+  
+  // Start listening and create session when component mounts
   useEffect(() => {
     if (bookId && childId) {
-      startListening(bookId);
+      if (isTokenMode) {
+        // In token mode, create session via edge function
+        createTokenSessionMutation.mutate();
+      } else {
+        // In normal mode, start listening via direct DB access
+        startListening(bookId);
+      }
     }
     
     // Cleanup: stop listening when component unmounts
     return () => {
-      if (childId) {
+      if (childId && !isTokenMode) {
         stopListening();
       }
     };
-  }, [bookId, childId, startListening, stopListening]);
+  }, [bookId, childId, isTokenMode]);
 
   // Load book to show title in header
   const { data: book, isLoading } = useQuery({
@@ -94,6 +125,8 @@ export default function NovaReader() {
           <BookRenderer
             bookId={bookId}
             childId={childId}
+            token={token}
+            sessionId={sessionId}
             onProgressUpdate={(page, percent) => {
               console.log(`Reading progress: page ${page + 1}, ${percent.toFixed(1)}%`);
             }}

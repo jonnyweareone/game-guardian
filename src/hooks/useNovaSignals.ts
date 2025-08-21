@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export function useNovaSignals(childId: string) {
+export function useNovaSignals(childId: string, isTokenMode: boolean = false) {
   const [isListening, setIsListening] = useState(false);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
 
@@ -77,6 +77,12 @@ export function useNovaSignals(childId: string) {
   }, [childId]);
 
   const startListening = async (bookId: string) => {
+    if (isTokenMode) {
+      // In token mode, don't try to write to DB - only listen for updates
+      console.debug('Token mode: listening state managed by edge functions');
+      return;
+    }
+    
     try {
       console.debug('Starting listening for child:', childId, 'book:', bookId);
       
@@ -94,6 +100,12 @@ export function useNovaSignals(childId: string) {
   };
 
   const stopListening = async () => {
+    if (isTokenMode) {
+      // In token mode, don't try to write to DB - only listen for updates
+      console.debug('Token mode: listening state managed by edge functions');
+      return;
+    }
+    
     try {
       console.debug('Stopping listening for child:', childId);
       
