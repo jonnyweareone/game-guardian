@@ -9,16 +9,38 @@ interface NovaCoachProps {
   childId: string;
 }
 
+type NovaInsight = {
+  ai_summary: string;
+  difficulty_level: string | null;
+  key_points: string[] | null;
+  comprehension_questions: string[] | null;
+  created_at: string;
+};
+
 export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
   // Fetch latest AI insights for this session
   const { data: latestInsight } = useQuery({
     queryKey: ['nova-insights', sessionId],
-    queryFn: async () => {
-      // For now, return null since AI insights table doesn't exist yet
-      // This will be replaced with actual data when the backend is implemented
-      return null;
+    queryFn: async (): Promise<NovaInsight | null> => {
+      if (!sessionId || !childId) return null;
+      
+      const { data, error } = await supabase
+        .from('nova_insights')
+        .select('ai_summary, difficulty_level, key_points, comprehension_questions, created_at')
+        .eq('session_id', sessionId)
+        .eq('child_id', childId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching insights:', error);
+        return null;
+      }
+      
+      return data;
     },
-    enabled: !!sessionId,
+    enabled: !!sessionId && !!childId,
     refetchInterval: 10000, // Refetch every 10 seconds
   });
 
@@ -43,9 +65,6 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
     );
   }
 
-  // Type guard to ensure we have a valid insight object
-  const insight = latestInsight as any;
-
   return (
     <div className="space-y-4">
       {/* Summary */}
@@ -57,25 +76,25 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {insight?.ai_summary && (
+          {latestInsight.ai_summary && (
             <div>
               <p className="text-sm text-muted-foreground">
-                {insight.ai_summary}
+                {latestInsight.ai_summary}
               </p>
             </div>
           )}
 
-          {insight?.difficulty_level && (
+          {latestInsight.difficulty_level && (
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-orange-500" />
               <span className="text-sm">Difficulty:</span>
               <Badge variant={
-                insight.difficulty_level === 'easy' ? 'default' :
-                insight.difficulty_level === 'medium' ? 'secondary' :
+                latestInsight.difficulty_level === 'easy' ? 'default' :
+                latestInsight.difficulty_level === 'medium' ? 'secondary' :
                 'destructive'
               }>
-                {insight.difficulty_level === 'easy' ? 'Easy' :
-                 insight.difficulty_level === 'medium' ? 'Medium' :
+                {latestInsight.difficulty_level === 'easy' ? 'Easy' :
+                 latestInsight.difficulty_level === 'medium' ? 'Medium' :
                  'Challenging'}
               </Badge>
             </div>
@@ -84,7 +103,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
       </Card>
 
       {/* Key Points */}
-      {insight?.key_points && insight.key_points.length > 0 && (
+      {latestInsight.key_points && latestInsight.key_points.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
@@ -94,7 +113,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {insight.key_points.slice(0, 3).map((point: string, index: number) => (
+              {latestInsight.key_points.slice(0, 3).map((point: string, index: number) => (
                 <li key={index} className="text-sm flex items-start gap-2">
                   <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
                   <span className="text-muted-foreground">{point}</span>
@@ -106,7 +125,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
       )}
 
       {/* Comprehension Questions */}
-      {insight?.comprehension_questions && insight.comprehension_questions.length > 0 && (
+      {latestInsight.comprehension_questions && latestInsight.comprehension_questions.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
@@ -116,7 +135,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {insight.comprehension_questions.slice(0, 2).map((question: string, index: number) => (
+              {latestInsight.comprehension_questions.slice(0, 2).map((question: string, index: number) => (
                 <div key={index} className="p-3 bg-muted/50 rounded-lg">
                   <p className="text-sm font-medium mb-1">Question {index + 1}:</p>
                   <p className="text-sm text-muted-foreground">{question}</p>
@@ -130,9 +149,9 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
       {/* Scope indicator */}
       <div className="text-center">
         <Badge variant="outline" className="text-xs">
-          Reading insights • {new Date(insight?.created_at || Date.now()).toLocaleTimeString()}
+          Reading insights • {new Date(latestInsight.created_at).toLocaleTimeString()}
         </Badge>
       </div>
     </div>
   );
-}
+};

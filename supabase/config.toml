@@ -18,11 +18,23 @@ port = 54323
 [functions.nova-verify-child]
 verify_jwt = false
 
+[functions.nova-verify-child-token]
+verify_jwt = false
+
 [functions.nova-start-session]
 verify_jwt = true
 
+[functions.nova-start-session-token]
+verify_jwt = false
+
 [functions.nova-end-session]
 verify_jwt = true
+
+[functions.nova-end-session-token]
+verify_jwt = false
+
+[functions.nova-update-progress-token]
+verify_jwt = false
 
 [functions.nova-chunk]
 verify_jwt = true

@@ -10,23 +10,24 @@ interface CoinsDisplayProps {
 }
 
 export function CoinsDisplay({ childId }: CoinsDisplayProps) {
-  // Fetch total coins for this child
+  // Fetch total coins for this child from wallets table
   const { data: totalCoins = 0 } = useQuery({
     queryKey: ['child-coins', childId],
     queryFn: async () => {
       if (!childId) return 0;
       
       const { data, error } = await supabase
-        .from('rewards_ledger')
-        .select('points')
-        .eq('child_id', childId);
+        .from('wallets')
+        .select('coins')
+        .eq('child_id', childId)
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching coins:', error);
         return 0;
       }
       
-      return data?.reduce((total, entry) => total + entry.points, 0) || 0;
+      return data?.coins || 0;
     },
     enabled: !!childId,
     refetchInterval: 5000, // Refetch every 5 seconds to show new coins
