@@ -73,7 +73,7 @@ export default function GameFrame({ src, bearerToken, gameName, shimSrc }: GameF
     <iframe
       ref={iframeRef}
       src={src}
-      sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads"
+      sandbox="allow-scripts allow-pointer-lock allow-downloads"
       referrerPolicy="no-referrer"
       style={{ width: '100%', height: '100%', border: 0 }}
       className="rounded-lg"
