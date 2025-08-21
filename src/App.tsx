@@ -18,6 +18,16 @@ import ProductOSMini from "./pages/ProductOSMini";
 import ProductOSFull from "./pages/ProductOSFull";
 import ProductReceiver from "./pages/ProductReceiver";
 
+// Import page components directly
+import HomePage from "./pages/HomePage";
+import Auth from "./pages/Auth";
+import GuardianNova from "./pages/GuardianNova";
+import NovaLearning from "./pages/NovaLearning";
+import NovaReader from "./pages/NovaReader";
+import HomeworkHelper from "./pages/HomeworkHelper";
+import AppStore from "./pages/AppStore";
+import AdminWaitlist from "./pages/AdminWaitlist";
+
 // Import admin components
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDevices from "./pages/admin/AdminDevices";
@@ -54,45 +64,33 @@ const App = () => (
               {/* Public routes */}
               <Route path="/auth" element={
                 <AuthGuard requireAuth={false}>
-                  {navItems.find(item => item.to === "/auth")?.page}
+                  <Auth />
                 </AuthGuard>
               } />
               
               {/* Home route - now properly mapped to / */}
-              <Route path="/" element={
-                navItems.find(item => item.to === "/")?.page
-              } />
+              <Route path="/" element={<HomePage />} />
               
               {/* Index redirect */}
               <Route path="/index" element={<Navigate to="/" replace />} />
               
               {/* Guardian Nova - public access */}
-              <Route path="/guardian-nova" element={
-                navItems.find(item => item.to === "/guardian-nova")?.page
-              } />
+              <Route path="/guardian-nova" element={<GuardianNova />} />
               
               {/* Nova Learning - public access for child tokens */}
-              <Route path="/novalearning" element={
-                navItems.find(item => item.to === "/novalearning")?.page
-              } />
+              <Route path="/novalearning" element={<NovaLearning />} />
               
               {/* Nova Reader - public access for child tokens */}
-              <Route path="/novalearning/reading/:bookId" element={
-                navItems.find(item => item.to === "/novalearning/reading/:bookId")?.page
-              } />
+              <Route path="/novalearning/reading/:bookId" element={<NovaReader />} />
               
               {/* Homework Helper - public access */}
-              <Route path="/homework-helper" element={
-                navItems.find(item => item.to === "/homework-helper")?.page
-              } />
+              <Route path="/homework-helper" element={<HomeworkHelper />} />
               
               {/* Docs section - public access */}
               <Route path="/docs/*" element={<DocsRoutes />} />
               
               {/* App Store - accessible to both authenticated and public users */}
-              <Route path="/app-store" element={
-                navItems.find(item => item.to === "/app-store")?.page
-              } />
+              <Route path="/app-store" element={<AppStore />} />
               
               {/* Protected routes */}
               {navItems
@@ -135,7 +133,7 @@ const App = () => (
                   <Route path="reports" element={<OtaReports />} />
                 </Route>
                 <Route path="waitlist" element={
-                  navItems.find(item => item.to === "/admin/waitlist")?.page
+                  <AdminWaitlist />
                 } />
               </Route>
               
