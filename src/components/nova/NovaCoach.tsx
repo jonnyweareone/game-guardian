@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,8 +19,11 @@ type NovaInsight = {
 };
 
 export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
+  const [latestInsight, setLatestInsight] = useState<NovaInsight | null>(null);
+  const [problemWords, setProblemWords] = useState<any[]>([]);
+
   // Fetch latest AI insights for this session
-  const { data: latestInsight } = useQuery({
+  const { data: insight, refetch } = useQuery({
     queryKey: ['nova-insights', sessionId],
     queryFn: async (): Promise<NovaInsight | null> => {
       if (!sessionId || !childId) return null;
@@ -43,6 +47,54 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
     enabled: !!sessionId && !!childId,
     refetchInterval: 10000, // Refetch every 10 seconds
   });
+
+  // Load problem words
+  useEffect(() => {
+    if (!sessionId) return;
+    
+    const loadProblemWords = async () => {
+      const { data } = await supabase
+        .from('nova_problem_words')
+        .select('word, phonetics, count')
+        .eq('session_id', sessionId)
+        .order('count', { ascending: false })
+        .limit(5);
+      setProblemWords(data || []);
+    };
+
+    loadProblemWords();
+  }, [sessionId]);
+
+  // Set up realtime subscription for new insights
+  useEffect(() => {
+    if (!sessionId) return;
+    
+    const channel = supabase
+      .channel(`insights_${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'nova_insights',
+          filter: `session_id=eq.${sessionId}`
+        },
+        () => {
+          console.log('New insight received, refetching...');
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, refetch]);
+
+  // Update local state when query data changes
+  useEffect(() => {
+    setLatestInsight(insight || null);
+  }, [insight]);
 
   if (!latestInsight) {
     return (
@@ -143,6 +195,36 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
                   <p className="text-sm font-medium mb-1">Question {index + 1}:</p>
                   <p className="text-sm text-muted-foreground">{question}</p>
                 </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Problem Words */}
+      {problemWords.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <HelpCircle className="h-4 w-4" />
+              Tricky Words
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {problemWords.map((word, index) => (
+                <span
+                  key={index}
+                  className="px-2 py-1 rounded bg-muted text-sm"
+                  title={word.phonetics || `Seen ${word.count} times`}
+                >
+                  {word.word}
+                  {word.phonetics && (
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      — {word.phonetics}
+                    </span>
+                  )}
+                </span>
               ))}
             </div>
           </CardContent>

@@ -10,6 +10,8 @@ import { WordHunt } from '@/components/nova/games/WordHunt';
 import { CoinsDisplay } from '@/components/nova/CoinsDisplay';
 import { SessionOverlay } from '@/components/nova/SessionOverlay';
 import { useNovaSignals } from '@/hooks/useNovaSignals';
+import { useNovaListeningSafe } from '@/hooks/useNovaListeningSafe';
+import { startNovaSession, recordPageTurn, stopNovaSession, NovaSessionIDs } from '@/lib/novaSession';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -38,9 +40,14 @@ export default function NovaReader() {
   const [currentProgress, setCurrentProgress] = useState(0);
   const [voiceActive, setVoiceActive] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [novaIds, setNovaIds] = useState<NovaSessionIDs | null>(null);
   
   // Initialize AI listening for this reading session
   const { startListening, stopListening } = useNovaSignals(childId, isTokenMode);
+  
+  // Safe Nova listening hook (always called, gates internally)
+  const listeningEnabled = process.env.NODE_ENV === 'development'; // You can control this via env or props
+  useNovaListeningSafe(novaIds, listeningEnabled);
   
   // Session management mutations
   const createTokenSessionMutation = useMutation({
@@ -137,6 +144,35 @@ export default function NovaReader() {
       setIsSessionLoading(false);
     },
   });
+
+  // Start Nova session when component mounts and we have the required IDs
+  useEffect(() => {
+    let mounted = true;
+    if (childId && bookId && !isTokenMode && !novaIds) {
+      (async () => {
+        try {
+          const ids = await startNovaSession(childId, bookId);
+          if (mounted) {
+            setNovaIds(ids);
+            setSessionId(ids.sessionId);
+            console.log('Nova session started:', ids.sessionId);
+          }
+        } catch (error) {
+          console.error('Failed to start Nova session:', error);
+        }
+      })();
+    }
+    return () => { mounted = false; };
+  }, [childId, bookId, isTokenMode, novaIds]);
+
+  // Stop session on unmount
+  useEffect(() => {
+    return () => {
+      if (novaIds) {
+        stopNovaSession(novaIds, currentProgress);
+      }
+    };
+  }, [novaIds, currentProgress]);
 
   // Session control handlers
   const handleStartSession = () => {
@@ -284,8 +320,12 @@ export default function NovaReader() {
             onSessionCreated={(newSessionId) => {
               setSessionId(newSessionId);
             }}
-            onPageChange={(content) => {
+            onPageChange={(content, pageIndex) => {
               setCurrentPageContent(content);
+              // Record page turn for Nova session
+              if (novaIds && content) {
+                recordPageTurn(novaIds, pageIndex || 0, content);
+              }
             }}
           />
         </main>

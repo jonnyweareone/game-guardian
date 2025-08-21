@@ -20,7 +20,7 @@ interface BookRendererProps {
   onProgressUpdate?: (page: number, readPercent: number) => void;
   onCoinsAwarded?: (coins: number) => void;
   onSessionCreated?: (sessionId: string) => void;
-  onPageChange?: (content: string) => void;
+  onPageChange?: (content: string, pageIndex?: number) => void;
 }
 
 export const BookRenderer: React.FC<BookRendererProps> = ({ 
@@ -174,7 +174,7 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
       });
 
       // Notify parent of current page content
-      onPageChange?.(pages[currentPage]?.content || '');
+      onPageChange?.(pages[currentPage]?.content || '', currentPage);
 
       // Generate insights for this page (debounced)
       const timer = setTimeout(async () => {
@@ -210,7 +210,7 @@ export const BookRenderer: React.FC<BookRendererProps> = ({
     onProgressUpdate?.(newPage, progressPercent);
     
     // Notify parent of page content change
-    onPageChange?.(pages[newPage]?.content || '');
+    onPageChange?.(pages[newPage]?.content || '', newPage);
     
     // Update child bookshelf progress
     if (isTokenMode && token) {

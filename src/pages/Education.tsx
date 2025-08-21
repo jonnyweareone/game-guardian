@@ -42,6 +42,41 @@ export default function EducationPage() {
     }
   }, [children]);
 
+  // Set up live updates for reading timeline and rewards
+  useEffect(() => {
+    const channel = supabase
+      .channel('edu-live')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'child_reading_timeline' },
+        () => {
+          console.log('Timeline updated, refreshing data...');
+          // You can add specific refetch logic here if needed
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'rewards_ledger' },
+        (payload) => {
+          console.log('New reward earned:', payload);
+          // Refetch wallet for the specific child
+          const childId = payload.new?.child_id;
+          if (childId) {
+            getWallet(childId).then(wallet => {
+              setWallets(prev => ({ ...prev, [childId]: wallet }));
+            }).catch(error => {
+              console.error('Error updating wallet:', error);
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const handleNovaLearning = async (child: any) => {
     // Pre-open blank tab to avoid popup blockers
     const novaTab = window.open('', '_blank');
