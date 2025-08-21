@@ -1,8 +1,10 @@
-:root { --bg: rgba(0,0,0,.5); --fg:#fff; --accent:#00e5ff; }
+:root { --bg: rgba(0,0,0,.55); --fg:#fff; --accent:#00e5ff; }
+* { box-sizing: border-box; }
+html,body { height:100%; }
 body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial; color:var(--fg); }
-.hud { position:fixed; top:12px; left:12px; right:12px; display:flex; gap:8px; align-items:center; pointer-events:none; }
+.hud { position:fixed; top:12px; left:12px; right:12px; display:flex; gap:8px; align-items:center; pointer-events:none; z-index:5; }
 .badge { background:var(--bg); border:1px solid rgba(255,255,255,.15); padding:6px 10px; border-radius:10px; font-size:14px; pointer-events:auto; }
 .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#111c; border:1px solid #fff2; padding:10px 14px; border-radius:10px; }
-dialog { border:none; border-radius:12px; padding:16px; background:#0b0f14; color:#fff; width:min(480px, 90vw); }
+dialog { border:none; border-radius:12px; padding:16px; background:#0b0f14; color:#fff; width:min(480px, 90vw); z-index:10; }
 #quizChoices button { display:block; width:100%; margin:.4rem 0; padding:.6rem .8rem; border-radius:10px; border:1px solid #2a2f38; background:#121821; color:#fff; text-align:left; }
 #quizChoices button:hover { border-color: var(--accent); }
