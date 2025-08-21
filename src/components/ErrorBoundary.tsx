@@ -6,6 +6,7 @@ import { AlertTriangle } from 'lucide-react';
 interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
+  errorInfo?: React.ErrorInfo;
 }
 
 interface ErrorBoundaryProps {
@@ -22,9 +23,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-  }
+componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  console.error('ErrorBoundary caught an error:', error, errorInfo);
+  this.setState({ errorInfo });
+}
 
   render() {
     if (this.state.hasError) {
@@ -39,12 +41,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </p>
               
               {this.state.error && (
-                <details className="text-left mb-6 p-4 bg-muted rounded-lg">
-                  <summary className="cursor-pointer font-medium">Error details</summary>
-                  <pre className="text-sm mt-2 overflow-auto">
-                    {this.state.error.message}
-                  </pre>
-                </details>
+<details className="text-left mb-6 p-4 bg-muted rounded-lg">
+  <summary className="cursor-pointer font-medium">Error details</summary>
+  <div className="mt-2 space-y-3">
+    <div>
+      <div className="text-xs uppercase text-muted-foreground mb-1">Message</div>
+      <pre className="text-sm overflow-auto">{this.state.error.message}</pre>
+    </div>
+    {this.state.errorInfo?.componentStack && (
+      <div>
+        <div className="text-xs uppercase text-muted-foreground mb-1">Component stack</div>
+        <pre className="text-xs overflow-auto whitespace-pre-wrap">{this.state.errorInfo.componentStack}</pre>
+      </div>
+    )}
+  </div>
+</details>
               )}
 
               <div className="flex gap-2 justify-center">

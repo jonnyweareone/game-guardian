@@ -370,12 +370,14 @@ const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
           <div className="flex items-center gap-2 text-sm">
             {isListening && (
               <div className="flex items-center gap-1 text-green-600">
+
                 <Mic className="h-3 w-3" />
                 <span>Listening</span>
               </div>
             )}
             {isSpeaking && (
               <div className="flex items-center gap-1 text-blue-600">
+
                 <Volume2 className="h-3 w-3 animate-pulse" />
                 <span>Speaking</span>
               </div>
