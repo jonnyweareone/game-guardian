@@ -14,14 +14,14 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
   const { data: latestInsight } = useQuery({
     queryKey: ['nova-insights', sessionId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('nova_insights')
-        .select('*')
-        .eq('session_id', sessionId)
-        .eq('scope', 'chunk')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        const { data, error } = await supabase
+          .from('nova_insights')
+          .select('*')
+          .eq('session_id', sessionId)
+          .eq('scope', 'chunk')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching Nova insights:', error);

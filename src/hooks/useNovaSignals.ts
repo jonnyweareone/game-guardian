@@ -39,7 +39,7 @@ export function useNovaSignals(childId: string) {
           .from('child_listening_state')
           .select('is_listening, book_id')
           .eq('child_id', childId)
-          .single();
+          .maybeSingle();
         
         if (data) {
           setIsListening(data.is_listening);
@@ -64,7 +64,7 @@ export function useNovaSignals(childId: string) {
         is_listening: true,
         book_id: bookId,
         updated_at: new Date().toISOString()
-      });
+      }, { onConflict: 'child_id' });
 
       supabase.channel(`nova_child_${childId}`).send({
         type: 'broadcast',
@@ -84,7 +84,7 @@ export function useNovaSignals(childId: string) {
         is_listening: false,
         book_id: null,
         updated_at: new Date().toISOString()
-      });
+      }, { onConflict: 'child_id' });
 
       supabase.channel(`nova_child_${childId}`).send({
         type: 'broadcast',
