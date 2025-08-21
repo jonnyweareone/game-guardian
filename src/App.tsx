@@ -35,6 +35,7 @@ import Turtlestitch from './pages/play/Turtlestitch';
 import TuxMath from './pages/play/TuxMath';
 import Antura from './pages/play/Antura';
 import SpaceTrek from './pages/play/SpaceTrek';
+import NovacraftPyramid from './pages/play/NovacraftPyramid';
 
 const queryClient = new QueryClient();
 
@@ -153,6 +154,7 @@ const App = () => (
               <Route path="/play/tuxmath" element={<TuxMath />} />
               <Route path="/play/antura" element={<Antura />} />
               <Route path="/play/spacetrek" element={<SpaceTrek />} />
+              <Route path="/play/novacraft-pyramid" element={<NovacraftPyramid />} />
               
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />

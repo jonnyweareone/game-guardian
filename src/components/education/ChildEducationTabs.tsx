@@ -9,6 +9,7 @@ import { NovaShelf } from "@/components/nova/NovaShelf";
 import { TTSDemo } from "@/components/nova/TTSDemo";
 import GameActivityGrid from "@/components/education/GameActivityGrid";
 import VRSection from "@/components/education/VRSection";
+import NovaCraftSection from "@/components/education/NovaCraftSection";
 import { BookOpen, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -186,9 +187,12 @@ export default function ChildEducationTabs({ childId }: ChildEducationTabsProps)
         </TabsContent>
 
         <TabsContent value="games" className="space-y-6">
-          <div>
-            <h3 className="text-lg font-semibold mb-4">🎮 Educational Games</h3>
-            <GameActivityGrid filter="games" childId={childId} />
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">🎮 Educational Games</h3>
+              <GameActivityGrid filter="games" childId={childId} />
+            </div>
+            <NovaCraftSection childId={childId} />
           </div>
         </TabsContent>
 
