@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>NovaCraft – Pyramid Parkour</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="./world-style.css"/>
+</head>
+<body>
+  <!-- 👇 Your engine should create/own the canvas; we provide an overlay UI -->
+  <div id="hud" class="hud">
+    <div id="timer" class="badge">⏱ 00:00</div>
+    <div id="falls" class="badge">💥 0 falls</div>
+    <div id="checkpoint" class="badge">📍 Start</div>
+    <div id="toast" class="toast" hidden></div>
+  </div>
+
+  <!-- KS2 quiz modal -->
+  <dialog id="quizModal">
+    <form method="dialog">
+      <h3 id="quizQuestion">Question</h3>
+      <div id="quizChoices"></div>
+      <menu>
+        <button id="quizCancel" value="cancel">Cancel</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- Your voxel engine bundle should be loaded BEFORE the world script.
+       Example paths for a vendor'd engine (adjust to your setup):
+       <script src="/vendor/novacraft/engine/engine.js"></script>
+  -->
+  <script>
+    // Minimal NovaGame stub to avoid errors if not loaded via GameHost:
+    window.NovaGame = window.NovaGame || { init:()=>{}, levelComplete:()=>{}, send:()=>{} };
+  </script>
+  <script src="./world-pyramid.js"></script>
+</body>
+</html>
