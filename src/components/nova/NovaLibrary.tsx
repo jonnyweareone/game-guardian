@@ -179,8 +179,9 @@ export function NovaLibrary({ childId }: NovaLibraryProps) {
           started_at: new Date().toISOString(),
         });
 
-      // Set active child in sessionStorage
+      // Set active child in sessionStorage (both formats for compatibility)
       sessionStorage.setItem('nova_active_child', childId);
+      sessionStorage.setItem('nova-active-child', childId);
       
       // Navigate to reader with child ID
       navigate(`/novalearning/reading/${book.id}?child=${childId}`);

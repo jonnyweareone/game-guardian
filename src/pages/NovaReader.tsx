@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BookRenderer } from '@/components/nova/BookRenderer';
 import { NovaCoach } from '@/components/nova/NovaCoach';
 import RealtimeVoiceInterface from '@/components/nova/RealtimeVoiceInterface';
+import { useNovaSignals } from '@/hooks/useNovaSignals';
 import { Loader2 } from 'lucide-react';
 
 export default function NovaReader() {
@@ -13,6 +14,23 @@ export default function NovaReader() {
   const [searchParams] = useSearchParams();
   const childId = searchParams.get('child') || '';
   const [sessionId, setSessionId] = useState<string | null>(null);
+  
+  // Initialize AI listening for this reading session
+  const { startListening, stopListening } = useNovaSignals(childId);
+  
+  // Start listening when component mounts and bookId is available
+  useEffect(() => {
+    if (bookId && childId) {
+      startListening(bookId);
+    }
+    
+    // Cleanup: stop listening when component unmounts
+    return () => {
+      if (childId) {
+        stopListening();
+      }
+    };
+  }, [bookId, childId, startListening, stopListening]);
 
   // Load book to show title in header
   const { data: book, isLoading } = useQuery({

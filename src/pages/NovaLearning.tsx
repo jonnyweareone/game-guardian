@@ -42,30 +42,70 @@ export default function NovaLearning() {
     enabled: !!user,
   });
 
-  // Initialize selected child from URL params, session storage, or default to first child
+  // Helper function to resolve child ID from token by querying the database
+  const resolveChildFromToken = async (token: string): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('nova_child_tokens')
+        .select('child_id')
+        .eq('token', token)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error resolving token:', error);
+        return null;
+      }
+      
+      return data?.child_id || null;
+    } catch (e) {
+      console.error('Error resolving child from token:', e);
+      return null;
+    }
+  };
+
+  // Initialize selected child from token, URL params, session storage, or default to first child
   useEffect(() => {
     if (!children?.length) return;
     
-    // Check URL parameter for child selection (from token)
-    const childParam = searchParams.get('child');
+    const initializeChild = async () => {
+      // Check for child ID from token (highest priority)
+      const token = searchParams.get('token');
+      let childIdFromToken = null;
+      if (token) {
+        childIdFromToken = await resolveChildFromToken(token);
+      }
+      
+      // Check URL parameter for child selection
+      const childParam = searchParams.get('child');
+      
+      // Check session storage for persisted selection (both key formats for compatibility)
+      const storedChildId = sessionStorage.getItem('nova-active-child') || sessionStorage.getItem('nova_active_child');
+      
+      let targetChildId: string | null = null;
+      
+      if (childIdFromToken && children.find(c => c.id === childIdFromToken)) {
+        // Token has highest priority
+        targetChildId = childIdFromToken;
+      } else if (childParam && children.find(c => c.id === childParam)) {
+        targetChildId = childParam;
+      } else if (storedChildId && children.find(c => c.id === storedChildId)) {
+        targetChildId = storedChildId;
+      } else {
+        // Default to first child only if no other selection method worked
+        targetChildId = children[0].id;
+      }
+      
+      // Update sessionStorage with both key formats for compatibility
+      if (targetChildId) {
+        sessionStorage.setItem('nova-active-child', targetChildId);
+        sessionStorage.setItem('nova_active_child', targetChildId);
+      }
+      
+      setSelectedChildId(targetChildId);
+    };
     
-    // Check session storage for persisted selection
-    const storedChildId = sessionStorage.getItem('nova-active-child');
-    
-    let targetChildId: string | null = null;
-    
-    if (childParam && children.find(c => c.id === childParam)) {
-      targetChildId = childParam;
-      sessionStorage.setItem('nova-active-child', childParam);
-    } else if (storedChildId && children.find(c => c.id === storedChildId)) {
-      targetChildId = storedChildId;
-    } else {
-      // Default to first child only if no other selection method worked
-      targetChildId = children[0].id;
-      sessionStorage.setItem('nova-active-child', children[0].id);
-    }
-    
-    setSelectedChildId(targetChildId);
+    initializeChild();
   }, [children, searchParams]);
 
   useEffect(() => {
@@ -134,7 +174,9 @@ export default function NovaLearning() {
               onChildSelect={(childId) => {
                 setSelectedChildId(childId);
                 if (childId) {
+                  // Update both sessionStorage keys for compatibility
                   sessionStorage.setItem('nova-active-child', childId);
+                  sessionStorage.setItem('nova_active_child', childId);
                 }
               }}
               alertCounts={{}}
