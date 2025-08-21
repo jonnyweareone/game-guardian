@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BookRenderer } from '@/components/nova/BookRenderer';
@@ -8,16 +8,22 @@ import { NovaCoach } from '@/components/nova/NovaCoach';
 import RealtimeVoiceInterface from '@/components/nova/RealtimeVoiceInterface';
 import { WordHunt } from '@/components/nova/games/WordHunt';
 import { CoinsDisplay } from '@/components/nova/CoinsDisplay';
+import { SessionOverlay } from '@/components/nova/SessionOverlay';
 import { useNovaSignals } from '@/hooks/useNovaSignals';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function NovaReader() {
   const { bookId } = useParams<{ bookId: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const childId = searchParams.get('child') || '';
   const token = searchParams.get('token');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentPageContent, setCurrentPageContent] = useState<string>('');
+  const [overlayState, setOverlayState] = useState<'start' | 'paused' | 'ending' | null>('start');
+  const [isSessionLoading, setIsSessionLoading] = useState(false);
+  const [currentProgress, setCurrentProgress] = useState(0);
   
   // Token mode: uses different hooks and edge functions
   const isTokenMode = !!token;
@@ -25,7 +31,7 @@ export default function NovaReader() {
   // Initialize AI listening for this reading session
   const { startListening, stopListening } = useNovaSignals(childId, isTokenMode);
   
-  // Create session using token-based edge function in token mode
+  // Session management mutations
   const createTokenSessionMutation = useMutation({
     mutationFn: async () => {
       if (!token || !bookId) throw new Error('Token and bookId required');
@@ -40,31 +46,118 @@ export default function NovaReader() {
     onSuccess: (data) => {
       console.log('Token session created:', data.session_id);
       setSessionId(data.session_id);
+      setOverlayState(null);
     },
     onError: (error) => {
       console.error('Failed to create token session:', error);
+      setIsSessionLoading(false);
     },
   });
-  
-  // Start listening and create session when component mounts
-  useEffect(() => {
-    if (bookId && childId) {
-      if (isTokenMode) {
-        // In token mode, create session via edge function
-        createTokenSessionMutation.mutate();
-      } else {
-        // In normal mode, start listening via direct DB access
-        startListening(bookId);
-      }
+
+  const pauseSessionMutation = useMutation({
+    mutationFn: async () => {
+      if (!token || !sessionId) throw new Error('Token and sessionId required');
+      
+      const { data, error } = await supabase.functions.invoke('nova-pause-session-token', {
+        body: { token, sessionId }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      setOverlayState('paused');
+      setIsSessionLoading(false);
+    },
+    onError: (error) => {
+      console.error('Failed to pause session:', error);
+      setIsSessionLoading(false);
+    },
+  });
+
+  const resumeSessionMutation = useMutation({
+    mutationFn: async () => {
+      if (!token || !sessionId) throw new Error('Token and sessionId required');
+      
+      const { data, error } = await supabase.functions.invoke('nova-resume-session-token', {
+        body: { token, sessionId }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      setOverlayState(null);
+      setIsSessionLoading(false);
+    },
+    onError: (error) => {
+      console.error('Failed to resume session:', error);
+      setIsSessionLoading(false);
+    },
+  });
+
+  const endSessionMutation = useMutation({
+    mutationFn: async () => {
+      if (!token || !sessionId) throw new Error('Token and sessionId required');
+      
+      const { data, error } = await supabase.functions.invoke('nova-end-session-token', {
+        body: { token, sessionId, progress: currentProgress }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      navigate('/nova-learning');
+    },
+    onError: (error) => {
+      console.error('Failed to end session:', error);
+      setIsSessionLoading(false);
+    },
+  });
+
+  // Session control handlers
+  const handleStartSession = () => {
+    setIsSessionLoading(true);
+    if (isTokenMode) {
+      createTokenSessionMutation.mutate();
+    } else {
+      startListening(bookId);
+      setOverlayState(null);
+      setIsSessionLoading(false);
     }
-    
-    // Cleanup: stop listening when component unmounts
-    return () => {
-      if (childId && !isTokenMode) {
-        stopListening();
-      }
-    };
-  }, [bookId, childId, isTokenMode]);
+  };
+
+  const handlePauseSession = () => {
+    setIsSessionLoading(true);
+    if (isTokenMode) {
+      pauseSessionMutation.mutate();
+    } else {
+      // For normal mode, just show overlay
+      setOverlayState('paused');
+      setIsSessionLoading(false);
+    }
+  };
+
+  const handleResumeSession = () => {
+    setIsSessionLoading(true);
+    if (isTokenMode) {
+      resumeSessionMutation.mutate();
+    } else {
+      setOverlayState(null);
+      setIsSessionLoading(false);
+    }
+  };
+
+  const handleEndSession = () => {
+    setIsSessionLoading(true);
+    if (isTokenMode) {
+      endSessionMutation.mutate();
+    } else {
+      stopListening();
+      navigate('/nova-learning');
+    }
+  };
 
   // Load book to show title in header
   const { data: book, isLoading } = useQuery({
@@ -96,6 +189,19 @@ export default function NovaReader() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Session Overlay */}
+      {overlayState && (
+        <SessionOverlay
+          state={overlayState}
+          onStart={handleStartSession}
+          onResume={handleResumeSession}
+          onPause={handlePauseSession}
+          onEnd={handleEndSession}
+          bookTitle={book?.title}
+          isLoading={isSessionLoading}
+        />
+      )}
+
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
@@ -115,6 +221,16 @@ export default function NovaReader() {
                 <p className="text-sm text-muted-foreground">by {book.author}</p>
               )}
             </div>
+            {sessionId && !overlayState && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handlePauseSession}
+                disabled={isSessionLoading}
+              >
+                Pause Session
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -127,8 +243,10 @@ export default function NovaReader() {
             childId={childId}
             token={token}
             sessionId={sessionId}
+            paused={!!overlayState}
             onProgressUpdate={(page, percent) => {
               console.log(`Reading progress: page ${page + 1}, ${percent.toFixed(1)}%`);
+              setCurrentProgress(percent);
             }}
             onCoinsAwarded={(coins) => {
               console.log(`Awarded ${coins} coins for reading`);

@@ -15,13 +15,24 @@ interface BookRendererProps {
   childId: string;
   token?: string | null;
   sessionId?: string | null;
+  paused?: boolean;
   onProgressUpdate?: (page: number, readPercent: number) => void;
   onCoinsAwarded?: (coins: number) => void;
   onSessionCreated?: (sessionId: string) => void;
   onPageChange?: (content: string) => void;
 }
 
-export function BookRenderer({ bookId, childId, token, sessionId: externalSessionId, onProgressUpdate, onCoinsAwarded, onSessionCreated, onPageChange }: BookRendererProps) {
+export const BookRenderer: React.FC<BookRendererProps> = ({ 
+  bookId, 
+  childId, 
+  token, 
+  sessionId: externalSessionId, 
+  paused = false,
+  onProgressUpdate, 
+  onCoinsAwarded, 
+  onSessionCreated, 
+  onPageChange 
+}) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(externalSessionId);
@@ -188,63 +199,65 @@ export function BookRenderer({ bookId, childId, token, sessionId: externalSessio
   }, [sessionId, currentPage, pages, childId, bookId, onPageChange]);
 
   const handlePageChange = useCallback(async (newPage: number) => {
-    if (pages && newPage >= 0 && newPage < pages.length) {
-      setCurrentPage(newPage);
-      setCurrentTokenIndex(undefined); // Reset token highlighting
-      
-      const progressPercent = ((newPage + 1) / pages.length) * 100;
-      onProgressUpdate?.(newPage, progressPercent);
-      
-      // Notify parent of page content change
-      onPageChange?.(pages[newPage]?.content || '');
-      
-      // Update child bookshelf progress
-      if (isTokenMode && token) {
-        // In token mode, use edge function to update progress
-        try {
-          await supabase.functions.invoke('nova-update-progress-token', {
-            body: {
-              token,
-              bookId,
-              progress: progressPercent,
-              pageIndex: newPage
-            }
-          });
-        } catch (error) {
-          console.error('Error updating token progress:', error);
-        }
-      } else {
-        // In normal mode, update directly
-        try {
-          await supabase.from('child_bookshelf').upsert({
-            child_id: childId,
-            book_id: bookId,
-            status: progressPercent >= 100 ? 'finished' : 'reading',
+    if (paused || !pages || newPage < 0 || newPage >= pages.length) return;
+    
+    setCurrentPage(newPage);
+    setCurrentTokenIndex(undefined); // Reset token highlighting
+    
+    const progressPercent = ((newPage + 1) / pages.length) * 100;
+    onProgressUpdate?.(newPage, progressPercent);
+    
+    // Notify parent of page content change
+    onPageChange?.(pages[newPage]?.content || '');
+    
+    // Update child bookshelf progress
+    if (isTokenMode && token) {
+      // In token mode, use edge function to update progress
+      try {
+        await supabase.functions.invoke('nova-update-progress-token', {
+          body: {
+            token,
+            bookId,
             progress: progressPercent,
-            last_location: JSON.stringify({ page: newPage }),
-            started_at: new Date().toISOString()
-          }, { onConflict: 'child_id,book_id' });
-        } catch (error) {
-          console.error('Error updating bookshelf progress:', error);
-        }
+            pageIndex: newPage
+          }
+        });
+      } catch (error) {
+        console.error('Error updating token progress:', error);
       }
-      
-      // Emit page read event when advancing (throttled)
-      if (newPage > currentPage) {
-        emitPageRead();
+    } else {
+      // In normal mode, update directly
+      try {
+        await supabase.from('child_bookshelf').upsert({
+          child_id: childId,
+          book_id: bookId,
+          status: progressPercent >= 100 ? 'finished' : 'reading',
+          progress: progressPercent,
+          last_location: JSON.stringify({ page: newPage }),
+          started_at: new Date().toISOString()
+        }, { onConflict: 'child_id,book_id' });
+      } catch (error) {
+        console.error('Error updating bookshelf progress:', error);
       }
     }
-  }, [pages, onProgressUpdate, onPageChange, currentPage, emitPageRead, childId, bookId]);
+    
+    // Emit page read event when advancing (throttled)
+    if (newPage > currentPage) {
+      emitPageRead();
+    }
+  }, [paused, pages, onProgressUpdate, onPageChange, currentPage, emitPageRead, childId, bookId, isTokenMode, token]);
 
   const handlePlayPause = useCallback(() => {
+    if (paused) return;
     setIsPlaying(!isPlaying);
-  }, [isPlaying]);
+  }, [isPlaying, paused]);
 
   const handleRestart = useCallback(() => {
+    if (paused) return;
     setCurrentPage(0);
     setIsPlaying(false);
     setCurrentTokenIndex(undefined);
-  }, []);
+  }, [paused]);
 
   // Show loading state
   if (bookLoading || pagesLoading) {
@@ -348,20 +361,21 @@ export function BookRenderer({ bookId, childId, token, sessionId: externalSessio
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 0}
+              disabled={paused || currentPage === 0}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
             <span className="text-sm font-medium">
               Page {currentPage + 1} of {pages.length}
+              {paused && <span className="ml-2 text-amber-600">(Paused)</span>}
             </span>
             
             <Button
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === pages.length - 1}
+              disabled={paused || currentPage === pages.length - 1}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -421,13 +435,13 @@ export function BookRenderer({ bookId, childId, token, sessionId: externalSessio
       {/* Read to Me dock - always rendered at bottom */}
       <ReadToMeDock
         bookTitle={book?.title}
-        isPlaying={isPlaying}
+        isPlaying={isPlaying && !paused}
         onPlay={handlePlayPause}
         onPause={handlePlayPause}
-        onStop={() => setIsPlaying(false)}
+        onStop={() => !paused && setIsPlaying(false)}
         progress={currentPage}
         duration={pages.length - 1}
-        onSeek={(position) => handlePageChange(Math.round(position))}
+        onSeek={(position) => !paused && handlePageChange(Math.round(position))}
       />
     </div>
   );
