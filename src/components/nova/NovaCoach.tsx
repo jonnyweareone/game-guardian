@@ -14,20 +14,9 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
   const { data: latestInsight } = useQuery({
     queryKey: ['nova-insights', sessionId],
     queryFn: async () => {
-        const { data, error } = await supabase
-          .from('nova_insights')
-          .select('*')
-          .eq('session_id', sessionId)
-          .eq('scope', 'chunk')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-      
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching Nova insights:', error);
-        return null;
-      }
-      return data;
+      // For now, return null since AI insights table doesn't exist yet
+      // This will be replaced with actual data when the backend is implemented
+      return null;
     },
     enabled: !!sessionId,
     refetchInterval: 10000, // Refetch every 10 seconds
@@ -141,7 +130,7 @@ export const NovaCoach: React.FC<NovaCoachProps> = ({ sessionId, childId }) => {
       {/* Scope indicator */}
       <div className="text-center">
         <Badge variant="outline" className="text-xs">
-          {insight?.scope === 'chunk' ? 'Chapter' : 'Session'} insights
+          Reading insights • {new Date(insight?.created_at || Date.now()).toLocaleTimeString()}
         </Badge>
       </div>
     </div>

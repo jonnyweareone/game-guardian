@@ -16,9 +16,10 @@ interface BookRendererProps {
   onProgressUpdate?: (page: number, readPercent: number) => void;
   onCoinsAwarded?: (coins: number) => void;
   onSessionCreated?: (sessionId: string) => void;
+  onPageChange?: (content: string) => void;
 }
 
-export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded, onSessionCreated }: BookRendererProps) {
+export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded, onSessionCreated, onPageChange }: BookRendererProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -148,6 +149,9 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
         currentLocator: `page-${currentPage}`,
       });
 
+      // Notify parent of current page content
+      onPageChange?.(pages[currentPage]?.content || '');
+
       // Generate insights for this page (debounced)
       const timer = setTimeout(async () => {
         const pageContent = pages[currentPage]?.content;
@@ -170,20 +174,39 @@ export function BookRenderer({ bookId, childId, onProgressUpdate, onCoinsAwarded
 
       return () => clearTimeout(timer);
     }
-  }, [sessionId, currentPage, pages, childId, bookId]);
+  }, [sessionId, currentPage, pages, childId, bookId, onPageChange]);
 
-  const handlePageChange = useCallback((newPage: number) => {
+  const handlePageChange = useCallback(async (newPage: number) => {
     if (pages && newPage >= 0 && newPage < pages.length) {
       setCurrentPage(newPage);
       setCurrentTokenIndex(undefined); // Reset token highlighting
-      onProgressUpdate?.(newPage, ((newPage + 1) / pages.length) * 100);
+      
+      const progressPercent = ((newPage + 1) / pages.length) * 100;
+      onProgressUpdate?.(newPage, progressPercent);
+      
+      // Notify parent of page content change
+      onPageChange?.(pages[newPage]?.content || '');
+      
+      // Update child bookshelf progress
+      try {
+        await supabase.from('child_bookshelf').upsert({
+          child_id: childId,
+          book_id: bookId,
+          status: progressPercent >= 100 ? 'finished' : 'reading',
+          progress: progressPercent,
+          last_location: JSON.stringify({ page: newPage }),
+          started_at: new Date().toISOString()
+        }, { onConflict: 'child_id,book_id' });
+      } catch (error) {
+        console.error('Error updating bookshelf progress:', error);
+      }
       
       // Emit page read event when advancing (throttled)
       if (newPage > currentPage) {
         emitPageRead();
       }
     }
-  }, [pages, onProgressUpdate, currentPage, emitPageRead]);
+  }, [pages, onProgressUpdate, onPageChange, currentPage, emitPageRead, childId, bookId]);
 
   const handlePlayPause = useCallback(() => {
     setIsPlaying(!isPlaying);

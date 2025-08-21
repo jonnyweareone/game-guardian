@@ -6,6 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { BookRenderer } from '@/components/nova/BookRenderer';
 import { NovaCoach } from '@/components/nova/NovaCoach';
 import RealtimeVoiceInterface from '@/components/nova/RealtimeVoiceInterface';
+import { WordHunt } from '@/components/nova/games/WordHunt';
+import { CoinsDisplay } from '@/components/nova/CoinsDisplay';
 import { useNovaSignals } from '@/hooks/useNovaSignals';
 import { Loader2 } from 'lucide-react';
 
@@ -14,6 +16,7 @@ export default function NovaReader() {
   const [searchParams] = useSearchParams();
   const childId = searchParams.get('child') || '';
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentPageContent, setCurrentPageContent] = useState<string>('');
   
   // Initialize AI listening for this reading session
   const { startListening, stopListening } = useNovaSignals(childId);
@@ -100,11 +103,15 @@ export default function NovaReader() {
             onSessionCreated={(newSessionId) => {
               setSessionId(newSessionId);
             }}
+            onPageChange={(content) => {
+              setCurrentPageContent(content);
+            }}
           />
         </main>
         
         {/* AI Sidebar */}
         <aside className="w-80 border-l bg-muted/20 p-4 space-y-4">
+          <CoinsDisplay childId={childId} />
           <RealtimeVoiceInterface
             sessionId={sessionId}
             childId={childId}
@@ -115,6 +122,11 @@ export default function NovaReader() {
             onTranscriptUpdate={(transcript) => {
               console.log('AI transcript:', transcript);
             }}
+          />
+          <WordHunt
+            pageText={currentPageContent}
+            childId={childId}
+            bookId={bookId}
           />
           <NovaCoach
             sessionId={sessionId || ''}

@@ -1247,6 +1247,7 @@ export type Database = {
           child_id: string
           is_listening: boolean
           session_id: string | null
+          started_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1254,6 +1255,7 @@ export type Database = {
           child_id: string
           is_listening?: boolean
           session_id?: string | null
+          started_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1261,6 +1263,7 @@ export type Database = {
           child_id?: string
           is_listening?: boolean
           session_id?: string | null
+          started_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2933,6 +2936,74 @@ export type Database = {
           },
         ]
       }
+      nova_games_rounds: {
+        Row: {
+          created_at: string | null
+          id: string
+          round_no: number
+          seconds: number | null
+          session_id: string
+          success: boolean | null
+          target_word: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          round_no: number
+          seconds?: number | null
+          session_id: string
+          success?: boolean | null
+          target_word: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          round_no?: number
+          seconds?: number | null
+          session_id?: string
+          success?: boolean | null
+          target_word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nova_games_rounds_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "nova_games_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nova_games_sessions: {
+        Row: {
+          book_id: string
+          child_id: string
+          ended_at: string | null
+          game_code: string
+          id: string
+          score: number | null
+          started_at: string | null
+        }
+        Insert: {
+          book_id: string
+          child_id: string
+          ended_at?: string | null
+          game_code: string
+          id?: string
+          score?: number | null
+          started_at?: string | null
+        }
+        Update: {
+          book_id?: string
+          child_id?: string
+          ended_at?: string | null
+          game_code?: string
+          id?: string
+          score?: number | null
+          started_at?: string | null
+        }
+        Relationships: []
+      }
       nova_insights: {
         Row: {
           ai_summary: string
@@ -3698,6 +3769,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rewards_ledger: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          id: string
+          meta: Json | null
+          points: number
+          source: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          points: number
+          source: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          id?: string
+          meta?: Json | null
+          points?: number
+          source?: string
+        }
+        Relationships: []
       }
       schools: {
         Row: {
