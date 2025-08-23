@@ -2481,6 +2481,130 @@ export type Database = {
           },
         ]
       }
+      guardian_device_configs: {
+        Row: {
+          apps: Json
+          created_at: string
+          device_id: string
+          effective_manifest: Json
+          id: string
+          nextdns_profile: string | null
+          policies: Json
+          version: number
+        }
+        Insert: {
+          apps?: Json
+          created_at?: string
+          device_id: string
+          effective_manifest?: Json
+          id?: string
+          nextdns_profile?: string | null
+          policies?: Json
+          version: number
+        }
+        Update: {
+          apps?: Json
+          created_at?: string
+          device_id?: string
+          effective_manifest?: Json
+          id?: string
+          nextdns_profile?: string | null
+          policies?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_device_configs_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "guardian_devices"
+            referencedColumns: ["device_id"]
+          },
+        ]
+      }
+      guardian_device_heartbeats: {
+        Row: {
+          agent_version: string | null
+          alerts: Json
+          device_id: string
+          id: number
+          ip: unknown | null
+          metrics: Json
+          ts: string
+        }
+        Insert: {
+          agent_version?: string | null
+          alerts?: Json
+          device_id: string
+          id?: number
+          ip?: unknown | null
+          metrics?: Json
+          ts?: string
+        }
+        Update: {
+          agent_version?: string | null
+          alerts?: Json
+          device_id?: string
+          id?: number
+          ip?: unknown | null
+          metrics?: Json
+          ts?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_device_heartbeats_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "guardian_devices"
+            referencedColumns: ["device_id"]
+          },
+        ]
+      }
+      guardian_devices: {
+        Row: {
+          activated_at: string | null
+          activation_requested_at: string | null
+          config_version: number | null
+          device_code: string | null
+          device_id: string
+          hw_info: Json | null
+          id: string
+          labels: Json | null
+          last_seen: string | null
+          notes: string | null
+          owner_user: string | null
+          status: string
+        }
+        Insert: {
+          activated_at?: string | null
+          activation_requested_at?: string | null
+          config_version?: number | null
+          device_code?: string | null
+          device_id: string
+          hw_info?: Json | null
+          id?: string
+          labels?: Json | null
+          last_seen?: string | null
+          notes?: string | null
+          owner_user?: string | null
+          status?: string
+        }
+        Update: {
+          activated_at?: string | null
+          activation_requested_at?: string | null
+          config_version?: number | null
+          device_code?: string | null
+          device_id?: string
+          hw_info?: Json | null
+          id?: string
+          labels?: Json | null
+          last_seen?: string | null
+          notes?: string | null
+          owner_user?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       identity_verifications: {
         Row: {
           address_lat: number | null

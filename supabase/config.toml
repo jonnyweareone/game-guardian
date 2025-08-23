@@ -15,6 +15,18 @@ port = 54322
 enabled = true
 port = 54323
 
+[functions.device-registration]
+verify_jwt = false
+
+[functions.activation-status]
+verify_jwt = false
+
+[functions.device-config]
+verify_jwt = false
+
+[functions.heartbeat]
+verify_jwt = false
+
 [functions.nova-verify-child]
 verify_jwt = false
 

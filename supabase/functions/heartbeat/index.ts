@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -24,33 +23,31 @@ Deno.serve(async (req) => {
     });
 
     const body = await req.json().catch(() => ({}));
-    const hw_info = body?.hw_info ?? {};
-    const labels = body?.labels ?? {};
+    const { agent_version, metrics = {}, alerts = [] } = body;
 
-    // upsert device as pending
-    const { data, error } = await supabase
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
+
+    const { error: insErr } = await supabase.from("guardian_device_heartbeats").insert({
+      device_id: deviceId,
+      agent_version,
+      metrics,
+      alerts,
+      ip
+    });
+    if (insErr) throw insErr;
+
+    const { error: updErr } = await supabase
       .from("guardian_devices")
-      .upsert({
-        device_id: deviceId,
-        status: "pending",
-        activation_requested_at: new Date().toISOString(),
-        last_seen: new Date().toISOString(),
-        hw_info,
-        labels
-      }, { onConflict: "device_id" })
-      .select("*")
-      .single();
+      .update({ last_seen: new Date().toISOString() })
+      .eq("device_id", deviceId);
+    if (updErr) throw updErr;
 
-    if (error) throw error;
-
-    return new Response(JSON.stringify({
-      ok: true,
-      status: data.status,
-      approval_required: true
-    }), { headers: { "content-type": "application/json", ...corsHeaders } });
+    return new Response(JSON.stringify({ ok: true }), { 
+      headers: { "content-type": "application/json", ...corsHeaders } 
+    });
 
   } catch (e) {
-    console.error("Device registration error:", e);
+    console.error("Heartbeat error:", e);
     return new Response(JSON.stringify({ error: String(e) }), { 
       status: 500,
       headers: { "content-type": "application/json", ...corsHeaders }
