@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     });
 
     const { data, error } = await supabase
-      .from("guardian_devices")
+      .from("devices")
       .select("status, owner_user, config_version")
       .eq("device_id", deviceId)
       .single();

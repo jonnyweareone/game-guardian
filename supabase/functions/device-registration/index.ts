@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
     // upsert device as pending
     const { data, error } = await supabase
-      .from("guardian_devices")
+      .from("devices")
       .upsert({
         device_id: deviceId,
         status: "pending",

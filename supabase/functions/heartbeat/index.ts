@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
 
-    const { error: insErr } = await supabase.from("guardian_device_heartbeats").insert({
+    const { error: insErr } = await supabase.from("device_heartbeats").insert({
       device_id: deviceId,
       agent_version,
       metrics,
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     if (insErr) throw insErr;
 
     const { error: updErr } = await supabase
-      .from("guardian_devices")
+      .from("devices")
       .update({ last_seen: new Date().toISOString() })
       .eq("device_id", deviceId);
     if (updErr) throw updErr;

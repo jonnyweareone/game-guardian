@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     });
 
     const { data: dev, error: devErr } = await supabase
-      .from("guardian_devices")
+      .from("devices")
       .select("status, config_version")
       .eq("device_id", deviceId)
       .single();
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     });
 
     const { data: cfg, error: cfgErr } = await supabase
-      .from("guardian_device_configs")
+      .from("device_configs")
       .select("version, effective_manifest, policies, apps, nextdns_profile")
       .eq("device_id", deviceId)
       .order("version", { ascending: false })
