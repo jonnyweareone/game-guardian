@@ -33,7 +33,6 @@ Deno.serve(async (req) => {
       .upsert({
         device_id: deviceId,
         status: "pending",
-        activation_requested_at: new Date().toISOString(),
         last_seen: new Date().toISOString(),
         hw_info,
         labels

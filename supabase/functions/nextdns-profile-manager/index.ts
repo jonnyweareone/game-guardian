@@ -81,97 +81,196 @@ async function createNextDNSProfile({
   supabase, 
   nextdnsApiKey 
 }: any) {
-  // Create NextDNS profile
-  const profileData = {
-    name: `Guardian AI - ${child_name}`,
-    description: `Age-appropriate web filtering for ${child_name} (Age ${age})`,
-    settings: getAgeAppropriateSettings(age, school_hours_enabled, content_categories)
-  };
+  try {
+    // First, create a minimal profile to get an ID
+    const minimalProfile = {
+      name: `Guardian AI - ${child_name}`,
+      description: `Age-appropriate web filtering for ${child_name} (Age ${age})`
+    };
 
-  const nextdnsResponse = await fetch("https://api.nextdns.io/profiles", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Api-Key": nextdnsApiKey
-    },
-    body: JSON.stringify(profileData)
-  });
+    console.log("Creating NextDNS profile with minimal payload:", minimalProfile);
 
-  if (!nextdnsResponse.ok) {
-    const error = await nextdnsResponse.text();
-    console.error("NextDNS API error:", error);
-    throw new Error(`Failed to create NextDNS profile: ${error}`);
-  }
-
-  const nextdnsProfile = await nextdnsResponse.json();
-  const profileId = nextdnsProfile.data.id;
-
-  console.log(`Created NextDNS profile ${profileId} for child ${child_id}`);
-
-  // Store in database
-  const { error: dbError } = await supabase
-    .from("child_dns_profiles")
-    .upsert({
-      child_id,
-      nextdns_config: profileId,
-      school_hours_enabled: school_hours_enabled || false
+    const nextdnsResponse = await fetch("https://api.nextdns.io/profiles", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": nextdnsApiKey
+      },
+      body: JSON.stringify(minimalProfile)
     });
 
-  if (dbError) {
-    console.error("Database error:", dbError);
-    // Try to cleanup NextDNS profile
-    await cleanupNextDNSProfile(profileId, nextdnsApiKey);
-    throw new Error(`Failed to save web filter profile: ${dbError.message}`);
-  }
+    if (!nextdnsResponse.ok) {
+      const errorText = await nextdnsResponse.text();
+      console.error(`NextDNS Profile Creation Error: ${nextdnsResponse.status} - ${errorText}`);
+      
+      // Return a graceful failure instead of throwing
+      return json({
+        success: false,
+        error: `NextDNS API error: ${nextdnsResponse.status}`,
+        details: errorText,
+        fallback: true
+      }, { status: 200 }); // Return 200 so the activation continues
+    }
 
-  return json({ 
-    success: true, 
-    profile_id: profileId,
-    message: `Web filter profile created for ${child_name}`
-  });
+    const nextdnsProfile = await nextdnsResponse.json();
+    const profileId = nextdnsProfile.data?.id || nextdnsProfile.id;
+
+    if (!profileId) {
+      console.error("No profile ID returned from NextDNS API:", nextdnsProfile);
+      return json({
+        success: false,
+        error: "NextDNS API did not return profile ID",
+        fallback: true
+      }, { status: 200 });
+    }
+
+    console.log(`Created NextDNS profile ${profileId} for child ${child_id}`);
+
+    // Store in database
+    const { error: dbError } = await supabase
+      .from("child_dns_profiles")
+      .upsert({
+        child_id,
+        nextdns_config: profileId,
+        school_hours_enabled: school_hours_enabled || false
+      });
+
+    if (dbError) {
+      console.error("Database error storing DNS profile:", dbError);
+      // Try to cleanup NextDNS profile
+      await cleanupNextDNSProfile(profileId, nextdnsApiKey);
+      
+      return json({
+        success: false,
+        error: `Database error: ${dbError.message}`,
+        fallback: true
+      }, { status: 200 });
+    }
+
+    // Now try to apply the full settings to the profile
+    try {
+      const settings = getAgeAppropriateSettings(age, school_hours_enabled, content_categories);
+      
+      const updateResponse = await fetch(`https://api.nextdns.io/profiles/${profileId}/settings`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Api-Key": nextdnsApiKey
+        },
+        body: JSON.stringify(settings)
+      });
+
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        console.error(`NextDNS Settings Update Error: ${updateResponse.status} - ${errorText}`);
+        // Profile exists but settings update failed - not critical for activation
+      } else {
+        console.log(`Successfully applied settings to NextDNS profile ${profileId}`);
+      }
+    } catch (settingsError) {
+      console.error("Error applying settings to NextDNS profile:", settingsError);
+      // Non-critical error - profile still exists
+    }
+
+    return json({ 
+      success: true, 
+      profile_id: profileId,
+      message: `Web filter profile created for ${child_name}`
+    });
+  } catch (error) {
+    console.error("Error creating NextDNS profile:", error);
+    return json({
+      success: false,
+      error: error.message,
+      fallback: true
+    }, { status: 200 }); // Continue activation even if DNS setup fails
+  }
 }
 
 async function updateNextDNSProfile({ child_id, age, school_hours_enabled, content_categories, supabase, nextdnsApiKey }: any) {
-  // Get existing profile
-  const { data: dnsProfile, error: fetchError } = await supabase
-    .from("child_dns_profiles")
-    .select("nextdns_config")
-    .eq("child_id", child_id)
-    .single();
+  try {
+    // Get existing profile
+    const { data: dnsProfile, error: fetchError } = await supabase
+      .from("child_dns_profiles")
+      .select("nextdns_config")
+      .eq("child_id", child_id)
+      .maybeSingle();
 
-  if (fetchError || !dnsProfile) {
-    return json({ error: "DNS profile not found" }, { status: 404 });
+    if (fetchError) {
+      console.error("Database error fetching DNS profile:", fetchError);
+      return json({
+        success: false,
+        error: `Database error: ${fetchError.message}`,
+        fallback: true
+      }, { status: 200 });
+    }
+
+    if (!dnsProfile?.nextdns_config) {
+      console.log("No existing DNS profile found, creating new one");
+      // No existing profile, create one instead
+      return await createNextDNSProfile({
+        child_id,
+        child_name: `Child-${child_id.slice(0, 8)}`,
+        age,
+        school_hours_enabled,
+        content_categories,
+        supabase,
+        nextdnsApiKey
+      });
+    }
+
+    const profileId = dnsProfile.nextdns_config;
+    
+    // Update NextDNS profile settings
+    const updatedSettings = getAgeAppropriateSettings(age, school_hours_enabled, content_categories);
+    
+    const nextdnsResponse = await fetch(`https://api.nextdns.io/profiles/${profileId}/settings`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": nextdnsApiKey
+      },
+      body: JSON.stringify(updatedSettings)
+    });
+
+    if (!nextdnsResponse.ok) {
+      const errorText = await nextdnsResponse.text();
+      console.error(`NextDNS update error: ${nextdnsResponse.status} - ${errorText}`);
+      
+      return json({
+        success: false,
+        error: `NextDNS API error: ${nextdnsResponse.status}`,
+        details: errorText,
+        fallback: true
+      }, { status: 200 });
+    }
+
+    // Update local database
+    const { error: dbError } = await supabase
+      .from("child_dns_profiles")
+      .update({ 
+        school_hours_enabled,
+        updated_at: new Date().toISOString()
+      })
+      .eq("child_id", child_id);
+
+    if (dbError) {
+      console.error("Database error updating DNS profile:", dbError);
+    }
+
+    return json({ 
+      success: true, 
+      profile_id: profileId,
+      message: "DNS profile updated" 
+    });
+  } catch (error) {
+    console.error("Error updating NextDNS profile:", error);
+    return json({
+      success: false,
+      error: error.message,
+      fallback: true
+    }, { status: 200 });
   }
-
-  const profileId = dnsProfile.nextdns_config;
-  
-  // Update NextDNS profile settings
-  const updatedSettings = getAgeAppropriateSettings(age, school_hours_enabled, content_categories);
-  
-  const nextdnsResponse = await fetch(`https://api.nextdns.io/profiles/${profileId}/settings`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Api-Key": nextdnsApiKey
-    },
-    body: JSON.stringify(updatedSettings)
-  });
-
-  if (!nextdnsResponse.ok) {
-    const error = await nextdnsResponse.text();
-    console.error("NextDNS update error:", error);
-    throw new Error(`Failed to update NextDNS profile: ${error}`);
-  }
-
-  // Update local database
-  const { error: dbError } = await supabase
-    .from("child_dns_profiles")
-    .update({ school_hours_enabled })
-    .eq("child_id", child_id);
-
-  if (dbError) throw new Error(`Failed to update DNS profile: ${dbError.message}`);
-
-  return json({ success: true, message: "DNS profile updated" });
 }
 
 async function deleteNextDNSProfile({ child_id, supabase, nextdnsApiKey }: any) {

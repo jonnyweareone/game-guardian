@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     const { data, error } = await supabase
       .from("devices")
-      .select("status, owner_user, config_version")
+      .select("status, parent_id, config_version")
       .eq("device_id", deviceId)
       .single();
 
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       ok: true,
       status: data.status,
-      approved: !!data.owner_user && data.status === "active",
+      approved: !!data.parent_id && data.status === "active",
       config_version: data.config_version ?? 0
     }), { headers: { "content-type": "application/json", ...corsHeaders } });
 
