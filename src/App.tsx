@@ -21,6 +21,7 @@ import ProductReceiver from "./pages/ProductReceiver";
 // Import page components directly
 import HomePage from "./pages/HomePage";
 import Auth from "./pages/Auth";
+import DeviceActivation from "./pages/DeviceActivation";
 import GuardianNova from "./pages/GuardianNova";
 import NovaLearning from "./pages/NovaLearning";
 import NovaReader from "./pages/NovaReader";
@@ -67,7 +68,10 @@ const App = () => (
                   <Auth />
                 </AuthGuard>
               } />
-              
+
+              {/* Device activation route - public access */}
+              <Route path="/activate" element={<DeviceActivation />} />
+
               {/* Home route - now properly mapped to / */}
               <Route path="/" element={<HomePage />} />
               
