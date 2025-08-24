@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ import { getWallet, listRewards, listRedemptions } from '@/lib/rewardsApi';
 import { edu } from '@/lib/educationApi';
 import PairDeviceDialog from '@/components/PairDeviceDialog';
 import AlertCard from '@/components/AlertCard';
+import ActivationWizard from '@/components/ActivationWizard';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -72,7 +73,16 @@ const Dashboard = () => {
   const [children, setChildren] = useState<ChildData[]>([]);
   const [wallets, setWallets] = useState<Record<string, any>>({});
   const [timeline, setTimeline] = useState<any[]>([]);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Check for activation parameters
+  const shouldActivate = searchParams.get('activate') === '1';
+  const activationDeviceId = searchParams.get('device_id');
+  const activationDeviceCode = searchParams.get('device_code') || '';
+
+  console.log('Dashboard activation check:', { shouldActivate, activationDeviceId, activationDeviceCode });
 
   // Fetch devices
   const { data: devices = [], isLoading: devicesLoading, refetch: refetchDevices } = useQuery({
@@ -238,6 +248,18 @@ const Dashboard = () => {
     return formatDistanceToNow(new Date(device.last_seen), { addSuffix: true });
   };
 
+  const handleActivationWizardClose = () => {
+    // Clear activation parameters from URL
+    const currentParams = new URLSearchParams(searchParams);
+    currentParams.delete('activate');
+    currentParams.delete('device_id');
+    currentParams.delete('device_code');
+    
+    // Update URL without activation parameters
+    const newUrl = currentParams.toString();
+    navigate(newUrl ? `?${newUrl}` : '/', { replace: true });
+  };
+
   // Show loading state
   if (devicesLoading || childrenLoading) {
     return (
@@ -253,7 +275,18 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <>
+      {/* Activation Wizard */}
+      {shouldActivate && activationDeviceId && (
+        <ActivationWizard
+          deviceId={activationDeviceId}
+          deviceCode={activationDeviceCode}
+          isOpen={true}
+          onClose={handleActivationWizardClose}
+        />
+      )}
+
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Family Dashboard</h1>
@@ -551,7 +584,8 @@ const Dashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </>
   );
 };
 
