@@ -106,7 +106,7 @@ serve(async (req) => {
     if (Array.isArray(app_ids) && app_ids.length > 0) {
       const { data: appData, error: appFetchError } = await supabase
         .from('app_catalog')
-        .select('id, name, type, platform, is_essential')
+        .select('id, name, type, platform, is_essential, category')
         .in('id', app_ids);
 
       if (appFetchError) {

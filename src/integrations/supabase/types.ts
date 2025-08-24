@@ -227,6 +227,7 @@ export type Database = {
           pegi_rating: number | null
           platform: string | null
           publisher: string | null
+          type: string | null
           updated_at: string
           version: string | null
           website: string | null
@@ -252,6 +253,7 @@ export type Database = {
           pegi_rating?: number | null
           platform?: string | null
           publisher?: string | null
+          type?: string | null
           updated_at?: string
           version?: string | null
           website?: string | null
@@ -277,6 +279,7 @@ export type Database = {
           pegi_rating?: number | null
           platform?: string | null
           publisher?: string | null
+          type?: string | null
           updated_at?: string
           version?: string | null
           website?: string | null
@@ -2196,6 +2199,90 @@ export type Database = {
           ssid?: string | null
         }
         Relationships: []
+      }
+      device_job_logs: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          log: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          log: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          log?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_job_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "device_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          device_id: string
+          id: string
+          payload: Json
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          device_id: string
+          id?: string
+          payload?: Json
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          device_id?: string
+          id?: string
+          payload?: Json
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_jobs_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_jobs_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "device_jobs_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "vw_admin_devices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       device_pair_tokens: {
         Row: {
@@ -4545,6 +4632,19 @@ export type Database = {
           ok: boolean
         }[]
       }
+      device_jobs_claim_next: {
+        Args: { p_device_id: string }
+        Returns: {
+          attempts: number
+          created_at: string
+          device_id: string
+          id: string
+          payload: Json
+          status: string
+          type: string
+          updated_at: string
+        }
+      }
       ensure_wallet: {
         Args: { p_child: string }
         Returns: undefined
@@ -4563,6 +4663,10 @@ export type Database = {
       is_parent_of_child: {
         Args: { _child: string }
         Returns: boolean
+      }
+      jwt_device_id_text: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       mark_devices_offline_if_stale: {
         Args: { grace_seconds: number }
