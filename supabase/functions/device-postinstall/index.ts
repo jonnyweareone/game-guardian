@@ -28,8 +28,7 @@ serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
     const body = await req.json().catch(() => ({}));
@@ -46,7 +45,7 @@ serve(async (req) => {
       return json({ error: "device_id and child_id required" }, { status: 400 });
     }
 
-    // Verify user owns the device
+    // Verify device exists and get parent info
     const { data: device, error: deviceError } = await supabase
       .from('devices')
       .select('id, parent_id')
@@ -85,7 +84,7 @@ serve(async (req) => {
         .eq('child_id', child_id);
 
       if (deleteError) {
-        console.log('device-postinstall: Note - could not clear existing app selections (table may not exist)', deleteError);
+        console.log('device-postinstall: Note - could not clear existing app selections', deleteError);
       }
 
       // Insert new selections
@@ -107,7 +106,7 @@ serve(async (req) => {
     if (Array.isArray(app_ids) && app_ids.length > 0) {
       const { data: appData, error: appFetchError } = await supabase
         .from('app_catalog')
-        .select('id, name, type, source, package, essential')
+        .select('id, name, type, platform, is_essential')
         .in('id', app_ids);
 
       if (appFetchError) {
@@ -147,7 +146,7 @@ serve(async (req) => {
       web_filters: payload.web_filters
     });
 
-    // Enqueue post-install job for device agent
+    // Enqueue post-install job for device agent using new table structure
     const { error: jobError } = await supabase
       .from('device_jobs')
       .insert({
