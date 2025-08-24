@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,18 @@ import SEOHead from '@/components/SEOHead';
 
 const DeviceActivation = () => {
   const [searchParams] = useSearchParams();
-  const deviceId = searchParams.get('device_id');
+  const { deviceId: routeDeviceId } = useParams();
+  
+  // Get device ID from route params or query params (multiple possible names)
+  const deviceId = routeDeviceId || 
+    searchParams.get('device_id') || 
+    searchParams.get('deviceId') || 
+    searchParams.get('deviceid');
+  
+  // Debug logging
+  console.log('DeviceActivation: Route deviceId:', routeDeviceId);
+  console.log('DeviceActivation: Query params:', Object.fromEntries(searchParams.entries()));
+  console.log('DeviceActivation: Final deviceId:', deviceId);
   
   const [activeTab, setActiveTab] = useState('signin');
   const [email, setEmail] = useState('');

@@ -69,8 +69,9 @@ const App = () => (
                 </AuthGuard>
               } />
 
-              {/* Device activation route - public access */}
+              {/* Device activation routes - public access */}
               <Route path="/activate" element={<DeviceActivation />} />
+              <Route path="/activate/:deviceId" element={<DeviceActivation />} />
 
               {/* Home route - now properly mapped to / */}
               <Route path="/" element={<HomePage />} />
