@@ -60,11 +60,11 @@ serve(async (req) => {
       return json({ error: "device_id and child_id required" }, { status: 400 });
     }
 
-    // Verify device exists and get parent info
+    // Use deviceCode from JWT to look up the device (more secure than trusting body)
     const { data: device, error: deviceError } = await supabase
       .from('devices')
       .select('id, parent_id')
-      .eq('id', device_id)
+      .eq('device_code', deviceCode)
       .single();
 
     if (deviceError || !device) {
@@ -81,7 +81,7 @@ serve(async (req) => {
         child_id: child_id,
         updated_at: new Date().toISOString()
       })
-      .eq('id', device_id);
+      .eq('id', device.id);
 
     if (deviceUpdateError) {
       console.error('device-postinstall: Error updating device', deviceUpdateError);
@@ -165,7 +165,7 @@ serve(async (req) => {
     const { error: jobError } = await supabase
       .from('device_jobs')
       .insert({
-        device_id,
+        device_id: device.id,
         type: 'POST_INSTALL',
         payload,
         status: 'queued'

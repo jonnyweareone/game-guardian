@@ -1,288 +1,353 @@
-import { useEffect, useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, Copy, Loader2, AlertTriangle, Sparkles } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Shield, CheckCircle2, Copy, Loader2, Sparkles } from 'lucide-react';
 import { useActivationStatus } from '@/hooks/useActivationStatus';
-import { useToast } from '@/hooks/use-toast';
-import SEOHead from '@/components/SEOHead';
-
-// Lightweight confetti component that respects reduced motion
-const ConfettiBurst = ({ show }: { show: boolean }) => {
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  
-  if (!show || prefersReducedMotion) return null;
-
-  const delay = Math.random() * 2;
-
-  return (
-    <>
-      <style>{`
-        @keyframes confetti {
-          0% { 
-            opacity: 1; 
-            transform: translateY(0) rotate(0deg); 
-          }
-          100% { 
-            opacity: 0; 
-            transform: translateY(300px) rotate(360deg); 
-          }
-        }
-        .confetti-particle {
-          animation: confetti 3s ease-out forwards;
-        }
-      `}</style>
-      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-        {[...Array(20)].map((_, i) => {
-          const animationDelay = Math.random() * 2;
-          return (
-            <div
-              key={i}
-              className="absolute confetti-particle opacity-0"
-              style={{
-                left: `${20 + Math.random() * 60}%`,
-                top: `${10 + Math.random() * 20}%`,
-                animationDelay: `${animationDelay}s`,
-              }}
-            >
-              <Sparkles 
-                className="w-4 h-4 text-primary animate-spin"
-                style={{
-                  animationDuration: `${1 + Math.random()}s`,
-                }}
-              />
-            </div>
-          );
-        })}
-      </div>
-    </>
-  );
-};
-
-// Mask token helper: keep first 6 and last 4 chars, replace middle with •
-const maskToken = (token: string): string => {
-  if (token.length <= 10) return token;
-  const start = token.slice(0, 6);
-  const end = token.slice(-4);
-  const middle = '•'.repeat(Math.min(token.length - 10, 20));
-  return `${start}${middle}${end}`;
-};
+import Confetti from 'react-confetti';
 
 const ActivationComplete = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const deviceCode = searchParams.get('device_id') || '';
   
-  const deviceId = searchParams.get('device_id');
-  const { loading, activated, deviceJwt, error, retry } = useActivationStatus(deviceId);
+  const { status, deviceJwt, isPolling } = useActivationStatus(deviceCode);
   
   const [showModal, setShowModal] = useState(false);
+  const [children, setChildren] = useState<any[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState('');
+  const [newChildName, setNewChildName] = useState('');
+  const [loadingChildren, setLoadingChildren] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [autoRedirectTimer, setAutoRedirectTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // Handle successful activation
+  // Load children when modal should show
   useEffect(() => {
-    if (activated && deviceJwt && !showModal) {
+    if (status === 'activated' && deviceJwt && !showModal && !showSuccess) {
       setShowModal(true);
-      setShowConfetti(true);
-      
-      // Auto-redirect after 5 seconds
-      const timer = setTimeout(() => {
-        navigate('/devices');
-      }, 5000);
-      setAutoRedirectTimer(timer);
+      loadChildren();
     }
-  }, [activated, deviceJwt, showModal, navigate]);
+  }, [status, deviceJwt, showModal, showSuccess]);
 
-  // Cleanup auto-redirect timer
-  useEffect(() => {
-    return () => {
-      if (autoRedirectTimer) {
-        clearTimeout(autoRedirectTimer);
+  const loadChildren = async () => {
+    setLoadingChildren(true);
+    try {
+      const { data, error } = await supabase
+        .from('children')
+        .select('id, name')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setChildren(data || []);
+      
+      // Auto-select if only one child
+      if (data && data.length === 1) {
+        setSelectedChildId(data[0].id);
       }
-    };
-  }, [autoRedirectTimer]);
+    } catch (error: any) {
+      console.error('Error loading children:', error);
+      toast.error('Failed to load child profiles');
+    } finally {
+      setLoadingChildren(false);
+    }
+  };
 
-  const handleCopyToken = async () => {
-    if (!deviceJwt) return;
+  const createChild = async () => {
+    if (!newChildName.trim()) {
+      toast.error('Please enter a name for the child');
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('children')
+        .insert({
+          name: newChildName.trim(),
+          parent_id: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      return data.id;
+    } catch (error: any) {
+      console.error('Error creating child:', error);
+      toast.error('Failed to create child profile');
+      return null;
+    }
+  };
+
+  const handleContinue = async () => {
+    setIsProcessing(true);
     
     try {
-      await navigator.clipboard.writeText(deviceJwt);
-      toast({
-        title: "Token copied!",
-        description: "Device token has been copied to clipboard.",
+      let childId = selectedChildId;
+      
+      // Create new child if needed
+      if (children.length === 0) {
+        childId = await createChild();
+        if (!childId) {
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      if (!childId) {
+        toast.error('Please select a child or create a new profile');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Call device-postinstall
+      const { data, error } = await supabase.functions.invoke('device-postinstall', {
+        headers: {
+          'Authorization': `Bearer ${deviceJwt}`,
+          'Content-Type': 'application/json'
+        },
+        body: {
+          device_id: deviceCode,
+          child_id: childId
+        }
       });
-    } catch (err) {
-      toast({
-        title: "Copy failed",
-        description: "Please copy the token manually.",
-        variant: "destructive"
-      });
+
+      if (error) throw error;
+
+      if (data?.ok) {
+        setShowSuccess(true);
+        setShowConfetti(true);
+        
+        // Hide confetti after 3 seconds
+        setTimeout(() => setShowConfetti(false), 3000);
+        
+        // Auto-redirect after 5 seconds
+        setTimeout(() => {
+          navigate('/devices');
+        }, 5000);
+      } else {
+        throw new Error(data?.error || 'Setup failed');
+      }
+    } catch (error: any) {
+      console.error('Device setup error:', error);
+      toast.error(error.message || 'Failed to complete device setup');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleGoToVerification = () => {
-    if (autoRedirectTimer) clearTimeout(autoRedirectTimer);
-    navigate('/settings/verification');
+  const copyToken = () => {
+    if (deviceJwt) {
+      navigator.clipboard.writeText(deviceJwt);
+      toast.success('Device token copied to clipboard');
+    }
   };
 
-  const handleGoToDevices = () => {
-    if (autoRedirectTimer) clearTimeout(autoRedirectTimer);
+  const maskToken = (token: string) => {
+    if (!token || token.length < 10) return token;
+    return `${token.slice(0, 6)}${'•'.repeat(Math.max(0, token.length - 10))}${token.slice(-4)}`;
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
     navigate('/devices');
   };
 
-  const handleModalClose = (open: boolean) => {
-    if (!open) {
-      if (autoRedirectTimer) clearTimeout(autoRedirectTimer);
-      navigate('/devices');
-    }
-  };
-
-  if (!deviceId) {
+  if (status === 'error') {
     return (
-      <>
-        <SEOHead
-          title="Activation Complete - Game Guardian AI™"
-          description="Complete your Guardian AI device activation."
-        />
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle className="text-center text-destructive">Missing Device ID</CardTitle>
-              <CardDescription className="text-center">
-                No device ID provided for activation completion.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate('/devices')} className="w-full">
-                Go to Devices
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-red-600">Activation Failed</CardTitle>
+            <CardDescription>
+              Unable to activate device {deviceCode}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/devices')} className="w-full">
+              Return to Devices
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (status === 'pending' || isPolling) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Activating Device</CardTitle>
+            <CardDescription>
+              Waiting for device {deviceCode} to come online...
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
+              <Badge variant="secondary" className="mb-4">
+                Status: {status}
+              </Badge>
+              <p className="text-sm text-muted-foreground">
+                This may take a few moments. Please keep this page open.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
     <>
-      <SEOHead
-        title="Activation Complete - Game Guardian AI™"
-        description="Your Guardian AI device activation is being completed."
-      />
+      {showConfetti && (
+        <Confetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.3}
+        />
+      )}
       
-      <ConfettiBurst show={showConfetti} />
-      
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        {/* Loading State */}
-        {loading && !error && (
-          <Card className="w-full max-w-md text-center">
-            <CardHeader>
-              <div className="flex justify-center mb-4">
-                <Loader2 className="h-12 w-12 text-primary animate-spin" />
-              </div>
-              <CardTitle>Finishing sync...</CardTitle>
-              <CardDescription>
-                Please wait while we complete your device activation.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Device ID:</strong> {deviceId}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Error State */}
-        {error && !loading && (
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <div className="flex justify-center mb-4">
-                <AlertTriangle className="h-12 w-12 text-destructive" />
-              </div>
-              <CardTitle className="text-center">Activation Not Finished</CardTitle>
-              <CardDescription className="text-center">
-                {error}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert>
-                <AlertDescription>
-                  The activation process is taking longer than expected. Please try again or check your device connection.
-                </AlertDescription>
-              </Alert>
-              <div className="flex gap-2">
-                <Button onClick={retry} className="flex-1">
-                  Retry
-                </Button>
-                <Button onClick={() => navigate('/devices')} variant="outline" className="flex-1">
-                  Go to Devices
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Success Modal */}
-      <Dialog open={showModal} onOpenChange={handleModalClose}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={showModal} onOpenChange={closeModal}>
+        <DialogContent className="sm:max-w-md" onEscapeKeyDown={closeModal}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-safe" />
-              Device activated and synced
+            <div className="flex justify-center mb-4">
+              {showSuccess ? (
+                <div className="relative">
+                  <CheckCircle2 className="h-12 w-12 text-green-600" />
+                  <Sparkles className="h-6 w-6 text-yellow-500 absolute -top-1 -right-1 animate-pulse" />
+                </div>
+              ) : (
+                <Shield className="h-12 w-12 text-blue-600" />
+              )}
+            </div>
+            <DialogTitle className="text-center">
+              {showSuccess ? 'Setup Complete!' : 'Device Activated & Synced'}
             </DialogTitle>
-            <DialogDescription>
-              Your Guardian AI device is now active and ready to protect your family's gaming experience.
+            <DialogDescription className="text-center">
+              {showSuccess 
+                ? 'Your Game Guardian device is ready to use'
+                : 'Complete setup by assigning a child profile'
+              }
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
-            <div className="p-4 bg-muted rounded-lg space-y-2">
+            {/* Device Info */}
+            <div className="bg-muted p-3 rounded-lg space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Device ID:</span>
-                <code className="text-sm font-mono bg-background px-2 py-1 rounded">
-                  {deviceId}
-                </code>
+                <Badge variant="outline" className="font-mono">
+                  {deviceCode}
+                </Badge>
               </div>
-              
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Device Token:</span>
-                <div className="flex items-center gap-2">
-                  <code className="text-sm font-mono bg-background px-2 py-1 rounded">
-                    {deviceJwt ? maskToken(deviceJwt) : 'Loading...'}
+                <div className="flex items-center space-x-2">
+                  <code className="text-xs bg-background px-2 py-1 rounded">
+                    {maskToken(deviceJwt || '')}
                   </code>
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={handleCopyToken}
+                    variant="ghost"
+                    onClick={copyToken}
+                    className="h-6 w-6 p-0"
                     disabled={!deviceJwt}
-                    aria-label="Copy device token to clipboard"
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
             </div>
-            
-            <div className="text-xs text-muted-foreground text-center">
-              Auto-redirecting to devices in 5 seconds...
-            </div>
-          </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button onClick={handleGoToVerification} className="w-full sm:w-auto">
-              Go to Verification
-            </Button>
-            <Button onClick={handleGoToDevices} variant="outline" className="w-full sm:w-auto">
-              Go to Devices
-            </Button>
-          </DialogFooter>
+            {!showSuccess && (
+              <>
+                {/* Child Selection */}
+                {loadingChildren ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : children.length > 0 ? (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Select Child Profile:</Label>
+                    <RadioGroup value={selectedChildId} onValueChange={setSelectedChildId}>
+                      {children.map((child) => (
+                        <div key={child.id} className="flex items-center space-x-2">
+                          <RadioGroupItem value={child.id} id={child.id} />
+                          <Label htmlFor={child.id} className="cursor-pointer">
+                            {child.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Label htmlFor="child-name" className="text-sm font-medium">
+                      Create Child Profile:
+                    </Label>
+                    <Input
+                      id="child-name"
+                      placeholder="Enter child's name"
+                      value={newChildName}
+                      onChange={(e) => setNewChildName(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                )}
+
+                <Button 
+                  onClick={handleContinue} 
+                  className="w-full"
+                  disabled={isProcessing || (!selectedChildId && !newChildName.trim())}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Setting up device...
+                    </>
+                  ) : (
+                    'Continue'
+                  )}
+                </Button>
+              </>
+            )}
+
+            {showSuccess && (
+              <div className="space-y-3">
+                <div className="text-center text-sm text-muted-foreground mb-4">
+                  Redirecting to devices in 5 seconds...
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    onClick={() => navigate('/settings/verification')}
+                    className="flex-1"
+                  >
+                    Go to Verification
+                  </Button>
+                  <Button 
+                    onClick={() => navigate('/devices')}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Go to Devices
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
