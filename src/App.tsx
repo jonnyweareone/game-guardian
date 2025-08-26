@@ -48,6 +48,7 @@ import TuxMath from './pages/play/TuxMath';
 import Antura from './pages/play/Antura';
 import SpaceTrek from './pages/play/SpaceTrek';
 import NovacraftPyramid from './pages/play/NovacraftPyramid';
+import CodeShare from './pages/CodeShare';
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,9 @@ const App = () => (
               
               {/* App Store - accessible to both authenticated and public users */}
               <Route path="/app-store" element={<AppStore />} />
+              
+              {/* Code Share - hidden route with token access */}
+              <Route path="/__share/code" element={<CodeShare />} />
               
               {/* Protected routes */}
               {navItems
