@@ -89,3 +89,18 @@ verify_jwt = false
 
 [functions.realtime-chat]
 verify_jwt = false
+
+[functions.device-heartbeat]
+verify_jwt = false
+
+[functions.device-app-manifest]
+verify_jwt = false
+
+[functions.device-postinstall]
+verify_jwt = false
+
+[functions.device-jobs-poll]
+verify_jwt = false
+
+[functions.device-status]
+verify_jwt = false
