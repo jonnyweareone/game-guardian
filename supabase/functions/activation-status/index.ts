@@ -16,33 +16,35 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const deviceId = req.headers.get("x-device-id") ?? "";
-    if (!deviceId) return new Response(JSON.stringify({ error: "Missing x-device-id" }), { 
+    // Accept device_id from either query parameter or header
+    const url = new URL(req.url);
+    const deviceCode = url.searchParams.get("device_id") || req.headers.get("x-device-id") || "";
+    
+    if (!deviceCode) return new Response(JSON.stringify({ error: "Missing device_id" }), { 
       status: 400,
       headers: { "content-type": "application/json", ...corsHeaders }
     });
 
     const { data, error } = await supabase
       .from("devices")
-      .select("status, parent_id, config_version")
-      .eq("device_id", deviceId)
-      .single();
+      .select("status, parent_id, is_active, paired_at")
+      .eq("device_code", deviceCode)
+      .maybeSingle();
 
-    if (error) return new Response(JSON.stringify({ error: error.message }), { 
-      status: 404,
-      headers: { "content-type": "application/json", ...corsHeaders }
-    });
-
+    // Always return 200 - never 404 for "not yet activated"
+    const activated = !!(data?.is_active || data?.paired_at || (data?.parent_id && data?.status === "active"));
+    
     return new Response(JSON.stringify({
-      ok: true,
-      status: data.status,
-      approved: !!data.parent_id && data.status === "active",
-      config_version: data.config_version ?? 0
+      activated,
+      status: data?.status || "pending"
     }), { headers: { "content-type": "application/json", ...corsHeaders } });
 
   } catch (e) {
     console.error("Activation status error:", e);
-    return new Response(JSON.stringify({ error: String(e) }), { 
+    return new Response(JSON.stringify({ 
+      activated: false,
+      error: "Internal error" 
+    }), { 
       status: 500,
       headers: { "content-type": "application/json", ...corsHeaders }
     });

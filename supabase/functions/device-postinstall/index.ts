@@ -1,10 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
+import { verifyDeviceJWT } from "../_shared/jwt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-device-id",
 };
 
 function json(body: Record<string, unknown>, init?: ResponseInit) {
@@ -20,11 +21,31 @@ serve(async (req) => {
   console.log('device-postinstall: Function invoked');
 
   try {
+    // Verify Device JWT (required)
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      console.log('device-postinstall: No authorization header');
-      return json({ error: "Unauthorized" }, { status: 401 });
+    if (!authHeader?.startsWith("Bearer ")) {
+      console.log('device-postinstall: Missing Device JWT');
+      return json({ error: "Missing Device JWT" }, { status: 401 });
     }
+
+    const deviceJWT = authHeader.substring(7);
+    const jwtResult = await verifyDeviceJWT(deviceJWT);
+    
+    if (!jwtResult.ok) {
+      console.log('device-postinstall: Invalid Device JWT', { expired: jwtResult.expired });
+      return json({ 
+        error: "Invalid Device JWT", 
+        expired: jwtResult.expired 
+      }, { status: 401 });
+    }
+
+    const deviceCode = jwtResult.payload?.sub;
+    if (!deviceCode) {
+      console.log('device-postinstall: Invalid device code in JWT');
+      return json({ error: "Invalid device code in JWT" }, { status: 401 });
+    }
+
+    console.log('device-postinstall: Device JWT verified', { device_code: deviceCode });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,

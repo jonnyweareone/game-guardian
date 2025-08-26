@@ -17,8 +17,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const deviceId = req.headers.get("x-device-id") ?? "";
-    if (!deviceId) return new Response(JSON.stringify({ error: "Missing x-device-id" }), { 
+    const deviceCode = req.headers.get("x-device-id") ?? "";
+    if (!deviceCode) return new Response(JSON.stringify({ error: "Missing x-device-id" }), { 
       status: 400,
       headers: { "content-type": "application/json", ...corsHeaders }
     });
@@ -27,20 +27,29 @@ Deno.serve(async (req) => {
     const hw_info = body?.hw_info ?? {};
     const labels = body?.labels ?? {};
 
-    // upsert device as pending
+    // upsert device as pending using device_code (not device_id)
     const { data, error } = await supabase
       .from("devices")
       .upsert({
-        device_id: deviceId,
-        status: "pending",
+        device_code: deviceCode,
+        status: "pending", 
         last_seen: new Date().toISOString(),
-        hw_info,
-        labels
-      }, { onConflict: "device_id" })
+        // Set required parent_id to prevent constraint violations
+        parent_id: "00000000-0000-0000-0000-000000000000"
+      }, { onConflict: "device_code" })
       .select("*")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Device registration error:", error);
+      return new Response(JSON.stringify({ 
+        error: "Registration failed", 
+        details: error.message 
+      }), { 
+        status: 500,
+        headers: { "content-type": "application/json", ...corsHeaders }
+      });
+    }
 
     return new Response(JSON.stringify({
       ok: true,
@@ -50,7 +59,10 @@ Deno.serve(async (req) => {
 
   } catch (e) {
     console.error("Device registration error:", e);
-    return new Response(JSON.stringify({ error: String(e) }), { 
+    return new Response(JSON.stringify({ 
+      error: "Registration failed", 
+      details: String(e) 
+    }), { 
       status: 500,
       headers: { "content-type": "application/json", ...corsHeaders }
     });
