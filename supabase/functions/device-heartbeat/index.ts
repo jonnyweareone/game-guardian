@@ -26,14 +26,14 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const auth = req.headers.get("authorization") || "";
-  if (!auth.startsWith("Bearer ")) return json({ error: "unauthorized" }, { status: 401 });
+  if (!auth.startsWith("Bearer ")) return json({ error: "Missing Device JWT" }, { status: 401 });
+  
   const token = auth.slice(7);
-  const v = await verifyDeviceJWT(token);
-  if (!v.ok) {
-    if (v.expired) return json({ error: "token_expired" }, { status: 401 });
-    return json({ error: "unauthorized" }, { status: 401 });
+  const { ok, deviceCode, error: verifyError } = await verifyDeviceJWT(token);
+  if (!ok || !deviceCode) {
+    console.error("device-heartbeat auth error:", verifyError);
+    return json({ error: "Unauthorized", details: verifyError }, { status: 401 });
   }
-  const device_code = String(v.payload.sub);
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -51,7 +51,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const deviceCode = device_code;
+    // Find device by device code from JWT
     const { data: device, error: devErr } = await supabase
       .from("devices")
       .select("id")

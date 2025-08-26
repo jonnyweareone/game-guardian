@@ -1,73 +1,72 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { verify, Algorithm } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+import { verifyDeviceJWT } from "../_shared/jwt.ts";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey"
+const corsHeaders = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, x-device-id"
 };
 
 function json(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
     ...init,
-    headers: { "Content-Type": "application/json", ...CORS, ...(init.headers || {}) }
+    headers: { "Content-Type": "application/json", ...corsHeaders, ...(init.headers || {}) }
   });
 }
 
-async function verifyDeviceJwt(h?: string) {
-  if (!h?.startsWith("Bearer ")) throw new Error("Unauthorized");
-  const token = h.slice(7);
-  const secret = Deno.env.get("DEVICE_JWT_SECRET")!;
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["verify"]
-  );
-  const payload = await verify(token, key, "HS256" as Algorithm) as any;
-  return { device_code: payload?.sub || payload?.device_code };
-}
-
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  
   try {
-    const { device_code } = await verifyDeviceJwt(req.headers.get("Authorization") || undefined);
+    // Verify Device JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "Missing Device JWT" }, { status: 401 });
+    }
 
-    const url = Deno.env.get("SUPABASE_URL")!;
-    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const svc = createClient(url, key, { auth: { persistSession: false } });
+    const token = authHeader.slice(7);
+    const { ok, deviceCode, error: verifyError } = await verifyDeviceJWT(token);
+    if (!ok || !deviceCode) {
+      console.error("device-app-manifest auth error:", verifyError);
+      return json({ error: "Unauthorized", details: verifyError }, { status: 401 });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } }
+    );
 
     // Resolve device → UUID
-    const { data: device, error: e1 } = await svc
+    const { data: device, error: deviceError } = await supabase
       .from("devices")
       .select("id")
-      .eq("device_code", device_code)
+      .eq("device_code", deviceCode)
       .single();
-    if (e1 || !device) return json({ error: "Device not found" }, { status: 404 });
+    if (deviceError || !device) return json({ error: "Device not found" }, { status: 404 });
 
     // Active child (many-to-many assignment table)
-    const { data: assign } = await svc
+    const { data: assign } = await supabase
       .from("device_child_assignments")
       .select("child_id")
       .eq("device_id", device.id)
       .eq("is_active", true)
       .maybeSingle();
 
-    // Essentials from catalog (now including icon_url)
-    const { data: essentials, error: e2 } = await svc
+    // Essentials from catalog
+    const { data: essentials, error: essentialsError } = await supabase
       .from("app_catalog")
       .select("id, name, category, is_essential, platform, version, description, enabled, icon_url")
       .eq("is_essential", true)
       .eq("enabled", true);
 
-    if (e2) throw e2;
+    if (essentialsError) throw essentialsError;
 
-    // Child-selected apps (now including icon_url)
+    // Child-selected apps
     let chosen: any[] = [];
     if (assign?.child_id) {
-      const { data, error } = await svc
+      const { data, error } = await supabase
         .from("child_app_selections")
         .select("selected, app_id, app_catalog:app_id ( id, name, category, is_essential, platform, version, description, enabled, icon_url )")
         .eq("child_id", assign.child_id)
@@ -94,7 +93,7 @@ serve(async (req) => {
     // Fetch DNS configuration for active child
     let dnsConfig = null;
     if (assign?.child_id) {
-      const { data: dnsProfile } = await svc
+      const { data: dnsProfile } = await supabase
         .from("child_dns_profiles")
         .select("nextdns_config, school_hours_enabled, bypass_until, bypass_reason")
         .eq("child_id", assign.child_id)
@@ -115,12 +114,13 @@ serve(async (req) => {
     }
 
     return json({ 
-      device_code, 
+      device_code: deviceCode, 
       child_id: assign?.child_id || null, 
       apps,
       dns_config: dnsConfig
     });
   } catch (e) {
-    return json({ error: e.message || "Unauthorized" }, { status: 401 });
+    console.error("device-app-manifest error:", e);
+    return json({ error: e.message || "Internal error" }, { status: 500 });
   }
 });

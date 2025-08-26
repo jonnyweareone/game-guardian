@@ -29,20 +29,14 @@ serve(async (req) => {
     }
 
     const deviceJWT = authHeader.substring(7);
-    const jwtResult = await verifyDeviceJWT(deviceJWT);
+    const { ok, deviceCode, error: verifyError } = await verifyDeviceJWT(deviceJWT);
     
-    if (!jwtResult.ok) {
-      console.log('device-postinstall: Invalid Device JWT', { expired: jwtResult.expired });
+    if (!ok || !deviceCode) {
+      console.log('device-postinstall: Invalid Device JWT', verifyError);
       return json({ 
         error: "Invalid Device JWT", 
-        expired: jwtResult.expired 
+        details: verifyError
       }, { status: 401 });
-    }
-
-    const deviceCode = jwtResult.payload?.sub;
-    if (!deviceCode) {
-      console.log('device-postinstall: Invalid device code in JWT');
-      return json({ error: "Invalid device code in JWT" }, { status: 401 });
     }
 
     console.log('device-postinstall: Device JWT verified', { device_code: deviceCode });
