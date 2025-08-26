@@ -19,7 +19,7 @@ const ActivationComplete = () => {
   const [searchParams] = useSearchParams();
   const deviceCode = searchParams.get('device_id') || '';
   
-  const { status, deviceJwt, isPolling } = useActivationStatus(deviceCode);
+  const { loading, activated, status, deviceJwt, error, retry } = useActivationStatus(deviceCode);
   
   const [showModal, setShowModal] = useState(false);
   const [children, setChildren] = useState<any[]>([]);
@@ -180,7 +180,7 @@ const ActivationComplete = () => {
     );
   }
 
-  if (status === 'pending' || isPolling) {
+  if (status === 'pending' || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
