@@ -36,6 +36,10 @@ const DeviceList = () => {
           )
         `)
         .is('deleted_at', null)
+        .eq('is_active', true)
+        .not('device_jwt', 'is', null)
+        .not('paired_at', 'is', null)
+        .in('status', ['online', 'active'])
         .order('created_at', { ascending: false });
       
       if (error) throw error;
