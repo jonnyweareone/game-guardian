@@ -22,6 +22,7 @@ import ProductReceiver from "./pages/ProductReceiver";
 import HomePage from "./pages/HomePage";
 import Auth from "./pages/Auth";
 import DeviceActivation from "./pages/DeviceActivation";
+import ActivationComplete from "./pages/ActivationComplete";
 import GuardianNova from "./pages/GuardianNova";
 import NovaLearning from "./pages/NovaLearning";
 import NovaReader from "./pages/NovaReader";
@@ -73,6 +74,10 @@ const App = () => (
               {/* Device activation routes - public access */}
               <Route path="/activate" element={<DeviceActivation />} />
               <Route path="/activate/:deviceId" element={<DeviceActivation />} />
+              <Route path="/activation/complete" element={<ActivationComplete />} />
+              
+              {/* Settings redirect for verification */}
+              <Route path="/settings/verification" element={<Navigate to="/account" replace />} />
 
               {/* Home route - now properly mapped to / */}
               <Route path="/" element={<HomePage />} />

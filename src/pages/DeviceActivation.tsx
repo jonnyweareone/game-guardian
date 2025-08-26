@@ -97,7 +97,7 @@ const DeviceActivation = () => {
             await fetch(`${getLocalAgentBase()}/token`, {
               method: "POST",
               headers: { "content-type": "application/json" },
-              body: JSON.stringify({ device_jwt: data.device_jwt })
+              body: JSON.stringify({ device_jwt: "[MASKED]" }) // Never log full token
             });
           } catch { 
             // Ignore if helper not running
@@ -111,11 +111,9 @@ const DeviceActivation = () => {
         description: "Starting activation wizard..."
       });
 
-      // Redirect to dashboard with activation parameters
+      // Redirect to activation completion
       setTimeout(() => {
-        navigate(
-          `/dashboard?activate=1&device_id=${encodeURIComponent(data.device_id || deviceId)}&device_code=${encodeURIComponent(data?.device?.device_code || deviceCode || '')}`
-        );
+        navigate(`/activation/complete?device_id=${encodeURIComponent(data.device_id || deviceId)}`);
       }, 2000);
 
     } catch (error: any) {
