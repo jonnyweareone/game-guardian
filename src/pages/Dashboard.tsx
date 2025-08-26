@@ -277,13 +277,8 @@ const Dashboard = () => {
   return (
     <>
       {/* Activation Wizard */}
-      {shouldActivate && activationDeviceId && (
-        <ActivationWizard
-          deviceId={activationDeviceId}
-          deviceCode={activationDeviceCode}
-          isOpen={true}
-          onClose={handleActivationWizardClose}
-        />
+      {shouldActivate && activationDeviceCode && (
+        <ActivationWizard deviceCode={activationDeviceCode} />
       )}
 
       <div className="container mx-auto p-6 space-y-6">

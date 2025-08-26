@@ -306,12 +306,9 @@ const Dashboard = () => {
       </div>
 
       {/* Activation Wizard */}
-      <ActivationWizard
-        deviceId={activationDeviceId}
-        deviceCode={activationDeviceCode}
-        isOpen={showActivationWizard}
-        onClose={handleActivationComplete}
-      />
+      {showActivationWizard && activationDeviceCode && (
+        <ActivationWizard deviceCode={activationDeviceCode} />
+      )}
     </div>
   );
 };
