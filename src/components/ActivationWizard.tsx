@@ -22,6 +22,9 @@ type Stage = "auth" | "bind" | "child" | "apps" | "dns" | "poll" | "posting" | "
 interface DNSConfig {
   schoolHoursEnabled: boolean;
   nextDnsConfig: string;
+  socialMediaBlocked: boolean;
+  gamingBlocked: boolean;
+  entertainmentBlocked: boolean;
 }
 
 export default function ActivationWizard({ deviceCode }: Props) {
@@ -37,6 +40,9 @@ export default function ActivationWizard({ deviceCode }: Props) {
   const [dnsConfig, setDnsConfig] = useState<DNSConfig>({
     schoolHoursEnabled: false,
     nextDnsConfig: "",
+    socialMediaBlocked: true,
+    gamingBlocked: true,
+    entertainmentBlocked: true,
   });
   const [deviceJwt, setDeviceJwt] = useState<string>("");
 
@@ -206,9 +212,9 @@ export default function ActivationWizard({ deviceCode }: Props) {
       const web_filter_config = {
         nextdns_profile: dnsConfig.nextDnsConfig || null,
         school_hours_enabled: dnsConfig.schoolHoursEnabled,
-        social_media_blocked: true,
-        gaming_blocked: false,
-        entertainment_blocked: false,
+        social_media_blocked: dnsConfig.socialMediaBlocked,
+        gaming_blocked: dnsConfig.gamingBlocked,
+        entertainment_blocked: dnsConfig.entertainmentBlocked,
       };
 
       setStage("posting");
@@ -405,10 +411,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
         <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
           <CardHeader>
-            <CardTitle>Select Apps</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Choose apps to pre-load for {currentChild?.name || 'this child'}. Essential apps are automatically selected.
-            </p>
+            <CardTitle>Select Apps for {currentChild?.name || 'this child'}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="max-h-[60vh] overflow-y-auto">
@@ -450,10 +453,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
         <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
           <CardHeader>
-            <CardTitle>DNS & Web Filter</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Configure web filtering and parental controls for {currentChild?.name || 'this child'}
-            </p>
+            <CardTitle>Web Filters & Protection</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="max-h-[60vh] overflow-y-auto">

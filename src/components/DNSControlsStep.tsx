@@ -1,12 +1,14 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Shield, Clock, CheckCircle, Info } from 'lucide-react';
+import { Shield, CheckCircle } from 'lucide-react';
 
 interface DNSConfig {
   schoolHoursEnabled: boolean;
   nextDnsConfig: string;
+  socialMediaBlocked: boolean;
+  gamingBlocked: boolean;
+  entertainmentBlocked: boolean;
 }
 
 interface DNSControlsStepProps {
@@ -16,87 +18,133 @@ interface DNSControlsStepProps {
 }
 
 export function DNSControlsStep({ dnsConfig, onDnsConfigChange, childName }: DNSControlsStepProps) {
-  const handleToggleSchoolHours = (enabled: boolean) => {
+  const [socialMediaBlocked, setSocialMediaBlocked] = useState(true);
+  const [gamingBlocked, setGamingBlocked] = useState(true);
+  const [entertainmentBlocked, setEntertainmentBlocked] = useState(true);
+
+  const handleToggle = (field: keyof DNSConfig, value: boolean) => {
     onDnsConfigChange({
       ...dnsConfig,
-      schoolHoursEnabled: enabled
+      [field]: value
     });
+    
+    // Update local state for additional controls
+    if (field === 'socialMediaBlocked') setSocialMediaBlocked(value);
+    if (field === 'gamingBlocked') setGamingBlocked(value);
+    if (field === 'entertainmentBlocked') setEntertainmentBlocked(value);
   };
+
+  const blockedCategories = [
+    'Adult Content',
+    'Terrorism & Extremism', 
+    'Gambling',
+    'Violence & Weapons',
+    'Drugs & Alcohol'
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
           <Shield className="h-5 w-5" />
-          DNS Filtering & Controls
+          Web Filters & Protection
         </h3>
         <p className="text-sm text-muted-foreground">
-          Guardian AI will automatically create a custom NextDNS profile for {childName} with age-appropriate filtering.
+          Guardian AI will automatically create age-appropriate web filtering for {childName}.
         </p>
       </div>
 
-      <Card className="border-green-200 bg-green-50/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base text-green-800">
-            <CheckCircle className="h-4 w-4" />
-            Automatic DNS Profile Creation
-          </CardTitle>
-          <CardDescription className="text-green-700">
-            A NextDNS profile will be created automatically with age-appropriate content filtering
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-green-700">
-          <div className="flex items-start gap-2">
-            <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium">What's included:</p>
-              <ul className="mt-1 space-y-1 text-xs">
-                <li>• Age-appropriate content blocking based on PEGI ratings</li>
-                <li>• Security protection (malware, phishing, scams)</li>
-                <li>• Privacy protection (tracker blocking)</li>
-                <li>• Custom Guardian AI block page</li>
-              </ul>
+      {/* Automatic Protection Active */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <h4 className="font-medium">Automatic Protection Active</h4>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          These categories have been automatically removed to safeguard {childName}:
+        </p>
+        
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          {blockedCategories.map((category, index) => (
+            <div key={category} className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-destructive"></div>
+              <span>{category}</span>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Clock className="h-4 w-4" />
-            School Hours Protection
-          </CardTitle>
-          <CardDescription>
-            Enable enhanced filtering during school hours (8 AM - 3 PM, weekdays)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="school-hours">Enable School Hours Filtering</Label>
-              <p className="text-sm text-muted-foreground">
-                Blocks social media, games, and entertainment sites during school hours
+      {/* Safe Search Enabled */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <h4 className="font-medium">Safe Search Enabled</h4>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Safe Search is automatically enabled across all search engines
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Filters explicit content from search results on Google, Bing, YouTube, and other platforms to ensure {childName} sees age-appropriate content.
+        </p>
+      </div>
+
+      {/* Additional Content Controls */}
+      <div className="space-y-4">
+        <h4 className="font-medium">Additional Content Controls</h4>
+        <p className="text-sm text-muted-foreground">
+          Choose additional categories to filter based on {childName}'s age and your family preferences
+        </p>
+        
+        <div className="space-y-4">
+          {/* Social Media Platforms */}
+          <div className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-blue-500"></div>
+                <span className="font-medium">Social Media Platforms</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Block access to social media during device use (Recommended for ages under 13)
               </p>
             </div>
             <Switch
-              id="school-hours"
-              checked={dnsConfig.schoolHoursEnabled}
-              onCheckedChange={handleToggleSchoolHours}
+              checked={socialMediaBlocked}
+              onCheckedChange={(value) => handleToggle('socialMediaBlocked', value)}
             />
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="p-3 rounded-lg bg-muted/50 border">
-        <div className="flex items-start gap-2">
-          <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-muted-foreground">
-            <p className="font-medium">DNS Setup</p>
-            <p className="mt-1">
-              The custom DNS profile will be automatically pushed to your Guardian AI device. 
-              No manual configuration required. You can modify these settings later from your child's profile.
-            </p>
+          {/* Gaming Platforms */}
+          <div className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-purple-500"></div>
+                <span className="font-medium">Gaming Platforms</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Block web-based gaming sites and platforms (Age-appropriate filtering applied)
+              </p>
+            </div>
+            <Switch
+              checked={gamingBlocked}
+              onCheckedChange={(value) => handleToggle('gamingBlocked', value)}
+            />
+          </div>
+
+          {/* Entertainment & Streaming */}
+          <div className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-orange-500"></div>
+                <span className="font-medium">Entertainment & Streaming</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Block streaming and entertainment sites during device use
+              </p>
+            </div>
+            <Switch
+              checked={entertainmentBlocked}
+              onCheckedChange={(value) => handleToggle('entertainmentBlocked', value)}
+            />
           </div>
         </div>
       </div>
