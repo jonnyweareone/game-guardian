@@ -32,11 +32,11 @@ const ActivationComplete = () => {
 
   // Load children when modal should show
   useEffect(() => {
-    if (status === 'activated' && deviceJwt && !showModal && !showSuccess) {
+    if (activated && deviceJwt && !showModal && !showSuccess) {
       setShowModal(true);
       loadChildren();
     }
-  }, [status, deviceJwt, showModal, showSuccess]);
+  }, [activated, deviceJwt, showModal, showSuccess]);
 
   const loadChildren = async () => {
     setLoadingChildren(true);
@@ -160,7 +160,7 @@ const ActivationComplete = () => {
     navigate('/devices');
   };
 
-  if (status === 'error') {
+  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">

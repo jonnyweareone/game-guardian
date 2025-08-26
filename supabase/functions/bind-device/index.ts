@@ -1,4 +1,3 @@
-
 /**
  * Supabase Edge Function: bind-device
  * - Requires a logged-in parent (Authorization: Bearer <access_token>)
@@ -8,7 +7,6 @@
  */
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
-import { mintDeviceJWT } from "../_shared/jwt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +28,45 @@ async function sha256b64url(data: string) {
   const enc = new TextEncoder().encode(data);
   const d = await crypto.subtle.digest("SHA-256", enc);
   return b64url(new Uint8Array(d));
+}
+
+// Inline JWT functions to avoid import issues
+async function signDeviceJWT(deviceCode: string) {
+  const DEVICE_JWT_SECRET = Deno.env.get("DEVICE_JWT_SECRET");
+  const JWT_ISSUER = Deno.env.get("JWT_ISSUER") ?? "gameguardian";
+  const JWT_AUDIENCE = Deno.env.get("JWT_AUDIENCE") ?? "device";
+
+  if (!DEVICE_JWT_SECRET) {
+    throw new Error("DEVICE_JWT_SECRET environment variable is not set");
+  }
+
+  // Create a proper key for HS256
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(DEVICE_JWT_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
+
+  const payload = {
+    sub: deviceCode,
+    iss: JWT_ISSUER,
+    aud: JWT_AUDIENCE,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 30), // 30 days
+  };
+
+  const header = { alg: "HS256", typ: "JWT" };
+  
+  const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  
+  const data = `${encodedHeader}.${encodedPayload}`;
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  
+  return `${data}.${encodedSignature}`;
 }
 
 serve(async (req) => {
@@ -67,9 +104,9 @@ serve(async (req) => {
     const user = userData.user;
     console.log("bind-device: User authenticated", user.id);
 
-    // Parse body
+    // Parse body - accept both device_id and device_code for compatibility
     const body = await req.json().catch(() => ({}));
-    const deviceCode = (body?.device_id as string | undefined)?.toUpperCase();
+    const deviceCode = (body?.device_id ?? body?.device_code as string | undefined)?.toUpperCase();
     const deviceName = body?.device_name as string | undefined;
     const childId = body?.child_id as string | undefined;
     const consentVersion = (body?.consent_version as string | undefined) ?? "1.0";
@@ -103,11 +140,12 @@ serve(async (req) => {
       console.log("bind-device: Child validation successful", validChildId);
     }
 
-    // Upsert device by device_code (unique)
+    // Upsert device by device_code (unique) and mark as active
     const row: Record<string, unknown> = {
       device_code: deviceCode,
       parent_id: user.id,
       is_active: true,
+      status: 'active', // Set status to active for activation-status function
       paired_at: new Date().toISOString(),
     };
     if (deviceName) row.device_name = deviceName;
@@ -129,13 +167,13 @@ serve(async (req) => {
 
     console.log("bind-device: Device upserted successfully", upserted);
 
-    // Generate refresh secret and short-lived JWT
+    // Generate refresh secret and JWT
     const raw = new Uint8Array(48);
     crypto.getRandomValues(raw);
     const refresh_secret = b64url(raw);
     const refresh_secret_hash = await sha256b64url(refresh_secret);
 
-    const token = await mintDeviceJWT(deviceCode, 15);
+    const token = await signDeviceJWT(deviceCode);
 
     // Cache token and refresh secret hash on the device row
     const { error: updErr } = await anonClient
@@ -144,7 +182,8 @@ serve(async (req) => {
         device_jwt: token, 
         refresh_secret_hash,
         last_token_issued_at: new Date().toISOString(),
-        is_active: true 
+        is_active: true,
+        status: 'active' // Ensure status is set to active
       })
       .eq("device_code", deviceCode);
 

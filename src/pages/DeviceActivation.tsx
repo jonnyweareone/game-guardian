@@ -28,7 +28,7 @@ const DeviceActivation = () => {
     setIsBinding(true);
     try {
       const { data, error } = await supabase.functions.invoke('bind-device', {
-        body: { device_code: inputCode.trim().toUpperCase() }
+        body: { device_id: inputCode.trim().toUpperCase() }
       });
 
       if (error) throw error;

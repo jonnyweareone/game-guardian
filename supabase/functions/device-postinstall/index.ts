@@ -1,7 +1,5 @@
-
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
-import { verifyDeviceJWT } from "../_shared/jwt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +11,65 @@ function json(body: Record<string, unknown>, init?: ResponseInit) {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers || {}), ...corsHeaders },
   });
+}
+
+// Inline JWT verification to avoid import issues
+async function verifyDeviceJWT(token: string) {
+  try {
+    const DEVICE_JWT_SECRET = Deno.env.get("DEVICE_JWT_SECRET");
+    const JWT_AUDIENCE = Deno.env.get("JWT_AUDIENCE") ?? "device";
+
+    if (!DEVICE_JWT_SECRET) {
+      return { ok: false, error: "JWT secret not configured" };
+    }
+
+    // Split the JWT token
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return { ok: false, error: "Invalid JWT format" };
+    }
+
+    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+    
+    // Decode payload
+    const payload = JSON.parse(atob(encodedPayload.replace(/-/g, "+").replace(/_/g, "/")));
+    
+    // Check expiry
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      return { ok: false, expired: true };
+    }
+
+    // Check audience
+    if (payload.aud !== JWT_AUDIENCE) {
+      return { ok: false, error: "Invalid audience" };
+    }
+
+    // Verify signature
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(DEVICE_JWT_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+
+    const data = `${encodedHeader}.${encodedPayload}`;
+    const signatureBuffer = new Uint8Array(atob(encodedSignature.replace(/-/g, "+").replace(/_/g, "/")).split('').map(c => c.charCodeAt(0)));
+    
+    const isValid = await crypto.subtle.verify("HMAC", key, signatureBuffer, new TextEncoder().encode(data));
+    
+    if (!isValid) {
+      return { ok: false, error: "Invalid signature" };
+    }
+
+    return { ok: true, deviceCode: String(payload.sub) };
+  } catch (e) {
+    const msg = String(e?.message || e);
+    if (msg.includes("expired") || msg.includes("exp")) {
+      return { ok: false, expired: true };
+    }
+    return { ok: false, error: msg };
+  }
 }
 
 serve(async (req) => {
