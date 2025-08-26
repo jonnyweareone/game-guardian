@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 // Token and expiry configuration
 const CODE_SHARE_TOKEN = 'ggshare_3Kzfd7PzYV8FQd2uG1sNcR9wLXhAqM5t';
-const CODE_SHARE_EXPIRES_AT = new Date('2025-01-29T00:00:00Z'); // 72 hours from now
+const CODE_SHARE_EXPIRES_AT = new Date('2025-08-29T00:00:00Z'); // Updated expiry date
 
 // Import all safe source files at build time
 const sourceFiles = import.meta.glob([
