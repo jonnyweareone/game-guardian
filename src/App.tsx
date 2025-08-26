@@ -99,7 +99,7 @@ const App = () => (
               <Route path="/app-store" element={<AppStore />} />
               
               {/* Code Share - hidden route with token access */}
-              <Route path="/__share/code" element={<CodeShare />} />
+              <Route path="/share-code" element={<CodeShare />} />
               
               {/* Protected routes */}
               {navItems
