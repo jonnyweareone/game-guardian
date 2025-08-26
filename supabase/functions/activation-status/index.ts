@@ -2,8 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const corsHeaders = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, x-device-id",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-device-id",
 };
 
 // Inline JWT functions to avoid import issues
@@ -51,7 +51,14 @@ serve(async (req) => {
   try {
     const url = new URL(req.url);
     const q = url.searchParams.get("device_id") ?? req.headers.get("x-device-id") ?? "";
-    if (!q) return new Response(JSON.stringify({ error: "Missing device_id" }), { status: 400, headers: corsHeaders });
+    if (!q) {
+      return new Response(JSON.stringify({ error: "Missing device_id" }), { 
+        status: 400, 
+        headers: { "Content-Type": "application/json", ...corsHeaders } 
+      });
+    }
+
+    console.log(`activation-status: Looking up device: ${q}`);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -62,11 +69,12 @@ serve(async (req) => {
     let { data: row, error } = await supabase
       .from("devices")
       .select("id, device_code, status, is_active, paired_at, device_jwt")
-      .eq("device_code", q)
+      .eq("device_code", q.toUpperCase())
       .maybeSingle();
 
     // If not found and q looks like a UUID, try by id for backward compatibility
     if (!row && /^[0-9a-f-]{8}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{12}$/i.test(q)) {
+      console.log(`activation-status: Trying UUID lookup for: ${q}`);
       const { data: byId } = await supabase
         .from("devices")
         .select("id, device_code, status, is_active, paired_at, device_jwt")
@@ -75,34 +83,59 @@ serve(async (req) => {
       if (byId) row = byId;
     }
 
-    if (error) throw error;
+    if (error) {
+      console.error("activation-status: Database error:", error);
+      throw error;
+    }
+
+    if (!row) {
+      console.log(`activation-status: Device not found: ${q}`);
+      return new Response(JSON.stringify({ 
+        activated: false, 
+        error: "Device not found",
+        device_id: q
+      }), { 
+        headers: { "Content-Type": "application/json", ...corsHeaders } 
+      });
+    }
 
     // Robust activation detection - check multiple indicators
-    const activated = row?.status === 'active' || !!row?.device_jwt || !!row?.is_active || !!row?.paired_at;
+    const activated = row.status === 'active' || !!row.device_jwt || !!row.is_active || !!row.paired_at;
+    
+    console.log(`activation-status: Device ${row.device_code} - activated: ${activated}, status: ${row.status}, has_jwt: ${!!row.device_jwt}, is_active: ${row.is_active}, paired_at: ${row.paired_at}`);
     
     if (!activated) {
       return new Response(JSON.stringify({ 
         activated: false, 
-        status: row?.status ?? "pending",
-        device_code: row?.device_code
+        status: row.status ?? "pending",
+        device_code: row.device_code,
+        device_id: row.device_code
       }), { 
-        headers: { "content-type": "application/json", ...corsHeaders } 
+        headers: { "Content-Type": "application/json", ...corsHeaders } 
       });
     }
 
     // Use the canonical device_code for token generation
     const token = await signDeviceJWT(row.device_code);
+    console.log(`activation-status: Generated JWT for device ${row.device_code}`);
+    
     return new Response(JSON.stringify({ 
       activated: true, 
       device_jwt: token, 
       device_id: row.device_code, 
       device_code: row.device_code,
-      status: "online" 
+      status: "active" 
     }), {
-      headers: { "content-type": "application/json", ...corsHeaders }
+      headers: { "Content-Type": "application/json", ...corsHeaders }
     });
   } catch (e) {
-    console.error("activation-status error", e);
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders });
+    console.error("activation-status error:", e);
+    return new Response(JSON.stringify({ 
+      error: "Internal server error",
+      message: String(e) 
+    }), { 
+      status: 500, 
+      headers: { "Content-Type": "application/json", ...corsHeaders } 
+    });
   }
 });

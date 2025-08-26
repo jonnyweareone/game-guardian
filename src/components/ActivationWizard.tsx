@@ -7,17 +7,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, CheckCircle, Shield, User, Copy, ArrowLeft, ArrowRight, Smartphone, Settings } from "lucide-react";
+import { Loader2, CheckCircle, Shield, User, Copy, ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import Confetti from "react-confetti";
 import Auth from "@/pages/Auth";
+import { AppSelectionStep } from "@/components/AppSelectionStep";
+import { DNSControlsStep } from "@/components/DNSControlsStep";
 
 type Props = { deviceCode: string };
-type Child = { id: string; name: string };
-type App = { id: string; name: string; category: string; is_essential?: boolean };
+type Child = { id: string; name: string; age?: number };
 
 type Stage = "auth" | "bind" | "child" | "apps" | "dns" | "poll" | "posting" | "done" | "error";
+
+interface DNSConfig {
+  schoolHoursEnabled: boolean;
+  nextDnsConfig: string;
+}
 
 export default function ActivationWizard({ deviceCode }: Props) {
   const navigate = useNavigate();
@@ -28,10 +33,11 @@ export default function ActivationWizard({ deviceCode }: Props) {
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [newChildName, setNewChildName] = useState("");
   const [newChildAge, setNewChildAge] = useState("");
-  const [apps, setApps] = useState<App[]>([]);
-  const [selectedApps, setSelectedApps] = useState<Record<string, boolean>>({});
-  const [dnsId, setDnsId] = useState<string>("");
-  const [schoolHours, setSchoolHours] = useState<boolean>(false);
+  const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
+  const [dnsConfig, setDnsConfig] = useState<DNSConfig>({
+    schoolHoursEnabled: false,
+    nextDnsConfig: "",
+  });
   const [deviceJwt, setDeviceJwt] = useState<string>("");
 
   // Auth wall
@@ -69,31 +75,12 @@ export default function ActivationWizard({ deviceCode }: Props) {
         if (bindError) throw bindError;
         if (!bindRes?.ok) throw new Error(bindRes?.error || "Failed to bind device");
 
-        // Load children
+        // Load children with age data
         const { data: kids, error: kidsErr } = await supabase
-          .from("children").select("id,name").order("created_at", { ascending: true });
+          .from("children").select("id,name,age").order("created_at", { ascending: true });
         if (kidsErr) throw kidsErr;
         setChildren(kids || []);
         setSelectedChild(kids?.[0]?.id || "");
-
-        // Load apps
-        const { data: catalog, error: appErr } = await supabase
-          .from("app_catalog")
-          .select("id,name,category,is_essential")
-          .eq("is_active", true)
-          .order("category", { ascending: true })
-          .order("name", { ascending: true });
-        if (appErr) throw appErr;
-        
-        setApps(catalog || []);
-        
-        // Pre-select essential apps
-        const essentialApps = (catalog || []).filter(app => app.is_essential);
-        const initialSelection: Record<string, boolean> = {};
-        essentialApps.forEach(app => {
-          initialSelection[app.id] = true;
-        });
-        setSelectedApps(initialSelection);
         
         setStage("child");
       } catch (e: any) {
@@ -123,7 +110,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
             age: parseInt(newChildAge),
             parent_id: user?.id
           })
-          .select()
+          .select("id,name,age")
           .single();
         
         if (createError) throw createError;
@@ -151,43 +138,81 @@ export default function ActivationWizard({ deviceCode }: Props) {
     try {
       setStage("poll");
 
-      // Poll activation-status for Device JWT
+      // Poll activation-status for Device JWT with fallback
       const supabaseUrl = "https://xzxjwuzwltoapifcyzww.supabase.co";
       const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eGp3dXp3bHRvYXBpZmN5end3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NTQwNzksImV4cCI6MjA3MDEzMDA3OX0.w4QLWZSKig3hdoPOyq4dhTS6sleGsObryIolphhi9yo";
       
       let jwt = "";
-      for (let i = 0; i < 12; i++) {
-        const r = await fetch(`${supabaseUrl}/functions/v1/activation-status?device_id=${encodeURIComponent(deviceCode)}`, {
-          headers: { 
-            apikey: anonKey, 
-            Authorization: `Bearer ${anonKey}` 
-          },
-        }).then(r => r.json()).catch(() => ({} as any));
-        
-        if (r?.activated && r?.device_jwt) { 
-          jwt = r.device_jwt; 
-          break; 
+      console.log("Starting device activation polling for:", deviceCode);
+      
+      // Primary polling: activation-status endpoint
+      for (let i = 0; i < 20; i++) {
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/activation-status?device_id=${encodeURIComponent(deviceCode)}`, {
+            headers: { 
+              apikey: anonKey, 
+              Authorization: `Bearer ${anonKey}` 
+            },
+          });
+          
+          if (response.ok) {
+            const r = await response.json();
+            console.log(`Poll ${i + 1}: activation-status response:`, r);
+            
+            if (r?.activated && r?.device_jwt) { 
+              jwt = r.device_jwt; 
+              console.log("Device JWT obtained from activation-status");
+              break; 
+            }
+          } else {
+            console.warn(`activation-status returned ${response.status}, trying fallback`);
+            
+            // Fallback to device-status endpoint
+            const fallbackResponse = await fetch(`${supabaseUrl}/functions/v1/device-status?device_id=${encodeURIComponent(deviceCode)}`, {
+              headers: { 
+                apikey: anonKey, 
+                Authorization: `Bearer ${anonKey}` 
+              },
+            });
+            
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json();
+              console.log(`Poll ${i + 1}: device-status fallback response:`, fallbackData);
+              
+              if (fallbackData?.activated && fallbackData?.device_jwt) {
+                jwt = fallbackData.device_jwt;
+                console.log("Device JWT obtained from device-status fallback");
+                break;
+              }
+            }
+          }
+        } catch (fetchError) {
+          console.warn(`Poll ${i + 1} failed:`, fetchError);
         }
+        
         await sleep(1500);
       }
       
-      if (!jwt) throw new Error("Device not activated yet. Please approve the device and retry.");
+      if (!jwt) {
+        console.error("Failed to obtain device JWT after polling");
+        throw new Error("Device not activated yet. Please approve the device and retry.");
+      }
+      
       setDeviceJwt(jwt);
 
       // Build postinstall payload
-      const app_ids = Object.entries(selectedApps)
-        .filter(([_, selected]) => selected)
-        .map(([appId]) => appId);
+      const app_ids = Array.from(selectedApps);
       
-      const web_filter_config = (dnsId || schoolHours) ? {
-        nextdns_profile: dnsId || null,
-        school_hours_enabled: !!schoolHours,
+      const web_filter_config = {
+        nextdns_profile: dnsConfig.nextDnsConfig || null,
+        school_hours_enabled: dnsConfig.schoolHoursEnabled,
         social_media_blocked: true,
         gaming_blocked: false,
         entertainment_blocked: false,
-      } : {};
+      };
 
       setStage("posting");
+      console.log("Calling device-postinstall with:", { deviceCode, selectedChild, app_ids, web_filter_config });
 
       // Call device-postinstall with Device JWT
       const { data, error } = await supabase.functions.invoke('device-postinstall', {
@@ -203,9 +228,16 @@ export default function ActivationWizard({ deviceCode }: Props) {
         }
       });
       
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        console.error("device-postinstall error:", error);
+        throw error;
+      }
+      if (data?.error) {
+        console.error("device-postinstall data error:", data.error);
+        throw new Error(data.error);
+      }
 
+      console.log("Device activation completed successfully");
       setStage("done");
       setTimeout(() => navigate("/devices"), 4000);
     } catch (e: any) {
@@ -302,7 +334,9 @@ export default function ActivationWizard({ deviceCode }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     {children.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} {c.age ? `(age ${c.age})` : ''}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -364,40 +398,36 @@ export default function ActivationWizard({ deviceCode }: Props) {
   }
 
   if (stage === "apps") {
+    const currentChild = children.find(c => c.id === selectedChild);
+    const childAge = currentChild?.age || 8;
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-        <Card className="w-full max-w-2xl">
+        <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5" />
-              Select Apps
-            </CardTitle>
+            <CardTitle>Select Apps</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Choose apps to pre-load for this child. You can change this later.
+              Choose apps to pre-load for {currentChild?.name || 'this child'}. Essential apps are automatically selected.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto">
-              {apps.map(app => (
-                <label key={app.id} className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted">
-                  <Checkbox
-                    checked={!!selectedApps[app.id]}
-                    onCheckedChange={(checked) => 
-                      setSelectedApps(prev => ({ ...prev, [app.id]: !!checked }))
-                    }
-                  />
-                  <div className="flex-1">
-                    <span className="font-medium">{app.name}</span>
-                    <span className="text-sm text-muted-foreground ml-2">{app.category}</span>
-                    {app.is_essential && (
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded ml-2">Essential</span>
-                    )}
-                  </div>
-                </label>
-              ))}
+            <div className="max-h-[60vh] overflow-y-auto">
+              <AppSelectionStep
+                childAge={childAge}
+                selectedApps={selectedApps}
+                onAppToggle={(appId, selected) => {
+                  const newSelection = new Set(selectedApps);
+                  if (selected) {
+                    newSelection.add(appId);
+                  } else {
+                    newSelection.delete(appId);
+                  }
+                  setSelectedApps(newSelection);
+                }}
+              />
             </div>
             
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-between pt-4 border-t">
               <Button variant="outline" onClick={() => setStage("child")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -414,44 +444,27 @@ export default function ActivationWizard({ deviceCode }: Props) {
   }
 
   if (stage === "dns") {
+    const currentChild = children.find(c => c.id === selectedChild);
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              DNS & Web Filter
-            </CardTitle>
+            <CardTitle>DNS & Web Filter</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Configure web filtering and parental controls
+              Configure web filtering and parental controls for {currentChild?.name || 'this child'}
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="dnsId">NextDNS Profile ID (optional)</Label>
-              <Input
-                id="dnsId"
-                placeholder="abcd1234"
-                value={dnsId}
-                onChange={(e) => setDnsId(e.target.value.trim())}
+            <div className="max-h-[60vh] overflow-y-auto">
+              <DNSControlsStep
+                dnsConfig={dnsConfig}
+                onDnsConfigChange={(config) => setDnsConfig(config)}
+                childName={currentChild?.name || 'this child'}
               />
-              <p className="text-xs text-muted-foreground">
-                Leave empty to use default web filtering
-              </p>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="schoolHours"
-                checked={schoolHours}
-                onCheckedChange={(checked) => setSchoolHours(!!checked)}
-              />
-              <Label htmlFor="schoolHours" className="text-sm font-normal">
-                Enable enhanced school hours policy
-              </Label>
-            </div>
-            
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-between pt-4 border-t">
               <Button variant="outline" onClick={() => setStage("apps")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
