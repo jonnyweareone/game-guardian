@@ -2,8 +2,7 @@
 import ActivationWizard from "@/components/ActivationWizard";
 
 export default function DeviceActivation() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("device_id") || "";
+  const code = new URLSearchParams(window.location.search).get("device_id") || "";
   
   if (!/^GG-[0-9A-F]{4}-[0-9A-F]{4}$/i.test(code)) {
     return (
