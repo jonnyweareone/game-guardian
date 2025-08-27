@@ -2933,6 +2933,42 @@ export type Database = {
           },
         ]
       }
+      livestream_feedback: {
+        Row: {
+          comfortable: boolean
+          created_at: string
+          headshot_path: string | null
+          id: string
+          notes: string | null
+          preferred_intro: string | null
+          speaker_slug: string
+          tech_notes: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          comfortable: boolean
+          created_at?: string
+          headshot_path?: string | null
+          id?: string
+          notes?: string | null
+          preferred_intro?: string | null
+          speaker_slug: string
+          tech_notes?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          comfortable?: boolean
+          created_at?: string
+          headshot_path?: string | null
+          id?: string
+          notes?: string | null
+          preferred_intro?: string | null
+          speaker_slug?: string
+          tech_notes?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       location_match_results: {
         Row: {
           created_at: string

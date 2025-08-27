@@ -1,157 +1,180 @@
-import { useEffect, useState } from 'react';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Info } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
 
-interface AppSelectionStepProps {
-  childAge?: number;
-  selectedApps: Set<string>;
-  onAppToggle: (appId: string, selected: boolean) => void;
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { Check, X, Shield, Users, BookOpen, Gamepad2, Video, MessageCircle, Globe, MoreHorizontal } from 'lucide-react';
+
+interface AppItem {
+  id: string;
+  name: string;
+  category: string;
+  icon_url?: string;
+  age_min: number;
+  age_max: number;
+  is_essential: boolean;
 }
 
-export function AppSelectionStep({ childAge = 8, selectedApps, onAppToggle }: AppSelectionStepProps) {
-  const [apps, setApps] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface AppSelectionStepProps {
+  onNext: () => void;
+  onBack: () => void;
+  selectedApps: string[];
+  onAppToggle: (appId: string, enabled: boolean) => void;
+}
 
-  useEffect(() => {
-    const fetchApps = async () => {
-      try {
-        const result = await supabase
-          .from('app_catalog')
-          .select('id, name, description, category, icon_url, is_essential, age_min, age_max, pegi_rating')
-          .eq('enabled', true)
-          .order('name');
-        
-        if (result.error) throw result.error;
-        
-        const filteredApps = (result.data || []).filter((app: any) => {
-          if (!app.pegi_rating) return true;
-          return app.pegi_rating <= childAge;
-        });
-        
-        setApps(filteredApps);
-      } catch (error) {
-        console.error('Failed to fetch apps:', error);
-        setApps([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchApps();
-  }, [childAge]);
-
-  useEffect(() => {
-    const essentialApps = apps.filter((app: any) => app.is_essential);
-    essentialApps.forEach((app: any) => {
-      if (!selectedApps.has(app.id)) {
-        onAppToggle(app.id, true);
-      }
-    });
-  }, [apps, selectedApps, onAppToggle]);
-
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="text-center text-muted-foreground">Loading age-appropriate apps...</div>
-      </div>
-    );
+const getCategoryIcon = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'education': return BookOpen;
+    case 'game': return Gamepad2;
+    case 'social': return Users;
+    case 'streaming': return Video;
+    case 'messaging': return MessageCircle;
+    case 'browser': return Globe;
+    default: return MoreHorizontal;
   }
+};
+
+const mockApps: AppItem[] = [
+  // Education
+  { id: 'khan-academy', name: 'Khan Academy', category: 'Education', age_min: 6, age_max: 18, is_essential: true },
+  { id: 'duolingo', name: 'Duolingo', category: 'Education', age_min: 8, age_max: 18, is_essential: false },
+  { id: 'scratch', name: 'Scratch', category: 'Education', age_min: 8, age_max: 16, is_essential: true },
+  
+  // Games
+  { id: 'minecraft', name: 'Minecraft', category: 'Game', age_min: 7, age_max: 18, is_essential: false },
+  { id: 'roblox', name: 'Roblox', category: 'Game', age_min: 9, age_max: 18, is_essential: false },
+  { id: 'among-us', name: 'Among Us', category: 'Game', age_min: 10, age_max: 18, is_essential: false },
+  
+  // Social
+  { id: 'whatsapp', name: 'WhatsApp', category: 'Social', age_min: 13, age_max: 18, is_essential: false },
+  { id: 'instagram', name: 'Instagram', category: 'Social', age_min: 13, age_max: 18, is_essential: false },
+  { id: 'tiktok', name: 'TikTok', category: 'Social', age_min: 13, age_max: 18, is_essential: false },
+  
+  // Streaming
+  { id: 'youtube', name: 'YouTube', category: 'Streaming', age_min: 13, age_max: 18, is_essential: false },
+  { id: 'netflix', name: 'Netflix', category: 'Streaming', age_min: 12, age_max: 18, is_essential: false },
+  { id: 'disney-plus', name: 'Disney+', category: 'Streaming', age_min: 6, age_max: 18, is_essential: false },
+];
+
+export default function AppSelectionStep({ onNext, onBack, selectedApps, onAppToggle }: AppSelectionStepProps) {
+  const [apps] = useState<AppItem[]>(mockApps);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  const categories = ['all', ...Array.from(new Set(apps.map(app => app.category)))];
+  const filteredApps = selectedCategory === 'all' 
+    ? apps 
+    : apps.filter(app => app.category === selectedCategory);
+
+  const groupedApps = filteredApps.reduce((acc, app) => {
+    if (!acc[app.category]) {
+      acc[app.category] = [];
+    }
+    acc[app.category].push(app);
+    return acc;
+  }, {} as Record<string, AppItem[]>);
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Age-Appropriate Apps</h3>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Info className="h-4 w-4" />
-          <span>Showing apps suitable for age {childAge} (PEGI {childAge} and below)</span>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Essential apps are automatically selected. Icons will appear once apps are installed.
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold">Choose Apps for Your Child</h2>
+        <p className="text-muted-foreground">
+          Select which apps and services your child can access. Essential apps for education are pre-selected.
         </p>
       </div>
 
-      {apps.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">
-            No age-appropriate apps found for age {childAge}.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {Array.from(new Set(apps.map((app: any) => app.category))).map(category => {
-            const categoryApps = apps.filter((app: any) => app.category === category);
-            
-            return (
-              <div key={category} className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="w-3 h-3 border border-muted-foreground/50 rounded-sm flex items-center justify-center">
-                      <div className="w-2 h-0.5 bg-muted-foreground/50"></div>
-                    </div>
-                    <span className="font-medium">{category.toLowerCase()}</span>
-                    <span className="text-xs">{categoryApps.length} apps</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  {categoryApps.map((app: any) => {
-                    const isSelected = selectedApps.has(app.id);
+      {/* Category Filter */}
+      <div className="flex flex-wrap gap-2 justify-center">
+        {categories.map((category) => (
+          <Button
+            key={category}
+            variant={selectedCategory === category ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedCategory(category)}
+            className="capitalize"
+          >
+            {category === 'all' ? 'All Categories' : category}
+          </Button>
+        ))}
+      </div>
+
+      {/* Apps Grid */}
+      <div className="space-y-6">
+        {Object.entries(groupedApps).map(([category, categoryApps]) => {
+          const IconComponent = getCategoryIcon(category);
+          
+          return (
+            <Card key={category}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <IconComponent className="h-5 w-5" />
+                  {category}
+                  <Badge variant="secondary" className="ml-auto">
+                    {categoryApps.length} apps
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categoryApps.map((app) => {
+                    const isSelected = selectedApps.includes(app.id);
                     const isEssential = app.is_essential;
                     
                     return (
-                      <div key={app.id} className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="w-8 h-8 rounded flex items-center justify-center bg-primary/10 flex-shrink-0">
-                            {app.icon_url ? (
-                              <img 
-                                src={app.icon_url} 
-                                alt={`${app.name} icon`}
-                                className="w-6 h-6 object-contain"
-                              />
-                            ) : (
-                              <div className="w-6 h-6 bg-primary/20 rounded"></div>
-                            )}
+                      <div
+                        key={app.id}
+                        className={`
+                          flex items-center justify-between p-4 rounded-lg border transition-colors
+                          ${isSelected ? 'bg-primary/5 border-primary' : 'bg-card border-border'}
+                          ${isEssential ? 'ring-2 ring-green-500/20' : ''}
+                        `}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                            <IconComponent className="h-5 w-5" />
                           </div>
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium">{app.name}</span>
-                              {app.pegi_rating && (
-                                <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                                  PEGI {app.pegi_rating}
+                          <div>
+                            <div className="font-medium flex items-center gap-2">
+                              {app.name}
+                              {isEssential && (
+                                <Badge variant="outline" className="text-xs border-green-500 text-green-700">
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  Essential
                                 </Badge>
                               )}
-                              <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                                Ages {app.age_min}-{app.age_max}
-                              </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {app.description || 'No description available'}
-                            </p>
+                            <div className="text-sm text-muted-foreground">
+                              Ages {app.age_min}-{app.age_max}
+                            </div>
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-muted-foreground">
-                            {isEssential ? 'Enabled' : isSelected ? 'Enabled' : 'Disabled'}
-                          </span>
-                          <Switch
-                            checked={isEssential || isSelected}
-                            disabled={isEssential}
-                            onCheckedChange={(checked) => onAppToggle(app.id, checked)}
-                          />
-                        </div>
+                        <Switch
+                          checked={isSelected}
+                          onCheckedChange={(checked) => onAppToggle(app.id, checked)}
+                          disabled={isEssential}
+                        />
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Navigation */}
+      <div className="flex justify-between pt-6">
+        <Button variant="outline" onClick={onBack}>
+          <X className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+        <Button onClick={onNext}>
+          Next: DNS Controls
+          <Check className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }

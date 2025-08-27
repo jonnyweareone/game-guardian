@@ -1,4 +1,5 @@
 
+
 project_id = "xzxjwuzwltoapifcyzww"
 
 [api]
@@ -104,3 +105,7 @@ verify_jwt = false
 
 [functions.device-status]
 verify_jwt = false
+
+[functions.livestream-feedback]
+verify_jwt = false
+
