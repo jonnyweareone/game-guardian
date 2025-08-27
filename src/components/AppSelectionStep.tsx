@@ -46,14 +46,12 @@ export default function AppSelectionStep({
     try {
       setLoading(true);
       
-      // Filter apps based on child's age - simplified query to avoid type issues
-      let query = supabase
+      // Explicitly select columns to avoid type complexity issues
+      const { data, error } = await supabase
         .from('app_catalog')
-        .select('*')
-        .eq('active', true)
+        .select('id, name, description, category, age_min, age_max, is_essential, icon_url')
+        .eq('is_active', true)
         .order('name');
-
-      const { data, error } = await query;
 
       if (error) throw error;
 
