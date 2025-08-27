@@ -104,6 +104,7 @@ function App() {
               <Route path="/homework" element={<HomeworkHelper />} />
               <Route path="/code-share" element={<CodeShare />} />
               <Route path="/device-activation" element={<DeviceActivation />} />
+              <Route path="/activate" element={<DeviceActivation />} />
               <Route path="/activation-complete" element={<ActivationComplete />} />
               
               {/* Livestream routes - public front page, private speaker pages */}
