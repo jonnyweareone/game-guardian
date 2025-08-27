@@ -35,11 +35,11 @@ export function DNSControlsStep({ dnsConfig, onDnsConfigChange, childName }: DNS
   };
 
   const blockedCategories = [
-    'Adult Content',
-    'Terrorism & Extremism', 
-    'Gambling',
-    'Violence & Weapons',
-    'Drugs & Alcohol'
+    '🔞 Adult Content',
+    '💣 Terrorism & Extremism', 
+    '🎰 Gambling',
+    '🔫 Violence & Weapons',
+    '💊 Drugs & Alcohol'
   ];
 
   return (
@@ -100,8 +100,7 @@ export function DNSControlsStep({ dnsConfig, onDnsConfigChange, childName }: DNS
           <div className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border">
             <div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-blue-500"></div>
-                <span className="font-medium">Social Media Platforms</span>
+                <span className="font-medium">💬 Social Media Platforms</span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Block access to social media during device use (Recommended for ages under 13)
@@ -117,8 +116,7 @@ export function DNSControlsStep({ dnsConfig, onDnsConfigChange, childName }: DNS
           <div className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border">
             <div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-purple-500"></div>
-                <span className="font-medium">Gaming Platforms</span>
+                <span className="font-medium">🎮 Gaming Platforms</span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Block web-based gaming sites and platforms (Age-appropriate filtering applied)
@@ -134,8 +132,7 @@ export function DNSControlsStep({ dnsConfig, onDnsConfigChange, childName }: DNS
           <div className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border">
             <div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-orange-500"></div>
-                <span className="font-medium">Entertainment & Streaming</span>
+                <span className="font-medium">🎬 Entertainment & Streaming</span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Block streaming and entertainment sites during device use

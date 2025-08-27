@@ -1,18 +1,18 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AppCatalogItem {
   id: string;
@@ -34,15 +34,16 @@ interface AppCatalogItem {
   updated_at: string;
 }
 
-const categories = ["Games", "Communication", "Entertainment", "Utilities", "System", "Education", "Social"];
-const platforms = ["PC", "Web", "Mobile", "System"];
+const categories = ['Education', 'Game', 'Social', 'Streaming', 'Productivity', 'Browser', 'Messaging', 'Entertainment', 'Utility'];
+const platforms = ['web', 'android', 'ios', 'desktop', 'all'];
 
 export default function AdminAppCatalog() {
-  const [editingApp, setEditingApp] = useState<AppCatalogItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingApp, setEditingApp] = useState<AppCatalogItem | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: apps, isLoading } = useQuery({
+  // Fetch app catalog
+  const { data: apps = [], isLoading } = useQuery({
     queryKey: ['admin-app-catalog'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -52,14 +53,15 @@ export default function AdminAppCatalog() {
       
       if (error) throw error;
       return data as AppCatalogItem[];
-    },
+    }
   });
 
+  // Create app mutation
   const createAppMutation = useMutation({
-    mutationFn: async (app: Omit<AppCatalogItem, 'created_at' | 'updated_at'>) => {
+    mutationFn: async (appData: any) => {
       const { data, error } = await supabase
         .from('app_catalog')
-        .insert([app])
+        .insert(appData)
         .select()
         .single();
       
@@ -68,21 +70,22 @@ export default function AdminAppCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-app-catalog'] });
+      toast.success('App created successfully');
       setIsDialogOpen(false);
       setEditingApp(null);
-      toast.success('App created successfully');
     },
     onError: (error) => {
-      toast.error('Failed to create app: ' + error.message);
-    },
+      toast.error(`Failed to create app: ${error.message}`);
+    }
   });
 
+  // Update app mutation
   const updateAppMutation = useMutation({
-    mutationFn: async (app: AppCatalogItem) => {
+    mutationFn: async (appData: any) => {
       const { data, error } = await supabase
         .from('app_catalog')
-        .update(app)
-        .eq('id', app.id)
+        .update(appData)
+        .eq('id', appData.id)
         .select()
         .single();
       
@@ -91,13 +94,32 @@ export default function AdminAppCatalog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-app-catalog'] });
+      toast.success('App updated successfully');
       setIsDialogOpen(false);
       setEditingApp(null);
-      toast.success('App updated successfully');
     },
     onError: (error) => {
-      toast.error('Failed to update app: ' + error.message);
+      toast.error(`Failed to update app: ${error.message}`);
+    }
+  });
+
+  // Delete app mutation
+  const deleteAppMutation = useMutation({
+    mutationFn: async (appId: string) => {
+      const { error } = await supabase
+        .from('app_catalog')
+        .delete()
+        .eq('id', appId);
+      
+      if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-app-catalog'] });
+      toast.success('App deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete app: ${error.message}`);
+    }
   });
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -105,32 +127,28 @@ export default function AdminAppCatalog() {
     const formData = new FormData(event.currentTarget);
     
     const appData = {
-      id: formData.get('id') as string,
       name: formData.get('name') as string,
-      description: formData.get('description') as string || null,
+      description: formData.get('description') as string,
       category: formData.get('category') as string,
-      icon_url: formData.get('icon_url') as string || null,
-      website: formData.get('website') as string || null,
-      publisher: formData.get('publisher') as string || null,
-      version: formData.get('version') as string || null,
-      platform: formData.get('platform') as string || null,
-      pegi_rating: parseInt(formData.get('pegi_rating') as string) || null,
-      pegi_descriptors: formData.get('pegi_descriptors') ? 
-        (formData.get('pegi_descriptors') as string).split(',').map(s => s.trim()) : [],
-      age_min: parseInt(formData.get('age_min') as string) || 0,
-      age_max: parseInt(formData.get('age_max') as string) || 18,
+      icon_url: formData.get('icon_url') as string,
+      website: formData.get('website') as string,
+      publisher: formData.get('publisher') as string,
+      platform: formData.get('platform') as string,
+      age_min: parseInt(formData.get('age_min') as string),
+      age_max: parseInt(formData.get('age_max') as string),
       is_essential: formData.get('is_essential') === 'on',
       is_active: formData.get('is_active') === 'on',
+      pegi_rating: formData.get('pegi_rating') ? parseInt(formData.get('pegi_rating') as string) : undefined,
     };
 
     if (editingApp) {
-      updateAppMutation.mutate({ ...appData, created_at: editingApp.created_at, updated_at: editingApp.updated_at });
+      updateAppMutation.mutate({ ...appData, id: editingApp.id });
     } else {
       createAppMutation.mutate(appData);
     }
   };
 
-  const openCreateDialog = () => {
+  const openAddDialog = () => {
     setEditingApp(null);
     setIsDialogOpen(true);
   };
@@ -140,17 +158,24 @@ export default function AdminAppCatalog() {
     setIsDialogOpen(true);
   };
 
+  const handleDelete = (appId: string) => {
+    if (confirm('Are you sure you want to delete this app?')) {
+      deleteAppMutation.mutate(appId);
+    }
+  };
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">App Catalog Management</h1>
-          <p className="text-muted-foreground">Manage applications available for Guardian OS devices</p>
+          <h1 className="text-3xl font-bold">App Catalog Management</h1>
+          <p className="text-muted-foreground">Manage applications available in the Guardian AI app store</p>
         </div>
+        
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={openAddDialog}>
+              <Plus className="mr-2 h-4 w-4" />
               Add App
             </Button>
           </DialogTrigger>
@@ -158,58 +183,78 @@ export default function AdminAppCatalog() {
             <DialogHeader>
               <DialogTitle>{editingApp ? 'Edit App' : 'Add New App'}</DialogTitle>
             </DialogHeader>
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="id">App ID</Label>
-                  <Input
-                    id="id"
-                    name="id"
-                    defaultValue={editingApp?.id || ''}
-                    placeholder="minecraft"
-                    required
-                    disabled={!!editingApp}
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input 
+                    id="name" 
+                    name="name" 
+                    required 
+                    defaultValue={editingApp?.name} 
                   />
                 </div>
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    defaultValue={editingApp?.name || ''}
-                    placeholder="Minecraft"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editingApp?.description || ''}
-                  placeholder="Build, explore and survive in infinite worlds"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select name="category" defaultValue={editingApp?.category || ''}>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category *</Label>
+                  <Select name="category" defaultValue={editingApp?.category} required>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      {categories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea 
+                  id="description" 
+                  name="description" 
+                  defaultValue={editingApp?.description} 
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="icon_url">Icon URL</Label>
+                  <Input 
+                    id="icon_url" 
+                    name="icon_url" 
+                    type="url"
+                    defaultValue={editingApp?.icon_url} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input 
+                    id="website" 
+                    name="website" 
+                    type="url"
+                    defaultValue={editingApp?.website} 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="publisher">Publisher</Label>
+                  <Input 
+                    id="publisher" 
+                    name="publisher" 
+                    defaultValue={editingApp?.publisher} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
                   <Label htmlFor="platform">Platform</Label>
-                  <Select name="platform" defaultValue={editingApp?.platform || ''}>
+                  <Select name="platform" defaultValue={editingApp?.platform}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select platform" />
                     </SelectTrigger>
@@ -222,105 +267,57 @@ export default function AdminAppCatalog() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="publisher">Publisher</Label>
-                  <Input
-                    id="publisher"
-                    name="publisher"
-                    defaultValue={editingApp?.publisher || ''}
-                    placeholder="Mojang Studios"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="version">Version</Label>
-                  <Input
-                    id="version"
-                    name="version"
-                    defaultValue={editingApp?.version || ''}
-                    placeholder="1.20.4"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="icon_url">Icon URL</Label>
-                  <Input
-                    id="icon_url"
-                    name="icon_url"
-                    defaultValue={editingApp?.icon_url || ''}
-                    placeholder="/lovable-uploads/minecraft-icon.png"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    name="website"
-                    defaultValue={editingApp?.website || ''}
-                    placeholder="https://minecraft.net"
-                  />
-                </div>
-              </div>
-
               <div className="grid grid-cols-3 gap-4">
-                <div>
+                <div className="space-y-2">
+                  <Label htmlFor="age_min">Min Age *</Label>
+                  <Input 
+                    id="age_min" 
+                    name="age_min" 
+                    type="number" 
+                    min="0" 
+                    max="18" 
+                    required
+                    defaultValue={editingApp?.age_min} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="age_max">Max Age *</Label>
+                  <Input 
+                    id="age_max" 
+                    name="age_max" 
+                    type="number" 
+                    min="0" 
+                    max="18" 
+                    required
+                    defaultValue={editingApp?.age_max} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
                   <Label htmlFor="pegi_rating">PEGI Rating</Label>
-                  <Input
-                    id="pegi_rating"
-                    name="pegi_rating"
+                  <Input 
+                    id="pegi_rating" 
+                    name="pegi_rating" 
                     type="number"
-                    defaultValue={editingApp?.pegi_rating || ''}
-                    placeholder="7"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="age_min">Min Age</Label>
-                  <Input
-                    id="age_min"
-                    name="age_min"
-                    type="number"
-                    defaultValue={editingApp?.age_min || 0}
-                    min="0"
-                    max="18"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="age_max">Max Age</Label>
-                  <Input
-                    id="age_max"
-                    name="age_max"
-                    type="number"
-                    defaultValue={editingApp?.age_max || 18}
-                    min="0"
-                    max="18"
+                    defaultValue={editingApp?.pegi_rating} 
                   />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="pegi_descriptors">PEGI Descriptors (comma-separated)</Label>
-                <Input
-                  id="pegi_descriptors"
-                  name="pegi_descriptors"
-                  defaultValue={editingApp?.pegi_descriptors?.join(', ') || ''}
-                  placeholder="Mild Violence, Users Interact Online"
-                />
-              </div>
-
-              <div className="flex gap-6">
+              <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_essential"
+                  <Switch 
+                    id="is_essential" 
                     name="is_essential"
-                    defaultChecked={editingApp?.is_essential || false}
+                    defaultChecked={editingApp?.is_essential ?? false}
                   />
                   <Label htmlFor="is_essential">Essential App</Label>
                 </div>
+                
                 <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_active"
+                  <Switch 
+                    id="is_active" 
                     name="is_active"
                     defaultChecked={editingApp?.is_active ?? true}
                   />
@@ -328,11 +325,18 @@ export default function AdminAppCatalog() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createAppMutation.isPending || updateAppMutation.isPending}>
+                <Button 
+                  type="submit" 
+                  disabled={createAppMutation.isPending || updateAppMutation.isPending}
+                >
                   {editingApp ? 'Update' : 'Create'} App
                 </Button>
               </div>
@@ -343,11 +347,19 @@ export default function AdminAppCatalog() {
 
       <Card>
         <CardHeader>
-          <CardTitle>App Catalog ({apps?.length || 0} apps)</CardTitle>
+          <CardTitle>Apps ({apps.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">Loading apps...</div>
+            <div>Loading apps...</div>
+          ) : apps.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No apps found</p>
+              <Button onClick={openAddDialog} className="mt-4">
+                <Plus className="mr-2 h-4 w-4" />
+                Add First App
+              </Button>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -362,49 +374,46 @@ export default function AdminAppCatalog() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {apps?.map((app) => (
+                {apps.map((app) => (
                   <TableRow key={app.id}>
-                    <TableCell className="font-medium">
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         {app.icon_url && (
-                          <img src={app.icon_url} alt={app.name} className="w-8 h-8 rounded" />
+                          <img src={app.icon_url} alt={app.name} className="w-6 h-6" />
                         )}
-                        <div>
-                          <div>{app.name}</div>
-                          <div className="text-sm text-muted-foreground">{app.id}</div>
-                        </div>
+                        <span className="font-medium">{app.name}</span>
+                        {app.is_essential && (
+                          <Badge variant="outline" className="text-xs">Essential</Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>{app.category}</TableCell>
-                    <TableCell>{app.publisher}</TableCell>
-                    <TableCell>{app.pegi_rating}</TableCell>
+                    <TableCell>{app.publisher || '-'}</TableCell>
+                    <TableCell>{app.pegi_rating || '-'}</TableCell>
                     <TableCell>{app.age_min}-{app.age_max}</TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
-                        {app.is_active ? (
-                          <Badge variant="secondary">
-                            <Eye className="h-3 w-3 mr-1" />
-                            Active
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">
-                            <EyeOff className="h-3 w-3 mr-1" />
-                            Inactive
-                          </Badge>
-                        )}
-                        {app.is_essential && (
-                          <Badge variant="default">Essential</Badge>
-                        )}
-                      </div>
+                      <Badge variant={app.is_active ? 'default' : 'secondary'}>
+                        {app.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(app)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEditDialog(app)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(app.id)}
+                          disabled={deleteAppMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -13,62 +13,59 @@ function json(body: Record<string, unknown>, init?: ResponseInit) {
   });
 }
 
-// Inline JWT verification to avoid import issues
-async function verifyDeviceJWT(token: string) {
+// Robust base64url decoding
+function b64urlToBytes(b64url: string): Uint8Array {
+  // base64url -> base64
+  const b64 = b64url.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b64url.length + 3) % 4);
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function importHmacKey(secret: string) {
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+}
+
+async function verifyDeviceJWT(jwt: string, expectedAud = "device") {
   try {
+    // format checks
+    const parts = jwt.split(".");
+    if (parts.length !== 3) throw new Error("format");
+    const [h, p, s] = parts;
+
+    // parse header + payload
+    const header = JSON.parse(new TextDecoder().decode(b64urlToBytes(h)));
+    const payload = JSON.parse(new TextDecoder().decode(b64urlToBytes(p)));
+    if (header.alg !== "HS256" || header.typ !== "JWT") throw new Error("alg");
+
+    // timing-safe signature verify
     const DEVICE_JWT_SECRET = Deno.env.get("DEVICE_JWT_SECRET");
-    const JWT_AUDIENCE = Deno.env.get("JWT_AUDIENCE") ?? "device";
-
-    if (!DEVICE_JWT_SECRET) {
-      return { ok: false, error: "JWT secret not configured" };
-    }
-
-    // Split the JWT token
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return { ok: false, error: "Invalid JWT format" };
-    }
-
-    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+    if (!DEVICE_JWT_SECRET) throw new Error("no-secret");
     
-    // Decode payload
-    const payload = JSON.parse(atob(encodedPayload.replace(/-/g, "+").replace(/_/g, "/")));
-    
-    // Check expiry
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-      return { ok: false, expired: true };
-    }
+    const key = await importHmacKey(DEVICE_JWT_SECRET);
+    const signingInput = new TextEncoder().encode(`${h}.${p}`);
+    const sigBytes = b64urlToBytes(s);
+    const ok = await crypto.subtle.verify("HMAC", key, sigBytes, signingInput);
+    if (!ok) throw new Error("signature");
 
-    // Check audience
-    if (payload.aud !== JWT_AUDIENCE) {
-      return { ok: false, error: "Invalid audience" };
-    }
+    // claims checks
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && now >= payload.exp) throw new Error("expired");
+    if (payload.nbf && now < payload.nbf) throw new Error("nbf");
+    if (expectedAud && payload.aud !== expectedAud) throw new Error("aud");
 
-    // Verify signature
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(DEVICE_JWT_SECRET),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"]
-    );
-
-    const data = `${encodedHeader}.${encodedPayload}`;
-    const signatureBuffer = new Uint8Array(atob(encodedSignature.replace(/-/g, "+").replace(/_/g, "/")).split('').map(c => c.charCodeAt(0)));
-    
-    const isValid = await crypto.subtle.verify("HMAC", key, signatureBuffer, new TextEncoder().encode(data));
-    
-    if (!isValid) {
-      return { ok: false, error: "Invalid signature" };
-    }
-
-    return { ok: true, deviceCode: String(payload.sub) };
+    return { ok: true, deviceCode: String(payload.device_id || payload.sub) };
   } catch (e) {
-    const msg = String(e?.message || e);
-    if (msg.includes("expired") || msg.includes("exp")) {
-      return { ok: false, expired: true };
-    }
-    return { ok: false, error: msg };
+    const reason = String(e?.message || e);
+    console.log('device-postinstall: JWT verify failed:', reason);
+    return { ok: false, error: reason };
   }
 }
 
@@ -86,14 +83,11 @@ serve(async (req) => {
     }
 
     const deviceJWT = authHeader.substring(7);
-    const { ok, deviceCode, error: verifyError } = await verifyDeviceJWT(deviceJWT);
+    const { ok, deviceCode, error: verifyError } = await verifyDeviceJWT(deviceJWT, "device");
     
     if (!ok || !deviceCode) {
-      console.log('device-postinstall: Invalid Device JWT', verifyError);
-      return json({ 
-        error: "Invalid Device JWT", 
-        details: verifyError
-      }, { status: 401 });
+      console.log('device-postinstall: Invalid Device JWT -', verifyError);
+      return json({ error: "Invalid Device JWT" }, { status: 401 });
     }
 
     console.log('device-postinstall: Device JWT verified', { device_code: deviceCode });

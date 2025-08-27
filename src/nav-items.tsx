@@ -9,7 +9,8 @@ import {
   GraduationCap,
   Trophy,
   Store,
-  MonitorSpeaker
+  MonitorSpeaker,
+  Database
 } from "lucide-react";
 
 export const navigation = [
@@ -83,6 +84,17 @@ export const navigation = [
     title: "Monitoring",
     url: "/monitoring",
     icon: Shield,
+  },
+  {
+    title: "Admin",
+    url: "/admin",
+    icon: Database,
+    items: [
+      {
+        title: "App Catalog",
+        url: "/admin/app-catalog",
+      },
+    ],
   },
   {
     title: "Account",
