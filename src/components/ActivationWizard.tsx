@@ -15,7 +15,7 @@ import AppSelectionStep from "@/components/AppSelectionStep";
 import { DNSControlsStep } from "@/components/DNSControlsStep";
 
 type Props = { deviceCode: string };
-type Child = { id: string; name: string; age?: number };
+type Child = { id: string; name: string; dob?: string };
 
 type Stage = "auth" | "bind" | "child" | "apps" | "dns" | "poll" | "posting" | "done" | "error";
 
@@ -27,15 +27,33 @@ interface DNSConfig {
   entertainmentBlocked: boolean;
 }
 
+// Helper function to calculate age from DOB
+function calculateAge(dob: string): number {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+// Helper function to format age display
+function formatAgeDisplay(dob: string): string {
+  const age = calculateAge(dob);
+  return `(age ${age})`;
+}
+
 export default function ActivationWizard({ deviceCode }: Props) {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [stage, setStage] = useState<Stage>("auth");
   const [error, setError] = useState<string>("");
   const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChild, setSelectedChild] = useState<string>("");
+  const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [newChildName, setNewChildName] = useState("");
-  const [newChildAge, setNewChildAge] = useState("");
+  const [newChildDob, setNewChildDob] = useState("");
   const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
   const [dnsConfig, setDnsConfig] = useState<DNSConfig>({
     schoolHoursEnabled: false,
@@ -57,7 +75,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
     }
   }, [user, authLoading]);
 
-  // Bind device (parent session) → fetch children + apps
+  // Bind device (parent session) → fetch children
   useEffect(() => {
     (async () => {
       if (stage !== "bind") return;
@@ -81,12 +99,12 @@ export default function ActivationWizard({ deviceCode }: Props) {
         if (bindError) throw bindError;
         if (!bindRes?.ok) throw new Error(bindRes?.error || "Failed to bind device");
 
-        // Load children with age data
+        // Load children with DOB data instead of age
         const { data: kids, error: kidsErr } = await supabase
-          .from("children").select("id,name,age").order("created_at", { ascending: true });
+          .from("children").select("id,name,dob").order("created_at", { ascending: true });
         if (kidsErr) throw kidsErr;
         setChildren(kids || []);
-        setSelectedChild(kids?.[0]?.id || "");
+        setSelectedChildId(kids?.[0]?.id || "");
         
         setStage("child");
       } catch (e: any) {
@@ -99,12 +117,13 @@ export default function ActivationWizard({ deviceCode }: Props) {
 
   // Continue buttons
   async function goApps() {
-    let childId = selectedChild;
+    let childId = selectedChildId;
+    let childAge = 8; // default age
     
     // Create new child if needed
     if (newChildName.trim()) {
-      if (!newChildAge) {
-        toast.error("Please enter the child's age");
+      if (!newChildDob) {
+        toast.error("Please enter the child's date of birth");
         return;
       }
       
@@ -113,19 +132,26 @@ export default function ActivationWizard({ deviceCode }: Props) {
           .from('children')
           .insert({ 
             name: newChildName.trim(),
-            age: parseInt(newChildAge),
+            dob: newChildDob,
             parent_id: user?.id
           })
-          .select("id,name,age")
+          .select("id,name,dob")
           .single();
         
         if (createError) throw createError;
         childId = newChild.id;
-        setSelectedChild(childId);
+        setSelectedChildId(childId);
+        childAge = calculateAge(newChild.dob);
       } catch (e: any) {
         console.error("Create child error:", e);
         toast.error("Failed to create child profile");
         return;
+      }
+    } else {
+      // Use existing child - calculate age from their DOB
+      const selectedChild = children.find(c => c.id === selectedChildId);
+      if (selectedChild?.dob) {
+        childAge = calculateAge(selectedChild.dob);
       }
     }
     
@@ -133,6 +159,8 @@ export default function ActivationWizard({ deviceCode }: Props) {
       toast.error("Please select or create a child profile."); 
       return; 
     }
+    
+    // Store child age for the apps step
     setStage("apps");
   }
 
@@ -218,13 +246,13 @@ export default function ActivationWizard({ deviceCode }: Props) {
       };
 
       setStage("posting");
-      console.log("Calling device-postinstall with:", { deviceCode, selectedChild, app_ids, web_filter_config });
+      console.log("Calling device-postinstall with:", { deviceCode, selectedChildId, app_ids, web_filter_config });
 
       // Call device-postinstall with Device JWT
       const { data, error } = await supabase.functions.invoke('device-postinstall', {
         body: {
           device_id: deviceCode,
-          child_id: selectedChild,
+          child_id: selectedChildId,
           app_ids,
           web_filter_config,
         },
@@ -334,14 +362,14 @@ export default function ActivationWizard({ deviceCode }: Props) {
             ) : (
               <div className="space-y-2">
                 <Label>Choose existing child</Label>
-                <Select value={selectedChild} onValueChange={setSelectedChild}>
+                <Select value={selectedChildId} onValueChange={setSelectedChildId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a child..." />
                   </SelectTrigger>
                   <SelectContent>
                     {children.map(c => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.name} {c.age ? `(age ${c.age})` : ''}
+                        {c.name} {c.dob ? formatAgeDisplay(c.dob) : '(no DOB)'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -367,22 +395,20 @@ export default function ActivationWizard({ deviceCode }: Props) {
                   value={newChildName}
                   onChange={(e) => {
                     setNewChildName(e.target.value);
-                    setSelectedChild("");
+                    setSelectedChildId("");
                   }}
                 />
               </div>
               
               {newChildName.trim() && (
                 <div className="space-y-2">
-                  <Label htmlFor="newChildAge">Age *</Label>
+                  <Label htmlFor="newChildDob">Date of Birth *</Label>
                   <Input
-                    id="newChildAge"
-                    type="number"
-                    min="3"
-                    max="18"
-                    value={newChildAge}
-                    onChange={(e) => setNewChildAge(e.target.value)}
-                    placeholder="Enter age..."
+                    id="newChildDob"
+                    type="date"
+                    value={newChildDob}
+                    onChange={(e) => setNewChildDob(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]} // Can't be in the future
                     required
                   />
                 </div>
@@ -392,7 +418,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
             <Button 
               onClick={goApps} 
               className="w-full"
-              disabled={!selectedChild && !newChildName.trim()}
+              disabled={!selectedChildId && !newChildName.trim()}
             >
               <ArrowRight className="h-4 w-4 mr-2" />
               Continue
@@ -404,14 +430,14 @@ export default function ActivationWizard({ deviceCode }: Props) {
   }
 
   if (stage === "apps") {
-    const currentChild = children.find(c => c.id === selectedChild);
-    const childAge = currentChild?.age || 8;
+    const selectedChild = children.find(c => c.id === selectedChildId);
+    const childAge = selectedChild?.dob ? calculateAge(selectedChild.dob) : 8; // fallback to 8 if no DOB
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
         <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
           <CardHeader>
-            <CardTitle>Select Apps for {currentChild?.name || 'this child'}</CardTitle>
+            <CardTitle>Select Apps for {selectedChild?.name || 'this child'}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="max-h-[60vh] overflow-y-auto">
@@ -428,6 +454,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
                   }
                   setSelectedApps(newSelection);
                 }}
+                childAge={childAge}
               />
             </div>
             
@@ -448,7 +475,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
   }
 
   if (stage === "dns") {
-    const currentChild = children.find(c => c.id === selectedChild);
+    const selectedChild = children.find(c => c.id === selectedChildId);
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
@@ -461,7 +488,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
               <DNSControlsStep
                 dnsConfig={dnsConfig}
                 onDnsConfigChange={(config) => setDnsConfig(config)}
-                childName={currentChild?.name || 'this child'}
+                childName={selectedChild?.name || 'this child'}
               />
             </div>
             
