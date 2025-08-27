@@ -24,7 +24,7 @@ interface AppSelectionStepProps {
   onBack: () => void;
   selectedApps: string[];
   onAppToggle: (appId: string, selected: boolean) => void;
-  childAge: number; // Age computed from DOB
+  childAge: number;
 }
 
 export default function AppSelectionStep({ 
@@ -46,22 +46,36 @@ export default function AppSelectionStep({
     try {
       setLoading(true);
       
-      // Filter apps based on child's age computed from DOB
-      const { data, error } = await supabase
+      // Filter apps based on child's age - simplified query to avoid type issues
+      let query = supabase
         .from('app_catalog')
         .select('*')
-        .or(`age_min.is.null,age_min.lte.${childAge}`)
-        .or(`age_max.is.null,age_max.gte.${childAge}`)
         .eq('active', true)
         .order('name');
 
+      const { data, error } = await query;
+
       if (error) throw error;
 
-      const appsData = data || [];
-      setApps(appsData);
+      // Filter by age in JavaScript to avoid complex SQL type issues
+      const ageFilteredApps = (data || []).filter(app => {
+        const ageMin = app.age_min;
+        const ageMax = app.age_max;
+        
+        // If no age restrictions, include the app
+        if (ageMin === null && ageMax === null) return true;
+        
+        // Check if child's age falls within the app's age range
+        const meetsMinAge = ageMin === null || childAge >= ageMin;
+        const meetsMaxAge = ageMax === null || childAge <= ageMax;
+        
+        return meetsMinAge && meetsMaxAge;
+      });
+
+      setApps(ageFilteredApps);
 
       // Pre-select essential apps
-      const essentialApps = appsData.filter(app => app.is_essential);
+      const essentialApps = ageFilteredApps.filter(app => app.is_essential);
       essentialApps.forEach(app => {
         if (!selectedApps.includes(app.id)) {
           onAppToggle(app.id, true);

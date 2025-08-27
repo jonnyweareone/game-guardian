@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -372,6 +371,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
                 onBack={handleBack}
                 selectedApps={Array.from(selectedApps)}
                 onAppToggle={handleAppToggle}
+                childAge={childAge || 8}
               />
               
               <div className="flex gap-2 pt-4">
