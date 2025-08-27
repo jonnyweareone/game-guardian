@@ -39,8 +39,8 @@ import CreatorMode from "./pages/CreatorMode";
 import NotFound from "./pages/NotFound";
 import OnlineSafetyLivestream from "./pages/OnlineSafetyLivestream";
 import LivestreamSpeaker from "./pages/LivestreamSpeaker";
-import { AuthGuard } from "@/components/AuthGuard";
-import { AdminRoute } from "@/components/AdminRoute";
+import AuthGuard from "@/components/AuthGuard";
+import AdminRoute from "@/components/AdminRoute";
 
 // Games
 import BlocklyMaze from "./pages/games/BlocklyMaze";
@@ -97,7 +97,7 @@ function App() {
               <Route path="/products/receiver" element={<ProductReceiver />} />
               <Route path="/about" element={<About />} />
               <Route path="/blog" element={<Blog />} />
-              <Route path="/press" element={<Press Releases />} />
+              <Route path="/press" element={<PressReleases />} />
               <Route path="/pitch" element={<PitchDeck />} />
               <Route path="/brand" element={<BrandAssets />} />
               <Route path="/how-to" element={<HowToGuide />} />
@@ -134,7 +134,7 @@ function App() {
               <Route path="/play/blockly-maze" element={<BlocklyMazePlay />} />
               <Route path="/play/novacraft-pyramid" element={<NovacraftPyramid />} />
               <Route path="/play/space-trek" element={<SpaceTrek />} />
-              <Route path="/play/turtlestitch" element={<TurtlestitchPlay />} />
+              <Route path="/play/turtlestitch" element={<Turtlestitch />} />
               <Route path="/play/tuxmath" element={<TuxMathPlay />} />
 
               {/* Activities */}
@@ -160,7 +160,7 @@ function App() {
               </Route>
 
               {/* Documentation */}
-              <Route path="/docs/*" element={<DocsLayout />} />
+              <Route path="/docs/*" element={<DocsLayout><div /></DocsLayout>} />
 
               {/* 404 */}
               <Route path="*" element={<NotFound />} />

@@ -10,7 +10,7 @@ import { Plus, Users, ArrowLeft, ArrowRight, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from './AvatarSelector';
-import { AppSelectionStep } from './AppSelectionStep';
+import AppSelectionStep from './AppSelectionStep';
 import { WebFiltersStep } from './WebFiltersStep';
 import { bulkUpsertChildAppSelections } from '@/lib/api';
 import { format } from 'date-fns';
@@ -368,8 +368,9 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
           ) : step === 'apps' ? (
             <div className="space-y-4">
               <AppSelectionStep
-                childAge={childAge}
-                selectedApps={selectedApps}
+                onNext={handleNext}
+                onBack={handleBack}
+                selectedApps={Array.from(selectedApps)}
                 onAppToggle={handleAppToggle}
               />
               

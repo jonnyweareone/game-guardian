@@ -11,7 +11,7 @@ import { Loader2, CheckCircle, Shield, User, Copy, ArrowLeft, ArrowRight } from 
 import { toast } from "sonner";
 import Confetti from "react-confetti";
 import Auth from "@/pages/Auth";
-import { AppSelectionStep } from "@/components/AppSelectionStep";
+import AppSelectionStep from "@/components/AppSelectionStep";
 import { DNSControlsStep } from "@/components/DNSControlsStep";
 
 type Props = { deviceCode: string };
@@ -416,8 +416,9 @@ export default function ActivationWizard({ deviceCode }: Props) {
           <CardContent className="space-y-4">
             <div className="max-h-[60vh] overflow-y-auto">
               <AppSelectionStep
-                childAge={childAge}
-                selectedApps={selectedApps}
+                onNext={goDns}
+                onBack={() => setStage("child")}
+                selectedApps={Array.from(selectedApps)}
                 onAppToggle={(appId, selected) => {
                   const newSelection = new Set(selectedApps);
                   if (selected) {
