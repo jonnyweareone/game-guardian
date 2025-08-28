@@ -35,9 +35,9 @@ const CATEGORIES = ['All', 'Game', 'App', 'Social', 'Education', 'Streaming', 'M
 export default function AppStoreTab({ childId, deviceId }: AppStoreTabProps) {
   const [apps, setApps] = useState<CatalogApp[]>([]);
   const [installedApps, setInstalledApps] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [installingApps, setInstallingApps] = useState<Set<string>>(new Set());
 
   // Load app catalog
@@ -50,7 +50,24 @@ export default function AppStoreTab({ childId, deviceId }: AppStoreTabProps) {
         .order('name');
 
       if (error) throw error;
-      setApps(data || []);
+
+      // Map DB rows into local shape (avoids type drift until types are regenerated)
+      setApps(((data as any) || []).map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description ?? "",
+        icon_url: row.icon_url ?? null,
+        category: row.category ?? null,
+        rating_system: row.rating_system ?? null,
+        age_rating: row.age_rating ?? null,
+        has_ugc: row.has_ugc ?? null,
+        has_chat: row.has_chat ?? null,
+        monetization: row.monetization ?? null,
+        warning_level: row.warning_level ?? 0,
+        warning_notes: row.warning_notes ?? null,
+        guide_url: row.guide_url ?? null,
+        publisher: row.publisher ?? undefined,
+      })));
     } catch (error) {
       console.error('Failed to load app catalog:', error);
       toast.error('Failed to load app catalog');

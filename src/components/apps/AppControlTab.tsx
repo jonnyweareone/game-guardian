@@ -1,5 +1,6 @@
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -32,8 +33,9 @@ interface AppControlTabProps {
 export default function AppControlTab({ childId, deviceId }: AppControlTabProps) {
   const [apps, setApps] = useState<InstalledApp[]>([]);
   const [usage, setUsage] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [savingApps, setSavingApps] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
 
   // Load installed/selected apps for this child
   const loadInstalledApps = async () => {
@@ -63,13 +65,26 @@ export default function AppControlTab({ childId, deviceId }: AppControlTabProps)
 
       if (error) throw error;
 
-      const installedApps = (data || [])
-        .filter(item => item.app_catalog)
-        .map(item => ({
-          app_id: item.app_id,
-          selected: item.selected,
-          ...item.app_catalog,
-        })) as InstalledApp[];
+      const installedApps: InstalledApp[] = (data || [])
+        .filter((row: any) => !!row.app_catalog)
+        .map((row: any) => {
+          const c = row.app_catalog || {};
+          return {
+            app_id: row.app_id,
+            selected: row.selected,
+            name: c.name ?? row.app_id,
+            icon_url: c.icon_url ?? null,
+            category: c.category ?? null,
+            rating_system: c.rating_system ?? null,
+            age_rating: c.age_rating ?? null,
+            has_ugc: c.has_ugc ?? null,
+            has_chat: c.has_chat ?? null,
+            monetization: c.monetization ?? null,
+            warning_level: c.warning_level ?? 0,
+            warning_notes: c.warning_notes ?? null,
+            guide_url: c.guide_url ?? null,
+          };
+        });
 
       setApps(installedApps);
     } catch (error) {
@@ -85,26 +100,34 @@ export default function AppControlTab({ childId, deviceId }: AppControlTabProps)
     try {
       const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       
+      // Get device_code for telemetry lookup
+      const { data: dev } = await supabase
+        .from("devices")
+        .select("device_code")
+        .eq("id", deviceId)
+        .maybeSingle();
+      if (!dev) return;
+
       // Cast to any to avoid type issues until schema is regenerated
-      const { data, error } = await supabase
+      const { data: events, error } = await supabase
         .from('device_events' as any)
         .select('ts, payload')
-        .eq('device_id', deviceId)
+        .eq('device_code', dev.device_code)
         .gte('ts', since)
         .eq('type', 'app_foreground')
         .order('ts', { ascending: true })
         .limit(2000) as any;
 
-      if (error || !data) return;
+      if (error || !events) return;
 
       // Simple sessionization: calculate minutes per app
       const counts: Record<string, number> = {};
       let lastApp: string | null = null;
       let lastTs: number | null = null;
 
-      for (const event of data) {
+      for (const event of events) {
         const now = new Date(event.ts).getTime();
-        const app = event.payload?.app_name || event.payload?.app_id || null;
+        const app = event.payload?.app_id || event.payload?.app_name || null;
         
         if (lastApp && lastTs) {
           const minutes = Math.max(0, Math.round((now - lastTs) / 60000));
@@ -235,7 +258,7 @@ export default function AppControlTab({ childId, deviceId }: AppControlTabProps)
       <Card>
         <CardContent className="py-8 text-center">
           <p className="text-muted-foreground mb-4">No apps installed yet</p>
-          <Button onClick={() => window.location.hash = `#/children/${childId}/apps/store`}>
+          <Button onClick={() => navigate(`/children/${childId}/apps/store`)}>
             Browse App Store
           </Button>
         </CardContent>
@@ -249,7 +272,7 @@ export default function AppControlTab({ childId, deviceId }: AppControlTabProps)
         <h3 className="text-lg font-semibold">Installed Apps ({apps.length})</h3>
         <Button 
           variant="outline" 
-          onClick={() => window.location.hash = `#/children/${childId}/apps/store`}
+          onClick={() => navigate(`/children/${childId}/apps/store`)}
         >
           + Add Apps
         </Button>

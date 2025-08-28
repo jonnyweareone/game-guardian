@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield, Users } from 'lucide-react';
-import EnhancedChildCard from '@/components/dashboard-v2/EnhancedChildCard';
+import { EnhancedChildCard } from '@/components/dashboard-v2/EnhancedChildCard';
 import { getChildrenWithAvatars } from '@/lib/dashboardV2Api';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -188,20 +188,7 @@ export default function Monitoring() {
         <div className="space-y-6">
           <EnhancedChildCard
             child={selectedChild}
-            sessions={[]} // Empty for now - will be populated when device data flows
-            totalTodayMinutes={0}
-            unreadAlerts={unreadAlerts}
-            isExpanded={expandedCards[selectedChild.id] || false}
-            onToggleExpanded={() => {
-              setExpandedCards(prev => ({
-                ...prev,
-                [selectedChild.id]: !prev[selectedChild.id]
-              }));
-            }}
-            onAddTime={() => {}}
-            onPauseDevice={() => {}}
-            onViewFullActivity={() => {}}
-            onRemoveChild={() => {}}
+            alerts={alerts}
           />
           
           {/* Alerts Section */}
