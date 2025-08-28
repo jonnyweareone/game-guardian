@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AuthGuard from "@/components/AuthGuard";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import Navigation from "@/components/Navigation";
 import Index from "@/pages/Index";
+import Auth from "@/pages/Auth";
+import ResetPassword from "@/pages/ResetPassword";
+import NotFound from "@/pages/NotFound";
 import Dashboard from "@/pages/Dashboard";
 import DevicesPage from "@/pages/DevicesPage";
 import Account from "@/pages/Account";
@@ -14,6 +16,12 @@ import Children from "@/pages/Children";
 import AdminDevices from "@/pages/admin/AdminDevices";
 import AdminAppCatalog from "@/pages/admin/AdminAppCatalog";
 import ChildApps from "@/pages/ChildApps";
+import HomePage from "@/pages/HomePage";
+import About from "@/pages/About";
+import Blog from "@/pages/Blog";
+import Products from "@/pages/Products";
+import HowToGuide from "@/pages/HowToGuide";
+import DocsRoutes from "@/pages/docs/routes";
 
 const queryClient = new QueryClient();
 
@@ -25,10 +33,19 @@ export default function App() {
       <BrowserRouter>
         <Navigation />
         <Routes>
-          {/* Public */}
-          <Route path="/" element={<Index />} />
+          {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/auth" element={<AuthGuard requireAuth={false}><Auth /></AuthGuard>} />
+          <Route path="/reset" element={<AuthGuard requireAuth={false}><ResetPassword /></AuthGuard>} />
+          <Route path="/about" element={<About />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/how-to-guide" element={<HowToGuide />} />
+          
+          {/* Docs Routes */}
+          <Route path="/docs/*" element={<DocsRoutes />} />
 
-          {/* Protected */}
+          {/* Protected Routes */}
           <Route
             path="/dashboard"
             element={
@@ -61,7 +78,8 @@ export default function App() {
               </AuthGuard>
             }
           />
-          {/* Child Apps console (both tabs share the same page component) */}
+          
+          {/* Child Apps Routes */}
           <Route
             path="/children/:childId/apps"
             element={
@@ -87,7 +105,8 @@ export default function App() {
             }
           />
 
-          {/* Admin */}
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminRoute><Navigate to="/admin/devices" replace /></AdminRoute>} />
           <Route
             path="/admin/devices"
             element={
@@ -104,6 +123,9 @@ export default function App() {
               </AdminRoute>
             }
           />
+          
+          {/* Catch-all 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
       <Toaster />
