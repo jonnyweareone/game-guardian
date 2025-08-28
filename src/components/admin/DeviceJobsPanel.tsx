@@ -12,7 +12,6 @@ type Job = {
   status: string;
   attempts: number;
   payload: any;
-  logs: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -29,7 +28,7 @@ export default function DeviceJobsPanel({ deviceId }: DeviceJobsPanelProps) {
     setLoading(true);
     const { data, error } = await supabase
       .from("device_jobs")
-      .select("id,type,status,attempts,payload,logs,created_at,updated_at")
+      .select("id,type,status,attempts,payload,created_at,updated_at")
       .eq("device_id", deviceId)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -150,12 +149,6 @@ export default function DeviceJobsPanel({ deviceId }: DeviceJobsPanelProps) {
                   </div>
                 )}
 
-                {job.logs && (
-                  <div className="bg-muted/50 p-2 rounded text-xs">
-                    <strong>Logs:</strong>
-                    <pre className="mt-1 whitespace-pre-wrap">{job.logs}</pre>
-                  </div>
-                )}
               </div>
             ))}
           </div>

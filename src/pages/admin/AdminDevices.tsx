@@ -1,5 +1,5 @@
 
-import DeviceList from '@/components/DeviceList';
+import AdminDeviceList from '@/components/admin/AdminDeviceList';
 
 const AdminDevices = () => {
   return (
@@ -10,7 +10,7 @@ const AdminDevices = () => {
           Manage and monitor all registered Game Guardian devices
         </p>
       </div>
-      <DeviceList />
+      <AdminDeviceList />
     </div>
   );
 };

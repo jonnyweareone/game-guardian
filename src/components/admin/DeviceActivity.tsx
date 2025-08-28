@@ -24,16 +24,10 @@ export default function DeviceActivity({ deviceCode }: DeviceActivityProps) {
 
   async function loadEvents() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("device_events")
-      .select("ts,type,payload,child_id")
-      .eq("device_code", deviceCode)
-      .order("ts", { ascending: false })
-      .limit(20);
-    
-    if (!error && data) {
-      setEvents(data as EventRow[]);
-    }
+    // Note: device_events table doesn't exist yet, using empty data for now
+    // In the future this would query actual device events
+    const data: EventRow[] = [];
+    setEvents(data);
     setLoading(false);
   }
 
