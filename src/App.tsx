@@ -22,6 +22,10 @@ import Blog from "@/pages/Blog";
 import Products from "@/pages/Products";
 import HowToGuide from "@/pages/HowToGuide";
 import DocsRoutes from "@/pages/docs/routes";
+import Rewards from "@/pages/Rewards";
+import Monitoring from "@/pages/Monitoring";
+import Education from "@/pages/Education";
+import OnlineSafetyLivestream from "@/pages/OnlineSafetyLivestream";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +45,9 @@ export default function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/products" element={<Products />} />
           <Route path="/how-to-guide" element={<HowToGuide />} />
+          
+          {/* Public Event Page */}
+          <Route path="/online-safety-livestream" element={<OnlineSafetyLivestream />} />
           
           {/* Docs Routes */}
           <Route path="/docs/*" element={<DocsRoutes />} />
@@ -101,6 +108,32 @@ export default function App() {
             element={
               <AuthGuard>
                 <ChildApps />
+              </AuthGuard>
+            }
+          />
+          
+          {/* Additional Protected Routes */}
+          <Route
+            path="/monitoring"
+            element={
+              <AuthGuard>
+                <Monitoring />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/education"
+            element={
+              <AuthGuard>
+                <Education />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/rewards"
+            element={
+              <AuthGuard>
+                <Rewards />
               </AuthGuard>
             }
           />
