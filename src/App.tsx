@@ -34,6 +34,7 @@ import HowToGuide from "./pages/HowToGuide";
 import HomeworkHelper from "./pages/HomeworkHelper";
 import CodeShare from "./pages/CodeShare";
 import DeviceActivation from "./pages/DeviceActivation";
+import ActivatePage from "./pages/ActivatePage";
 import ActivationComplete from "./pages/ActivationComplete";
 import CreatorMode from "./pages/CreatorMode";
 import NotFound from "./pages/NotFound";
@@ -103,8 +104,22 @@ function App() {
               <Route path="/how-to" element={<HowToGuide />} />
               <Route path="/homework" element={<HomeworkHelper />} />
               <Route path="/code-share" element={<CodeShare />} />
-              <Route path="/device-activation" element={<DeviceActivation />} />
-              <Route path="/activate" element={<DeviceActivation />} />
+              <Route 
+                path="/device-activation" 
+                element={
+                  <AuthGuard>
+                    <DeviceActivation />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/activate" 
+                element={
+                  <AuthGuard>
+                    <ActivatePage />
+                  </AuthGuard>
+                } 
+              />
               <Route path="/activation-complete" element={<ActivationComplete />} />
               
               {/* Livestream routes - public front page, private speaker pages */}

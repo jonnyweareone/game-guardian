@@ -12,9 +12,12 @@ const AuthGuard = ({ children, requireAuth = true }: AuthGuardProps) => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const isDemoMode = localStorage.getItem('demo-mode') === 'true';
+  
+  // Disable demo mode for activation routes - they require real auth
+  const isActivationRoute = location.pathname === '/activate' || location.pathname === '/device-activation';
 
-  // Hard-disable demo mode if a real user exists
-  if (user && isDemoMode) {
+  // Hard-disable demo mode if a real user exists or if on activation route
+  if ((user && isDemoMode) || (isDemoMode && isActivationRoute)) {
     try { 
       localStorage.removeItem('demo-mode'); 
     } catch {}
@@ -31,7 +34,7 @@ const AuthGuard = ({ children, requireAuth = true }: AuthGuardProps) => {
     );
   }
 
-  if (requireAuth && !user && !isDemoMode) {
+  if (requireAuth && !user && (!isDemoMode || isActivationRoute)) {
     // Save the current location for redirect after login
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }

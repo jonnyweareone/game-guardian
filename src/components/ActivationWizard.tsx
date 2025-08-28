@@ -246,26 +246,39 @@ export default function ActivationWizard({ deviceCode }: Props) {
       };
 
       setStage("posting");
-      console.log("Calling device-postinstall with:", { deviceCode, selectedChildId, app_ids, web_filter_config });
+      console.log('Making device-postinstall call with:', {
+        deviceCode,
+        selectedChildId,
+        selectedAppIds: app_ids,
+        filterConfig: web_filter_config
+      });
 
-      // Call device-postinstall with Device JWT
-      const { data, error } = await supabase.functions.invoke('device-postinstall', {
-        body: {
+      const response = await fetch(`https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/device-postinstall`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+          'Content-Type': 'application/json',
+          'x-device-id': deviceCode,           // redundant header
+          'x-child-id': selectedChildId        // redundant header
+        },
+        body: JSON.stringify({
           device_id: deviceCode,
+          deviceCode,                          // alternate name
           child_id: selectedChildId,
+          selectedChildId,                     // alternate name
           app_ids,
           web_filter_config,
-        },
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          "Content-Type": "application/json"
-        }
+        }),
       });
       
-      if (error) {
-        console.error("device-postinstall error:", error);
-        throw error;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('device-postinstall error:', response.status, errorText);
+        throw new Error(`Device activation failed: ${response.status}`);
       }
+      
+      const data = await response.json();
+      
       if (data?.error) {
         console.error("device-postinstall data error:", data.error);
         throw new Error(data.error);

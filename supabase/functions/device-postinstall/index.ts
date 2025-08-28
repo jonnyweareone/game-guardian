@@ -2,15 +2,37 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-device-id",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-device-id, x-child-id',
+}
+
+function json(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
+type ParsedData = {
+  device_id?: string;
+  deviceCode?: string;
+  child_id?: string;
+  selectedChildId?: string;
+  app_ids?: string[];
+  web_filter_config?: unknown;
 };
 
-function json(body: Record<string, unknown>, init?: ResponseInit) {
-  return new Response(JSON.stringify(body), {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}), ...corsHeaders },
-  });
+function safeJsonParse(text: string): ParsedData {
+  try { 
+    return text ? (JSON.parse(text) as ParsedData) : {}; 
+  } catch { 
+    return {}; 
+  }
+}
+
+function getQuery(url: string) {
+  const u = new URL(url);
+  return (key: string) => u.searchParams.get(key) || undefined;
 }
 
 // Robust base64url decoding
@@ -70,52 +92,78 @@ async function verifyDeviceJWT(jwt: string, expectedAud = "device") {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  console.log('device-postinstall: Function invoked');
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
-    // Verify Device JWT (required)
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      console.log('device-postinstall: Missing Device JWT');
-      return json({ error: "Missing Device JWT" }, { status: 401 });
+    // Verify Device JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return json({ error: 'Missing Authorization header' }, 401);
     }
 
-    const deviceJWT = authHeader.substring(7);
-    const { ok, deviceCode, error: verifyError } = await verifyDeviceJWT(deviceJWT, "device");
+    const token = authHeader.slice(7);
+    const verification = await verifyDeviceJWT(token);
     
-    if (!ok || !deviceCode) {
-      console.log('device-postinstall: Invalid Device JWT -', verifyError);
-      return json({ error: "Invalid Device JWT" }, { status: 401 });
+    if (!verification.ok) {
+      console.error('JWT verification failed:', verification);
+      return json({ error: 'Invalid device JWT' }, 401);
     }
 
-    console.log('device-postinstall: Device JWT verified', { device_code: deviceCode });
+    const deviceCodeFromJWT = verification.deviceCode;
+
+    // Parse body with robust fallbacks
+    const raw = await req.text(); // works even if Content-Type is wrong
+    const body = safeJsonParse(raw);
+    
+    const q = getQuery(req.url);
+    const deviceIdHeader = req.headers.get('x-device-id') || undefined;
+    const childIdHeader = req.headers.get('x-child-id') || undefined;
+
+    // Extract child_id from multiple sources
+    const child_id =
+      body.child_id ||
+      body.selectedChildId ||
+      childIdHeader ||
+      q('child_id') ||
+      q('selectedChildId') ||
+      undefined;
+
+    // Extract app_ids from multiple sources
+    const app_ids: string[] =
+      Array.isArray(body.app_ids) ? body.app_ids
+        : (q('app_ids')?.split(',').filter(Boolean) || []);
+
+    // Extract web_filter_config
+    const web_filter_config =
+      body.web_filter_config ?? safeJsonParse(q('web_filter_config') || '{}');
+
+    // Always use device from JWT, never trust client
+    const device_id = deviceCodeFromJWT;
+
+    console.log('Device postinstall parsed:', {
+      device_id,
+      child_id_present: !!child_id,
+      app_ids_count: app_ids.length,
+      raw_len: raw.length,
+      has_web_filter_config: !!web_filter_config
+    });
+
+    if (!child_id) {
+      return json({ error: 'Missing child_id' }, 400);
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const body = await req.json().catch(() => ({}));
-    const { device_id, child_id, app_ids, web_filter_config } = body;
-
-    console.log('device-postinstall: Request body parsed', { 
-      device_id, 
-      child_id, 
-      app_ids_count: app_ids?.length,
-      web_filter_config 
-    });
-
-    if (!device_id || !child_id) {
-      return json({ error: "device_id and child_id required" }, { status: 400 });
-    }
-
     // Use deviceCode from JWT to look up the device (more secure than trusting body)
     const { data: device, error: deviceError } = await supabase
       .from('devices')
       .select('id, parent_id')
-      .eq('device_code', deviceCode)
+      .eq('device_code', device_id)
       .single();
 
     if (deviceError || !device) {

@@ -75,7 +75,10 @@ const Auth = () => {
         description: "You've successfully signed in to Game Guardian AI.",
       });
       try { localStorage.removeItem('demo-mode'); } catch {}
-      navigate('/dashboard');
+      // Redirect back to original location or dashboard
+      const fromLoc = (location.state as any)?.from;
+      const redirectTo = fromLoc ? `${fromLoc.pathname}${fromLoc.search || ''}` : '/dashboard';
+      navigate(redirectTo, { replace: true });
     }
   };
 
@@ -100,6 +103,10 @@ const Auth = () => {
         title: "Account created!",
         description: "Please check your email to verify your account.",
       });
+      // Redirect back to original location or dashboard
+      const fromLoc = (location.state as any)?.from;
+      const redirectTo = fromLoc ? `${fromLoc.pathname}${fromLoc.search || ''}` : '/dashboard';
+      navigate(redirectTo, { replace: true });
     }
   };
 
@@ -243,7 +250,10 @@ const Auth = () => {
                         title: "Demo Mode Activated",
                         description: "Welcome to Game Guardian AI demo dashboard.",
                       });
-                      navigate('/dashboard');
+                      // Redirect back to original location or dashboard
+                      const fromLoc = (location.state as any)?.from;
+                      const redirectTo = fromLoc ? `${fromLoc.pathname}${fromLoc.search || ''}` : '/dashboard';
+                      navigate(redirectTo, { replace: true });
                       setIsLoading(false);
                     }}
                     disabled={isLoading}
