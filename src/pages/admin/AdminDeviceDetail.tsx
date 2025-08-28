@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,6 +24,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import DeviceJobsPanel from '@/components/admin/DeviceJobsPanel';
+import DeviceActivity from '@/components/admin/DeviceActivity';
 
 interface DeviceConfig {
   ui_update?: string;
@@ -436,6 +439,12 @@ export default function AdminDeviceDetail() {
             </Button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* New Admin Panels */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DeviceJobsPanel deviceId={device.id} />
+        <DeviceActivity deviceCode={device.device_code} />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -62,6 +63,28 @@ serve(async (req) => {
 
     const raw = await req.json();
     console.log('Received data from device:', deviceId, raw);
+
+    // Handle app usage telemetry (MVP) — app moved to foreground
+    if ((raw as any).type === 'app_foreground') {
+      const row = {
+        device_code: deviceId,
+        child_id: device.child_id ?? null,
+        type: 'app_foreground',
+        ts: new Date().toISOString(),
+        payload: {
+          app_name: (raw as any).payload?.app_name ?? (raw as any).app_name ?? null,
+          window_title: (raw as any).payload?.window_title ?? (raw as any).window_title ?? null
+        }
+      };
+
+      const { error: insErr } = await supabase.from('device_events').insert(row);
+      if (insErr) {
+        console.error('Error inserting device event:', insErr);
+        return new Response(JSON.stringify({ error: insErr.message }), { headers: corsHeaders, status: 400 });
+      }
+      
+      return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders, status: 200 });
+    }
 
     // Helper to handle app catalog ingestion
     async function handleAppCatalog(item: any) {
