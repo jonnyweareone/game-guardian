@@ -9,6 +9,27 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
 import { verifyDeviceJWT } from "../_shared/jwt.ts";
 
+/** Tolerant JSON parsing even if Content-Type is wrong */
+async function parseBody(req: Request): Promise<Record<string, unknown>> {
+  const raw = await req.text();
+  if (!raw) return {};
+  try { return JSON.parse(raw) as Record<string, unknown>; } catch { return {}; }
+}
+
+/** First valid IP from XFF / X-Real-IP (inet-safe); else undefined */
+function extractClientIp(req: Request): string | undefined {
+  const list = [
+    ...(req.headers.get("x-forwarded-for") ?? "").split(",").map(s => s.trim()).filter(Boolean),
+    (req.headers.get("x-real-ip") ?? "").trim(),
+  ].filter(Boolean);
+
+  for (const ip of list) {
+    // Accept IPv4 or IPv6, reject junk like "unknown" or comma lists
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(ip) || /^[0-9a-f:]+$/i.test(ip)) return ip;
+  }
+  return undefined;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -36,14 +57,11 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const ui_version = body?.ui_version as string | undefined;
-    const firmware_version = body?.firmware_version as string | undefined;
-    const build_id = body?.build_id as string | undefined;
-    const os_version = body?.os_version as string | undefined;
-    const kernel_version = body?.kernel_version as string | undefined;
-    const model = body?.model as string | undefined;
-    const location = body?.location as Record<string, any> | undefined;
+    // Parse body safely (works even with missing/wrong Content-Type)
+    const body = await parseBody(req);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const ts = typeof body.ts === "number" ? body.ts : nowSec;
+    const lastSeenIso = new Date(ts * 1000).toISOString();
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -59,10 +77,29 @@ serve(async (req) => {
       .maybeSingle();
     if (devErr || !device) return json({ error: "Device not found" }, { status: 404 });
 
+    // Build patch — safe IP extraction and version mapping
     const patch: Record<string, unknown> = { 
-      last_seen: new Date().toISOString(),
-      last_ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+      last_seen: lastSeenIso
     };
+
+    // Map incoming "version" → ui_version (only if provided)
+    if (typeof body.version === "string" && body.version.length > 0) {
+      patch.ui_version = body.version;
+    }
+
+    // inet-safe last_ip: only first valid IP; omit if none
+    const ip = extractClientIp(req);
+    if (ip) patch.last_ip = ip;
+
+    // Handle other version fields
+    const ui_version = body?.ui_version as string | undefined;
+    const firmware_version = body?.firmware_version as string | undefined;
+    const build_id = body?.build_id as string | undefined;
+    const os_version = body?.os_version as string | undefined;
+    const kernel_version = body?.kernel_version as string | undefined;
+    const model = body?.model as string | undefined;
+    const location = body?.location as Record<string, any> | undefined;
+
     if (ui_version) patch.ui_version = ui_version;
     if (firmware_version) patch.firmware_version = firmware_version;
     if (build_id) patch.build_id = build_id;
