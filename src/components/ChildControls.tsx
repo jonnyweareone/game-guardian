@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { AppRailItem, AppPolicyPatch, DeviceAppItem } from '@/components/AppRailItem';
 import { getChildTimePolicy, listChildApps, upsertChildTimePolicy, upsertAppCategoryPolicy, listAppCategoryPolicies, addTimeTokens, getCurrentActivity } from '@/lib/api';
+import { Smartphone } from 'lucide-react';
 
 type ChildControlsProps = {
   childId: string;
@@ -229,6 +230,23 @@ export default function ChildControls({
 
   return (
     <div className="space-y-6">
+      {/* Add Apps link at the top */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Quick Actions</span>
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = `#/children/${childId}/apps`}
+              className="flex items-center gap-2"
+            >
+              <Smartphone className="h-4 w-4" />
+              Manage Apps
+            </Button>
+          </CardTitle>
+        </CardHeader>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>{childName} — Time control</CardTitle>
@@ -276,6 +294,7 @@ export default function ChildControls({
           </div>
         </CardContent>
       </Card>
+
       {/* Now + quick tokens */}
       <Card>
         <CardHeader>
