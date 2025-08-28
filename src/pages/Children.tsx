@@ -57,34 +57,27 @@ export default function Children() {
 
       if (childrenError) throw childrenError;
 
-      // Fetch device assignments for each child
+      // Fetch devices assigned to each child directly
       const childrenWithDevices = await Promise.all(
         (children || []).map(async (child) => {
-          const { data: assignments, error: assignmentsError } = await supabase
-            .from('device_child_assignments')
+          const { data: devices, error: devicesError } = await supabase
+            .from('devices')
             .select(`
-              device_id,
-              is_active,
-              devices (
-                id,
-                device_name,
-                kind,
-                status,
-                last_seen,
-                is_active
-              )
+              id,
+              device_name,
+              kind,
+              status,
+              last_seen,
+              is_active
             `)
-            .eq('child_id', child.id);
+            .eq('child_id', child.id)
+            .is('deleted_at', null);
 
-          if (assignmentsError) throw assignmentsError;
-
-          const assigned_devices = (assignments || [])
-            .map(a => a.devices)
-            .filter(Boolean) as Device[];
+          if (devicesError) throw devicesError;
 
           return {
             ...child,
-            assigned_devices
+            assigned_devices: devices || []
           };
         })
       );
@@ -129,8 +122,11 @@ export default function Children() {
   };
 
   const getDeviceStatusColor = (device: Device) => {
-    if (device.status === 'online') return 'bg-green-500';
-    if (device.status === 'offline') return 'bg-gray-400';
+    // Check if device is online based on recent activity
+    const isRecentlyActive = device.last_seen && new Date(device.last_seen) > new Date(Date.now() - 5 * 60 * 1000);
+    
+    if (device.status === 'online' || isRecentlyActive) return 'bg-green-500';
+    if (device.status === 'offline' || !isRecentlyActive) return 'bg-gray-400';
     return 'bg-yellow-500';
   };
 

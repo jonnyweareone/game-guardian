@@ -79,7 +79,8 @@ serve(async (req) => {
 
     // Build patch — safe IP extraction and version mapping
     const patch: Record<string, unknown> = { 
-      last_seen: lastSeenIso
+      last_seen: lastSeenIso,
+      status: 'online'
     };
 
     // Map incoming "version" → ui_version (only if provided)

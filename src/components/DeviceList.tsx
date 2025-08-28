@@ -86,14 +86,20 @@ const DeviceList = () => {
   }, []);
 
   const getStatusBadge = (status: string, isActive: boolean, lastSeen: string | null) => {
-    if (status === 'active' && isActive) {
-      const isOnline = lastSeen && new Date(lastSeen) > new Date(Date.now() - 5 * 60 * 1000);
-      return isOnline ? (
+    // Check if device is online based on recent heartbeat
+    const isRecentlyActive = lastSeen && new Date(lastSeen) > new Date(Date.now() - 5 * 60 * 1000);
+    
+    if (status === 'online' || (isRecentlyActive && isActive)) {
+      return (
         <Badge variant="default" className="bg-green-600">
           <Wifi className="h-3 w-3 mr-1" />
           Online
         </Badge>
-      ) : (
+      );
+    }
+    
+    if (isActive && !isRecentlyActive) {
+      return (
         <Badge variant="secondary">
           <WifiOff className="h-3 w-3 mr-1" />
           Offline
