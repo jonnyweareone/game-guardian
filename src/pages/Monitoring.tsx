@@ -20,6 +20,7 @@ export default function Monitoring() {
   const [selectedChildId, setSelectedChildId] = useState<string | null>(query.get('child'));
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [childDevice, setChildDevice] = useState<any>(null);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
   // Load children on mount
@@ -83,7 +84,37 @@ export default function Monitoring() {
       }
     };
 
+    const loadChildDevice = async () => {
+      try {
+        // Fetch child's assigned devices
+        const { data, error } = await supabase
+          .from('device_child_assignments')
+          .select(`
+            devices!inner(
+              id,
+              device_code,
+              device_name,
+              kind,
+              status,
+              last_seen
+            )
+          `)
+          .eq('child_id', selectedChildId)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (isMounted) {
+          setChildDevice(data?.devices || null);
+        }
+      } catch (error) {
+        console.error('Failed to load child device:', error);
+        // Don't show toast error for device fetch as it's not critical
+      }
+    };
+
     loadAlerts();
+    loadChildDevice();
     return () => { isMounted = false; };
   }, [selectedChildId]);
 
@@ -188,16 +219,25 @@ export default function Monitoring() {
         <div className="space-y-6">
           <EnhancedChildCard
             child={selectedChild}
+            device={childDevice}
             alerts={alerts}
           />
           
           {/* Alerts Section */}
-          {alerts.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Alerts</CardTitle>
-              </CardHeader>
-              <CardContent>
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Alerts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {alerts.length === 0 ? (
+                <div className="text-center py-8">
+                  <Shield className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No recent alerts yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    When safety concerns are detected, they'll appear here
+                  </p>
+                </div>
+              ) : (
                 <div className="space-y-3">
                   {alerts.slice(0, 10).map(alert => (
                     <div key={alert.id} className="flex items-start justify-between gap-3 p-4 border rounded-lg">
@@ -228,9 +268,9 @@ export default function Monitoring() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

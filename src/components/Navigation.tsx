@@ -43,6 +43,7 @@ const Navigation = () => {
     { href: '/education', label: 'Education', icon: BookOpen },
     { href: '/children', label: 'Children', icon: Users },
     { href: '/devices', label: 'Device Management', icon: Shield },
+    { href: '/os-apps', label: 'OS Apps', icon: Package },
     { href: '/rewards', label: 'Rewards', icon: Gift },
     { href: '/account', label: 'Settings', icon: Settings },
   ];
