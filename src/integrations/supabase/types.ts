@@ -4897,6 +4897,39 @@ export type Database = {
         Args: { _child: string; _device: string }
         Returns: boolean
       }
+      set_app_schedule: {
+        Args: { p_app_id: string; p_device_id: string; p_schedule: Json }
+        Returns: {
+          app_id: string
+          approved: boolean
+          approved_at: string | null
+          blocked_reason: string | null
+          created_at: string
+          device_id: string
+          hidden: boolean
+          schedule: Json | null
+          updated_at: string
+        }
+      }
+      toggle_app_policy: {
+        Args: {
+          p_app_id: string
+          p_device_id: string
+          p_enable: boolean
+          p_reason?: string
+        }
+        Returns: {
+          app_id: string
+          approved: boolean
+          approved_at: string | null
+          blocked_reason: string | null
+          created_at: string
+          device_id: string
+          hidden: boolean
+          schedule: Json | null
+          updated_at: string
+        }
+      }
       uk_year_and_key_stage: {
         Args: { p_dob: string; p_ref?: string }
         Returns: {

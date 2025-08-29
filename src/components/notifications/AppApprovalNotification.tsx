@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Check, X, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { approveApp, blockApp } from '@/lib/osAppsApi';
+import { subscribePendingLocalInstalls } from '@/lib/realtimeHelpers';
+import type { DeviceAppInventory, DeviceAppPolicy } from '@/types/os-apps';
 
 interface PendingApp {
   device_id: string;
@@ -31,24 +34,12 @@ export const AppApprovalNotification: React.FC = () => {
     loadPendingApps();
 
     // Set up real-time subscription for new apps
-    const subscription = supabase
-      .channel('app-approvals')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'device_app_inventory',
-          filter: `installed_by=eq.local`
-        },
-        () => {
-          loadPendingApps();
-        }
-      )
-      .subscribe();
+    const unsubscribe = subscribePendingLocalInstalls(() => {
+      loadPendingApps();
+    });
 
     return () => {
-      subscription.unsubscribe();
+      unsubscribe();
     };
   }, [user]);
 
@@ -105,18 +96,11 @@ export const AppApprovalNotification: React.FC = () => {
 
   const handleApproval = async (app: PendingApp, approved: boolean) => {
     try {
-      const { error } = await supabase
-        .from('device_app_policy')
-        .update({
-          approved,
-          hidden: !approved,
-          approved_at: approved ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('device_id', app.device_id)
-        .eq('app_id', app.app_id);
-
-      if (error) throw error;
+      if (approved) {
+        await approveApp(app.device_id, app.app_id);
+      } else {
+        await blockApp(app.device_id, app.app_id, 'Blocked by parent');
+      }
 
       toast.success(`${app.name} ${approved ? 'approved' : 'blocked'}`);
       loadPendingApps(); // Refresh the list

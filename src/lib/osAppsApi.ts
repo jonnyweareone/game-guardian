@@ -1,0 +1,78 @@
+import { supabase } from '@/integrations/supabase/client';
+import type {
+  AppCatalogItem, DeviceAppInventory, DeviceAppPolicy,
+  ScheduleJSON
+} from '@/types/os-apps';
+
+export async function fetchDeviceApps(deviceId: string) {
+  const { data, error } = await supabase
+    .from('device_app_inventory')
+    .select('*')
+    .eq('device_id', deviceId)
+    .order('name');
+  if (error) throw error;
+  return (data ?? []) as DeviceAppInventory[];
+}
+
+export async function fetchDevicePolicies(deviceId: string) {
+  const { data, error } = await supabase
+    .from('device_app_policy')
+    .select('*')
+    .eq('device_id', deviceId);
+  if (error) throw error;
+  return (data ?? []) as DeviceAppPolicy[];
+}
+
+export async function approveApp(deviceId: string, appId: string, reason?: string) {
+  const { data, error } = await supabase.rpc('toggle_app_policy', {
+    p_device_id: deviceId,
+    p_app_id: appId,
+    p_enable: true,
+    p_reason: reason ?? null
+  });
+  if (error) throw error;
+  return data as DeviceAppPolicy;
+}
+
+export async function blockApp(deviceId: string, appId: string, reason?: string) {
+  const { data, error } = await supabase.rpc('toggle_app_policy', {
+    p_device_id: deviceId,
+    p_app_id: appId,
+    p_enable: false,
+    p_reason: reason ?? null
+  });
+  if (error) throw error;
+  return data as DeviceAppPolicy;
+}
+
+export async function setSchedule(deviceId: string, appId: string, schedule: ScheduleJSON) {
+  const { data, error } = await supabase.rpc('set_app_schedule', {
+    p_device_id: deviceId,
+    p_app_id: appId,
+    p_schedule: schedule ?? {}
+  });
+  if (error) throw error;
+  return data as DeviceAppPolicy;
+}
+
+type QueueInstallPayload = {
+  device_id: string;
+  type: 'install_app';
+  app_id: string;
+  payload: { method: string; source?: string | null; name?: string | null; installed_by: 'web' };
+};
+const JOBS_TABLE = 'device_jobs'; // or 'device_jobs' if your agent expects that
+
+export async function queueInstall(deviceId: string, app: AppCatalogItem) {
+  const row: QueueInstallPayload = {
+    device_id: deviceId,
+    type: 'install_app',
+    app_id: app.app_id,
+    payload: { method: app.method, source: app.source ?? app.method, name: app.name, installed_by: 'web' }
+  };
+  const { error } = await supabase.from(JOBS_TABLE).insert(row as any);
+  if (error) throw error;
+
+  // pre-approve now so it is usable once installed
+  await approveApp(deviceId, app.app_id);
+}

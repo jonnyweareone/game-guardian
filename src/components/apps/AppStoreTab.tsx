@@ -6,24 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Loader2, Download, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface AppCatalogItem {
-  id: string;
-  name: string;
-  method: string;
-  source: string;
-  slug: string;
-  icon_url: string | null;
-  tags: string[] | null;
-  launch_url: string | null;
-  category: string | null;
-  description: string | null;
-  age_min: number | null;
-  age_max: number | null;
-  pegi_rating: number | null;
-  enabled: boolean;
-  verified: boolean;
-}
+import { queueInstall } from '@/lib/osAppsApi';
+import type { AppCatalogItem } from '@/types/os-apps';
 
 interface AppStoreTabProps {
   childId: string;
@@ -48,13 +32,31 @@ const AppStoreTab: React.FC<AppStoreTabProps> = ({
     try {
       const { data, error } = await supabase
         .from('app_catalog')
-        .select('*')
+        .select('id, name, method, source, icon_url, tags, category, description, age_min, age_max, pegi_rating, enabled, verified')
         .eq('enabled', true)
         .eq('verified', true)
         .order('name');
 
       if (error) throw error;
-      setApps(data || []);
+      
+      // Map the data to match our interface
+      const mappedData: AppCatalogItem[] = (data || []).map(item => ({
+        app_id: item.id,
+        name: item.name,
+        method: item.method as 'flatpak' | 'apt' | 'snap' | 'web',
+        source: item.source,
+        category: item.category,
+        icon_url: item.icon_url,
+        tags: item.tags,
+        enabled: item.enabled,
+        verified: item.verified,
+        description: item.description,
+        age_min: item.age_min,
+        age_max: item.age_max,
+        pegi_rating: item.pegi_rating
+      }));
+      
+      setApps(mappedData);
     } catch (error) {
       console.error('Error loading apps:', error);
       toast.error('Failed to load app catalog');
@@ -69,47 +71,16 @@ const AppStoreTab: React.FC<AppStoreTabProps> = ({
       return;
     }
 
-    setInstalling(prev => [...prev, app.id]);
+    setInstalling(prev => [...prev, app.app_id]);
     
     try {
-      // Queue install job for the device
-      const { error: jobError } = await supabase
-        .from('device_jobs')
-        .insert({
-          device_id: selectedDeviceId,
-          type: 'install_app',
-          payload: {
-            app_id: app.id,
-            method: app.method,
-            source: app.source,
-            name: app.name,
-            installed_by: 'web'
-          }
-        });
-
-      if (jobError) throw jobError;
-
-      // Also add to inventory with 'web' installed_by
-      const { error: inventoryError } = await supabase
-        .from('device_app_inventory')
-        .upsert({
-          device_id: selectedDeviceId,
-          app_id: app.id,
-          name: app.name,
-          version: '1.0.0',
-          source: app.method,
-          installed_by: 'web',
-          seen_at: new Date().toISOString()
-        });
-
-      if (inventoryError) throw inventoryError;
-
+      await queueInstall(selectedDeviceId, app);
       toast.success(`${app.name} installation queued`);
     } catch (error) {
       console.error('Error installing app:', error);
       toast.error(`Failed to install ${app.name}`);
     } finally {
-      setInstalling(prev => prev.filter(id => id !== app.id));
+      setInstalling(prev => prev.filter(id => id !== app.app_id));
     }
   };
 
@@ -178,7 +149,7 @@ const AppStoreTab: React.FC<AppStoreTabProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredApps.map((app) => (
-            <Card key={app.id} className="hover:shadow-md transition-shadow">
+            <Card key={app.app_id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -234,9 +205,9 @@ const AppStoreTab: React.FC<AppStoreTabProps> = ({
                   <Button
                     size="sm"
                     onClick={() => installApp(app)}
-                    disabled={installing.includes(app.id) || !selectedDeviceId}
+                    disabled={installing.includes(app.app_id) || !selectedDeviceId}
                   >
-                    {installing.includes(app.id) ? (
+                    {installing.includes(app.app_id) ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : (
                       <Download className="h-4 w-4 mr-2" />

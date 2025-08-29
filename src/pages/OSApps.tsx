@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +9,10 @@ import { DeviceAppCard } from '@/components/apps/DeviceAppCard';
 import AppStoreTab from '@/components/apps/AppStoreTab';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { fetchDeviceApps, fetchDevicePolicies } from '@/lib/osAppsApi';
+import { subscribePendingLocalInstalls } from '@/lib/realtimeHelpers';
+import { supabase } from '@/integrations/supabase/client';
+import type { DeviceAppInventory, DeviceAppPolicy } from '@/types/os-apps';
 
 interface Child {
   id: string;
@@ -24,34 +27,14 @@ interface Device {
   is_active: boolean | null;
 }
 
-interface DeviceApp {
-  device_id: string;
-  app_id: string;
-  name: string | null;
-  version: string | null;
-  source: string | null;
-  installed_by: string | null;
-  seen_at: string;
-}
-
-interface AppPolicy {
-  device_id: string;
-  app_id: string;
-  approved: boolean;
-  hidden: boolean;
-  schedule: any;
-  blocked_reason: string | null;
-  approved_at: string | null;
-}
-
 const OSApps: React.FC = () => {
   const { user } = useAuth();
   const [children, setChildren] = useState<Child[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedChild, setSelectedChild] = useState<string | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
-  const [deviceApps, setDeviceApps] = useState<DeviceApp[]>([]);
-  const [appPolicies, setAppPolicies] = useState<AppPolicy[]>([]);
+  const [deviceApps, setDeviceApps] = useState<DeviceAppInventory[]>([]);
+  const [appPolicies, setAppPolicies] = useState<DeviceAppPolicy[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('control');
 
@@ -119,25 +102,13 @@ const OSApps: React.FC = () => {
     const loadDeviceData = async () => {
       setLoading(true);
       try {
-        // Load device apps
-        const { data: apps, error: appsError } = await supabase
-          .from('device_app_inventory')
-          .select('*')
-          .eq('device_id', selectedDevice)
-          .order('name');
+        const [apps, policies] = await Promise.all([
+          fetchDeviceApps(selectedDevice),
+          fetchDevicePolicies(selectedDevice)
+        ]);
 
-        if (appsError) throw appsError;
-
-        // Load app policies
-        const { data: policies, error: policiesError } = await supabase
-          .from('device_app_policy')
-          .select('*')
-          .eq('device_id', selectedDevice);
-
-        if (policiesError) throw policiesError;
-
-        setDeviceApps(apps || []);
-        setAppPolicies(policies || []);
+        setDeviceApps(apps);
+        setAppPolicies(policies);
       } catch (error) {
         console.error('Error loading device data:', error);
         toast.error('Failed to load device apps');
@@ -147,36 +118,30 @@ const OSApps: React.FC = () => {
     };
 
     loadDeviceData();
+
+    // Set up realtime subscription for app changes
+    const unsubscribe = subscribePendingLocalInstalls(() => {
+      loadDeviceData();
+    }, selectedDevice);
+
+    return () => {
+      unsubscribe();
+    };
   }, [selectedDevice]);
 
-  const refreshData = () => {
+  const refreshData = async () => {
     if (selectedDevice) {
-      // Trigger refresh by updating the dependency
-      const loadDeviceData = async () => {
-        try {
-          const { data: apps, error: appsError } = await supabase
-            .from('device_app_inventory')
-            .select('*')
-            .eq('device_id', selectedDevice)
-            .order('name');
+      try {
+        const [apps, policies] = await Promise.all([
+          fetchDeviceApps(selectedDevice),
+          fetchDevicePolicies(selectedDevice)
+        ]);
 
-          if (appsError) throw appsError;
-
-          const { data: policies, error: policiesError } = await supabase
-            .from('device_app_policy')
-            .select('*')
-            .eq('device_id', selectedDevice);
-
-          if (policiesError) throw policiesError;
-
-          setDeviceApps(apps || []);
-          setAppPolicies(policies || []);
-        } catch (error) {
-          console.error('Error refreshing data:', error);
-        }
-      };
-
-      loadDeviceData();
+        setDeviceApps(apps);
+        setAppPolicies(policies);
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+      }
     }
   };
 

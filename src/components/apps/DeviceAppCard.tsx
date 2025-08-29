@@ -7,32 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Clock, Check, X } from 'lucide-react';
 import { ScheduleEditor, ScheduleJSON } from './ScheduleEditor';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-interface DeviceApp {
-  device_id: string;
-  app_id: string;
-  name: string | null;
-  version: string | null;
-  source: string | null;
-  installed_by: string | null;
-  seen_at: string;
-}
-
-interface AppPolicy {
-  device_id: string;
-  app_id: string;
-  approved: boolean;
-  hidden: boolean;
-  schedule: ScheduleJSON;
-  blocked_reason: string | null;
-  approved_at: string | null;
-}
+import { approveApp, blockApp, setSchedule } from '@/lib/osAppsApi';
+import type { DeviceAppInventory, DeviceAppPolicy } from '@/types/os-apps';
 
 interface DeviceAppCardProps {
-  app: DeviceApp;
-  policy: AppPolicy | null;
+  app: DeviceAppInventory;
+  policy: DeviceAppPolicy | null;
   onPolicyUpdate: () => void;
 }
 
@@ -48,22 +29,19 @@ export const DeviceAppCard: React.FC<DeviceAppCardProps> = ({
 
   const needsApproval = app.installed_by === 'local' && !policy?.approved;
 
-  const updatePolicy = async (updates: Partial<AppPolicy>) => {
+  const updatePolicy = async (updates: { approved?: boolean; hidden?: boolean; blocked_reason?: string }) => {
     if (!policy) return;
     
     setIsUpdating(true);
     try {
-      const { error } = await supabase
-        .from('device_app_policy')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-          ...(updates.approved === true && { approved_at: new Date().toISOString() })
-        })
-        .eq('device_id', policy.device_id)
-        .eq('app_id', policy.app_id);
-
-      if (error) throw error;
+      if (updates.approved !== undefined) {
+        // Use RPC for approval/blocking
+        if (updates.approved) {
+          await approveApp(policy.device_id, policy.app_id, updates.blocked_reason);
+        } else {
+          await blockApp(policy.device_id, policy.app_id, updates.blocked_reason);
+        }
+      }
 
       toast.success('App policy updated');
       onPolicyUpdate();
@@ -76,8 +54,20 @@ export const DeviceAppCard: React.FC<DeviceAppCardProps> = ({
   };
 
   const saveSchedule = async () => {
-    await updatePolicy({ schedule: localSchedule });
-    setShowSchedule(false);
+    if (!policy) return;
+    
+    setIsUpdating(true);
+    try {
+      await setSchedule(policy.device_id, policy.app_id, localSchedule);
+      toast.success('Schedule updated');
+      onPolicyUpdate();
+      setShowSchedule(false);
+    } catch (error) {
+      console.error('Error updating schedule:', error);
+      toast.error('Failed to update schedule');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const saveReason = async () => {
