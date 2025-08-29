@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { User, AlertTriangle, Clock, CheckCircle, Smartphone } from "lucide-react";
+import { User, AlertTriangle, Clock, CheckCircle } from "lucide-react";
 
 interface Child {
   id: string;
@@ -90,7 +90,7 @@ export function EnhancedChildCard({ child, device, alerts }: EnhancedChildCardPr
           <div className="text-muted-foreground">No device associated with this child.</div>
         )}
         
-        <div className="grid grid-cols-2 gap-2 mt-4">
+        <div className="mt-4">
           <Button
             variant="outline"
             size="sm"
@@ -99,16 +99,6 @@ export function EnhancedChildCard({ child, device, alerts }: EnhancedChildCardPr
           >
             <User className="h-4 w-4" />
             Profile
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/children/${child.id}/apps`)}
-            className="flex items-center gap-2"
-          >
-            <Smartphone className="h-4 w-4" />
-            Apps
           </Button>
         </div>
       </CardContent>

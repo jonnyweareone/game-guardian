@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -146,7 +146,7 @@ export default function Monitoring() {
               </p>
             </div>
             <Button asChild>
-              <a href="/children">Add Child Profile</a>
+              <Link to="/children">Add Child Profile</Link>
             </Button>
           </div>
         </Card>
