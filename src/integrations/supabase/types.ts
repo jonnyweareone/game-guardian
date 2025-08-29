@@ -214,6 +214,7 @@ export type Database = {
           cross_platform_progress: string | null
           description: string | null
           description_long: string | null
+          enabled: boolean
           hero_url: string | null
           icon_url: string | null
           id: string
@@ -222,13 +223,20 @@ export type Database = {
           is_active: boolean | null
           is_essential: boolean | null
           is_mobile_compatible: boolean | null
+          last_tested_at: string | null
+          launch_url: string | null
+          method: string | null
           name: string
           pegi_descriptors: string[] | null
           pegi_rating: number | null
           platform: string | null
           publisher: string | null
+          slug: string | null
+          source: string | null
+          tags: string[] | null
           type: string | null
           updated_at: string
+          verified: boolean
           version: string | null
           website: string | null
         }
@@ -240,6 +248,7 @@ export type Database = {
           cross_platform_progress?: string | null
           description?: string | null
           description_long?: string | null
+          enabled?: boolean
           hero_url?: string | null
           icon_url?: string | null
           id: string
@@ -248,13 +257,20 @@ export type Database = {
           is_active?: boolean | null
           is_essential?: boolean | null
           is_mobile_compatible?: boolean | null
+          last_tested_at?: string | null
+          launch_url?: string | null
+          method?: string | null
           name: string
           pegi_descriptors?: string[] | null
           pegi_rating?: number | null
           platform?: string | null
           publisher?: string | null
+          slug?: string | null
+          source?: string | null
+          tags?: string[] | null
           type?: string | null
           updated_at?: string
+          verified?: boolean
           version?: string | null
           website?: string | null
         }
@@ -266,6 +282,7 @@ export type Database = {
           cross_platform_progress?: string | null
           description?: string | null
           description_long?: string | null
+          enabled?: boolean
           hero_url?: string | null
           icon_url?: string | null
           id?: string
@@ -274,13 +291,20 @@ export type Database = {
           is_active?: boolean | null
           is_essential?: boolean | null
           is_mobile_compatible?: boolean | null
+          last_tested_at?: string | null
+          launch_url?: string | null
+          method?: string | null
           name?: string
           pegi_descriptors?: string[] | null
           pegi_rating?: number | null
           platform?: string | null
           publisher?: string | null
+          slug?: string | null
+          source?: string | null
+          tags?: string[] | null
           type?: string | null
           updated_at?: string
+          verified?: boolean
           version?: string | null
           website?: string | null
         }
@@ -428,6 +452,13 @@ export type Database = {
             columns: ["app_id"]
             isOneToOne: false
             referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_versions_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_store_public"
             referencedColumns: ["id"]
           },
           {
@@ -1006,6 +1037,13 @@ export type Database = {
             columns: ["app_id"]
             isOneToOne: false
             referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_app_selections_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_store_public"
             referencedColumns: ["id"]
           },
           {
@@ -2792,6 +2830,13 @@ export type Database = {
             foreignKeyName: "installed_apps_app_id_fkey"
             columns: ["app_id"]
             isOneToOne: false
+            referencedRelation: "app_store_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installed_apps_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
             referencedRelation: "v_child_app_selections"
             referencedColumns: ["app_id"]
           },
@@ -3652,6 +3697,13 @@ export type Database = {
             foreignKeyName: "pending_requests_app_id_fkey"
             columns: ["app_id"]
             isOneToOne: false
+            referencedRelation: "app_store_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_requests_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
             referencedRelation: "v_child_app_selections"
             referencedColumns: ["app_id"]
           },
@@ -4491,6 +4543,54 @@ export type Database = {
       }
     }
     Views: {
+      app_store_public: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          category: string | null
+          description: string | null
+          icon_url: string | null
+          id: string | null
+          launch_url: string | null
+          method: string | null
+          name: string | null
+          pegi_rating: number | null
+          slug: string | null
+          source: string | null
+          tags: string[] | null
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          category?: string | null
+          description?: string | null
+          icon_url?: string | null
+          id?: string | null
+          launch_url?: string | null
+          method?: string | null
+          name?: string | null
+          pegi_rating?: number | null
+          slug?: string | null
+          source?: string | null
+          tags?: string[] | null
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          category?: string | null
+          description?: string | null
+          icon_url?: string | null
+          id?: string | null
+          launch_url?: string | null
+          method?: string | null
+          name?: string | null
+          pegi_rating?: number | null
+          slug?: string | null
+          source?: string | null
+          tags?: string[] | null
+        }
+        Relationships: []
+      }
       v_child_app_selections: {
         Row: {
           app_age_rating: number | null
