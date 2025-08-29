@@ -458,13 +458,6 @@ export type Database = {
             foreignKeyName: "app_versions_app_id_fkey"
             columns: ["app_id"]
             isOneToOne: false
-            referencedRelation: "app_store_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "app_versions_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
             referencedRelation: "v_child_app_selections"
             referencedColumns: ["app_id"]
           },
@@ -1037,13 +1030,6 @@ export type Database = {
             columns: ["app_id"]
             isOneToOne: false
             referencedRelation: "app_catalog"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "child_app_selections_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "app_store_public"
             referencedColumns: ["id"]
           },
           {
@@ -2830,13 +2816,6 @@ export type Database = {
             foreignKeyName: "installed_apps_app_id_fkey"
             columns: ["app_id"]
             isOneToOne: false
-            referencedRelation: "app_store_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "installed_apps_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
             referencedRelation: "v_child_app_selections"
             referencedColumns: ["app_id"]
           },
@@ -3697,13 +3676,6 @@ export type Database = {
             foreignKeyName: "pending_requests_app_id_fkey"
             columns: ["app_id"]
             isOneToOne: false
-            referencedRelation: "app_store_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pending_requests_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
             referencedRelation: "v_child_app_selections"
             referencedColumns: ["app_id"]
           },
@@ -4543,54 +4515,6 @@ export type Database = {
       }
     }
     Views: {
-      app_store_public: {
-        Row: {
-          age_max: number | null
-          age_min: number | null
-          category: string | null
-          description: string | null
-          icon_url: string | null
-          id: string | null
-          launch_url: string | null
-          method: string | null
-          name: string | null
-          pegi_rating: number | null
-          slug: string | null
-          source: string | null
-          tags: string[] | null
-        }
-        Insert: {
-          age_max?: number | null
-          age_min?: number | null
-          category?: string | null
-          description?: string | null
-          icon_url?: string | null
-          id?: string | null
-          launch_url?: string | null
-          method?: string | null
-          name?: string | null
-          pegi_rating?: number | null
-          slug?: string | null
-          source?: string | null
-          tags?: string[] | null
-        }
-        Update: {
-          age_max?: number | null
-          age_min?: number | null
-          category?: string | null
-          description?: string | null
-          icon_url?: string | null
-          id?: string | null
-          launch_url?: string | null
-          method?: string | null
-          name?: string | null
-          pegi_rating?: number | null
-          slug?: string | null
-          source?: string | null
-          tags?: string[] | null
-        }
-        Relationships: []
-      }
       v_child_app_selections: {
         Row: {
           app_age_rating: number | null
@@ -4784,6 +4708,24 @@ export type Database = {
       ensure_wallet: {
         Args: { p_child: string }
         Returns: undefined
+      }
+      get_verified_apps: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          age_max: number
+          age_min: number
+          category: string
+          description: string
+          icon_url: string
+          id: string
+          launch_url: string
+          method: string
+          name: string
+          pegi_rating: number
+          slug: string
+          source: string
+          tags: string[]
+        }[]
       }
       has_role: {
         Args: {
