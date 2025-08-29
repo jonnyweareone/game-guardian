@@ -45,6 +45,11 @@ export const navigation = [
     icon: Store,
   },
   {
+    title: "OS Apps",
+    url: "/os-apps",
+    icon: MonitorSpeaker,
+  },
+  {
     title: "Rewards",
     url: "/rewards",
     icon: Trophy,

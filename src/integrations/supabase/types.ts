@@ -1976,6 +1976,102 @@ export type Database = {
           },
         ]
       }
+      device_app_events: {
+        Row: {
+          app_id: string
+          device_id: string
+          event: string
+          id: string
+          meta: Json | null
+          ts: string
+        }
+        Insert: {
+          app_id: string
+          device_id: string
+          event: string
+          id?: string
+          meta?: Json | null
+          ts?: string
+        }
+        Update: {
+          app_id?: string
+          device_id?: string
+          event?: string
+          id?: string
+          meta?: Json | null
+          ts?: string
+        }
+        Relationships: []
+      }
+      device_app_inventory: {
+        Row: {
+          app_id: string
+          device_id: string
+          first_seen: string
+          installed_by: string | null
+          name: string | null
+          seen_at: string
+          source: string | null
+          version: string | null
+        }
+        Insert: {
+          app_id: string
+          device_id: string
+          first_seen?: string
+          installed_by?: string | null
+          name?: string | null
+          seen_at?: string
+          source?: string | null
+          version?: string | null
+        }
+        Update: {
+          app_id?: string
+          device_id?: string
+          first_seen?: string
+          installed_by?: string | null
+          name?: string | null
+          seen_at?: string
+          source?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
+      device_app_policy: {
+        Row: {
+          app_id: string
+          approved: boolean
+          approved_at: string | null
+          blocked_reason: string | null
+          created_at: string
+          device_id: string
+          hidden: boolean
+          schedule: Json | null
+          updated_at: string
+        }
+        Insert: {
+          app_id: string
+          approved?: boolean
+          approved_at?: string | null
+          blocked_reason?: string | null
+          created_at?: string
+          device_id: string
+          hidden?: boolean
+          schedule?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          app_id?: string
+          approved?: boolean
+          approved_at?: string | null
+          blocked_reason?: string | null
+          created_at?: string
+          device_id?: string
+          hidden?: boolean
+          schedule?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       device_apps: {
         Row: {
           app_id: string

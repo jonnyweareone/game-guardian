@@ -26,6 +26,7 @@ import Rewards from "@/pages/Rewards";
 import Monitoring from "@/pages/Monitoring";
 import Education from "@/pages/Education";
 import OnlineSafetyLivestream from "@/pages/OnlineSafetyLivestream";
+import OSApps from "@/pages/OSApps";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,16 @@ export default function App() {
             element={
               <AuthGuard>
                 <ChildApps />
+              </AuthGuard>
+            }
+          />
+          
+          {/* OS Apps Route */}
+          <Route
+            path="/os-apps"
+            element={
+              <AuthGuard>
+                <OSApps />
               </AuthGuard>
             }
           />

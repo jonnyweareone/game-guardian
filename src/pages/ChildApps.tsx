@@ -192,7 +192,7 @@ export default function ChildApps() {
           <TabsContent value="store">
             <AppStoreTab 
               childId={childId!} 
-              deviceId={selectedDeviceId || undefined} 
+              selectedDeviceId={selectedDeviceId || null} 
             />
           </TabsContent>
         </Tabs>
