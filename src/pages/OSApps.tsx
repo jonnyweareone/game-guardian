@@ -9,7 +9,7 @@ import { DeviceAppCard } from '@/components/apps/DeviceAppCard';
 import AppStoreTab from '@/components/apps/AppStoreTab';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { fetchDeviceApps, fetchDevicePolicies } from '@/lib/osAppsApi';
+import { fetchDeviceApps, fetchDevicePolicies, fetchDeviceUsage } from '@/lib/osAppsApi';
 import { subscribePendingLocalInstalls } from '@/lib/realtimeHelpers';
 import { supabase } from '@/integrations/supabase/client';
 import type { DeviceAppInventory, DeviceAppPolicy } from '@/types/os-apps';
@@ -35,6 +35,7 @@ const OSApps: React.FC = () => {
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [deviceApps, setDeviceApps] = useState<DeviceAppInventory[]>([]);
   const [appPolicies, setAppPolicies] = useState<DeviceAppPolicy[]>([]);
+  const [appUsage, setAppUsage] = useState<Record<string, { totalSeconds: number; sessionsCount: number }>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('control');
 
@@ -102,13 +103,15 @@ const OSApps: React.FC = () => {
     const loadDeviceData = async () => {
       setLoading(true);
       try {
-        const [apps, policies] = await Promise.all([
+        const [apps, policies, usage] = await Promise.all([
           fetchDeviceApps(selectedDevice),
-          fetchDevicePolicies(selectedDevice)
+          fetchDevicePolicies(selectedDevice),
+          fetchDeviceUsage(selectedDevice)
         ]);
 
         setDeviceApps(apps);
         setAppPolicies(policies);
+        setAppUsage(usage);
       } catch (error) {
         console.error('Error loading device data:', error);
         toast.error('Failed to load device apps');
@@ -132,13 +135,15 @@ const OSApps: React.FC = () => {
   const refreshData = async () => {
     if (selectedDevice) {
       try {
-        const [apps, policies] = await Promise.all([
+        const [apps, policies, usage] = await Promise.all([
           fetchDeviceApps(selectedDevice),
-          fetchDevicePolicies(selectedDevice)
+          fetchDevicePolicies(selectedDevice),
+          fetchDeviceUsage(selectedDevice)
         ]);
 
         setDeviceApps(apps);
         setAppPolicies(policies);
+        setAppUsage(usage);
       } catch (error) {
         console.error('Error refreshing data:', error);
       }
@@ -290,11 +295,13 @@ const OSApps: React.FC = () => {
                       <div className="grid gap-4">
                         {deviceApps.map((app) => {
                           const policy = appPolicies.find(p => p.app_id === app.app_id);
+                          const usage = appUsage[app.app_id];
                           return (
                             <DeviceAppCard
                               key={app.app_id}
                               app={app}
                               policy={policy || null}
+                              usage={usage}
                               onPolicyUpdate={refreshData}
                             />
                           );

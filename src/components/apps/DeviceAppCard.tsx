@@ -14,12 +14,14 @@ import type { DeviceAppInventory, DeviceAppPolicy } from '@/types/os-apps';
 interface DeviceAppCardProps {
   app: DeviceAppInventory;
   policy: DeviceAppPolicy | null;
+  usage?: { totalSeconds: number; sessionsCount: number };
   onPolicyUpdate: () => void;
 }
 
 export const DeviceAppCard: React.FC<DeviceAppCardProps> = ({
   app,
   policy,
+  usage,
   onPolicyUpdate
 }) => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -74,6 +76,16 @@ export const DeviceAppCard: React.FC<DeviceAppCardProps> = ({
     await updatePolicy({ blocked_reason: localReason });
   };
 
+  const formatUsage = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
   return (
     <Card className={`${needsApproval ? 'border-amber-500 bg-amber-50/10' : ''}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -96,6 +108,11 @@ export const DeviceAppCard: React.FC<DeviceAppCardProps> = ({
                 </Badge>
               )}
             </div>
+            {usage && usage.totalSeconds > 0 && (
+              <div className="text-xs text-muted-foreground">
+                Last 7d: {formatUsage(usage.totalSeconds)} ({usage.sessionsCount} sessions)
+              </div>
+            )}
           </div>
         </div>
         

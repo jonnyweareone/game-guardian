@@ -63,6 +63,31 @@ type QueueInstallPayload = {
 };
 const JOBS_TABLE = 'device_jobs'; // or 'device_jobs' if your agent expects that
 
+export async function fetchDeviceUsage(deviceId: string, sinceDate?: Date) {
+  const since = sinceDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // Default: last 7 days
+  
+  const { data, error } = await supabase
+    .from('device_app_usage')
+    .select('app_id, duration_s, started_at')
+    .eq('device_id', deviceId)
+    .gte('started_at', since.toISOString())
+    .order('started_at', { ascending: false });
+    
+  if (error) throw error;
+  
+  // Aggregate usage by app_id
+  const usageMap = new Map<string, { totalSeconds: number; sessionsCount: number }>();
+  
+  (data || []).forEach(session => {
+    const existing = usageMap.get(session.app_id) || { totalSeconds: 0, sessionsCount: 0 };
+    existing.totalSeconds += session.duration_s || 0;
+    existing.sessionsCount += 1;
+    usageMap.set(session.app_id, existing);
+  });
+  
+  return Object.fromEntries(usageMap);
+}
+
 export async function queueInstall(deviceId: string, app: AppCatalogItem) {
   const row: QueueInstallPayload = {
     device_id: deviceId,
