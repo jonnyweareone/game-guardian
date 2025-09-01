@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -109,7 +110,7 @@ export const DeviceAppCard: React.FC<DeviceAppCardProps> = ({
               )}
             </div>
             {usage && usage.totalSeconds > 0 && (
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground mt-1">
                 Last 7d: {formatUsage(usage.totalSeconds)} ({usage.sessionsCount} sessions)
               </div>
             )}

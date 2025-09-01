@@ -4660,6 +4660,18 @@ export type Database = {
         }
         Relationships: []
       }
+      device_app_usage_view: {
+        Row: {
+          app_id: string | null
+          device_code: string | null
+          duration_s: number | null
+          ended_at: string | null
+          exit_code: number | null
+          name: string | null
+          started_at: string | null
+        }
+        Relationships: []
+      }
       v_child_app_selections: {
         Row: {
           app_age_rating: number | null

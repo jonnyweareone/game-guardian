@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type {
   AppCatalogItem, DeviceAppInventory, DeviceAppPolicy,
@@ -66,10 +67,20 @@ const JOBS_TABLE = 'device_jobs'; // or 'device_jobs' if your agent expects that
 export async function fetchDeviceUsage(deviceId: string, sinceDate?: Date) {
   const since = sinceDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // Default: last 7 days
   
+  // First get device_code from deviceId
+  const { data: device, error: deviceError } = await supabase
+    .from('devices')
+    .select('device_code')
+    .eq('id', deviceId)
+    .single();
+    
+  if (deviceError || !device) throw deviceError || new Error('Device not found');
+  
+  // Query usage view using device_code
   const { data, error } = await supabase
-    .from('device_app_usage')
+    .from('device_app_usage_view')
     .select('app_id, duration_s, started_at')
-    .eq('device_id', deviceId)
+    .eq('device_code', device.device_code)
     .gte('started_at', since.toISOString())
     .order('started_at', { ascending: false });
     
