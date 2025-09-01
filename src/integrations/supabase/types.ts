@@ -4866,6 +4866,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      insert_device_app_usage: {
+        Args: { device_code: string; rows: Json }
+        Returns: undefined
+      }
       is_admin: {
         Args: { _user_id?: string }
         Returns: boolean
@@ -4875,6 +4879,10 @@ export type Database = {
         Returns: boolean
       }
       jwt_device_id_text: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      jwt_sub: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
@@ -4972,6 +4980,10 @@ export type Database = {
           key_stage: string
           year_group: string
         }[]
+      }
+      upsert_device_app_inventory: {
+        Args: { device_code: string; rows: Json }
+        Returns: undefined
       }
     }
     Enums: {
