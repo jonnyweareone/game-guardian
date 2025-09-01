@@ -25,7 +25,7 @@ export default function OnlineSafetyLivestream() {
             <div className="flex flex-wrap justify-center gap-6 mt-8">
               <div className="flex items-center gap-2 text-lg">
                 <Calendar className="h-5 w-5 text-primary" />
-                <span>Wednesday 10th or Thursday 11th September</span>
+                <span>Thursday 11th September</span>
               </div>
               <div className="flex items-center gap-2 text-lg">
                 <Clock className="h-5 w-5 text-primary" />
