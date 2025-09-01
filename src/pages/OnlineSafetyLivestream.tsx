@@ -91,18 +91,20 @@ export default function OnlineSafetyLivestream() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {speakers.map((speaker) => (
-              <Card key={speaker.slug} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6 text-center space-y-4">
-                  <div className="w-24 h-24 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
-                    <Users className="h-12 w-12 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold">{speaker.name}</h3>
-                    <p className="text-muted-foreground">{speaker.tagline}</p>
-                  </div>
-                  <p className="text-sm leading-relaxed">{speaker.bio}</p>
-                </CardContent>
-              </Card>
+              <Link key={speaker.slug} to={`/online-safety-livestream/speakers/${speaker.slug}`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardContent className="p-6 text-center space-y-4">
+                    <div className="w-24 h-24 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
+                      <Users className="h-12 w-12 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">{speaker.name}</h3>
+                      <p className="text-muted-foreground">{speaker.tagline}</p>
+                    </div>
+                    <p className="text-sm leading-relaxed">{speaker.bio}</p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
