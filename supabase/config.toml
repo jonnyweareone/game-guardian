@@ -109,3 +109,9 @@ verify_jwt = false
 [functions.livestream-feedback]
 verify_jwt = false
 
+[functions.device-app-inventory]
+verify_jwt = false
+
+[functions.device-app-usage]
+verify_jwt = false
+

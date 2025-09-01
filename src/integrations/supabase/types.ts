@@ -2072,6 +2072,42 @@ export type Database = {
         }
         Relationships: []
       }
+      device_app_usage: {
+        Row: {
+          app_id: string
+          device_id: string
+          duration_s: number
+          ended_at: string
+          exit_code: number | null
+          id: number
+          inserted_at: string
+          name: string
+          started_at: string
+        }
+        Insert: {
+          app_id: string
+          device_id: string
+          duration_s: number
+          ended_at: string
+          exit_code?: number | null
+          id?: number
+          inserted_at?: string
+          name: string
+          started_at: string
+        }
+        Update: {
+          app_id?: string
+          device_id?: string
+          duration_s?: number
+          ended_at?: string
+          exit_code?: number | null
+          id?: number
+          inserted_at?: string
+          name?: string
+          started_at?: string
+        }
+        Relationships: []
+      }
       device_apps: {
         Row: {
           app_id: string
