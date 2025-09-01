@@ -4647,6 +4647,19 @@ export type Database = {
       }
     }
     Views: {
+      device_app_inventory_view: {
+        Row: {
+          app_id: string | null
+          device_code: string | null
+          first_seen: string | null
+          installed_by: string | null
+          name: string | null
+          seen_at: string | null
+          source: string | null
+          version: string | null
+        }
+        Relationships: []
+      }
       v_child_app_selections: {
         Row: {
           app_age_rating: number | null
