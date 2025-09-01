@@ -12,8 +12,8 @@ interface InventoryRow {
   app_id: string;
   name: string;
   version?: string;
-  source: 'apt' | 'snap' | 'flatpak' | 'web';
-  installed_by: 'web' | 'local';
+  source: 'apt' | 'snap' | 'flatpak' | 'web' | 'desktop' | 'appimage';
+  installed_by: string;
   first_seen?: string;
   seen_at?: string;
 }
@@ -86,19 +86,24 @@ serve(async (req) => {
       const app_id = String(item.app_id || '').trim();
       const name = String(item.name || '').trim();
       const source = String(item.source || '').toLowerCase();
-      const installed_by = String(item.installed_by || 'local').toLowerCase();
+      
+      // Accept all common sources we emit; default to 'desktop' if unknown
+      const allowedSources = new Set(['apt','snap','flatpak','web','desktop','appimage']);
+      const normSource = allowedSources.has(source) ? source : 'desktop';
+
+      const installed_by = String(item.installed_by ?? 'agent').toLowerCase();
+      // Be permissive; keep whatever the agent says (truncate to 24 chars to be safe)
+      const normInstalledBy = installed_by.slice(0, 24);
 
       if (!app_id || !name) continue;
-      if (!['apt', 'snap', 'flatpak', 'web'].includes(source)) continue;
-      if (!['web', 'local'].includes(installed_by)) continue;
 
       validRows.push({
         device_id: deviceId,
         app_id,
         name,
         version: item.version ? String(item.version) : null,
-        source: source as InventoryRow['source'],
-        installed_by: installed_by as InventoryRow['installed_by'],
+        source: normSource as InventoryRow['source'],
+        installed_by: normInstalledBy,
         first_seen: item.first_seen || now,
         seen_at: item.seen_at || now,
       });
