@@ -29,6 +29,9 @@ import Education from "@/pages/Education";
 import OnlineSafetyLivestream from "@/pages/OnlineSafetyLivestream";
 import LivestreamSpeaker from "@/pages/LivestreamSpeaker";
 import OSApps from "@/pages/OSApps";
+import ActivatePage from "@/pages/ActivatePage";
+import DeviceActivation from "@/pages/DeviceActivation";
+import ActivationComplete from "@/pages/ActivationComplete";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +115,32 @@ export default function App() {
             element={
               <AuthGuard>
                 <ChildApps />
+              </AuthGuard>
+            }
+          />
+          
+          {/* Activation Routes - require real auth, demo mode disabled by AuthGuard */}
+          <Route
+            path="/activate"
+            element={
+              <AuthGuard>
+                <ActivatePage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/device-activation"
+            element={
+              <AuthGuard>
+                <DeviceActivation />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/activation-complete"
+            element={
+              <AuthGuard>
+                <ActivationComplete />
               </AuthGuard>
             }
           />

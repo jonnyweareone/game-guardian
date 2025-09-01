@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Loader2, Monitor, Store, ArrowLeft } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { AlertTriangle, Loader2, Monitor, Store, ArrowLeft, Filter, Download } from 'lucide-react';
 import { DeviceAppCard } from '@/components/apps/DeviceAppCard';
 import AppStoreTab from '@/components/apps/AppStoreTab';
 import { toast } from 'sonner';
@@ -38,6 +40,29 @@ const OSApps: React.FC = () => {
   const [appUsage, setAppUsage] = useState<Record<string, { totalSeconds: number; sessionsCount: number }>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('control');
+  const [hideSystemApps, setHideSystemApps] = useState(true);
+
+  const curatedKeywords = useMemo(() => [
+    'firefox', 'libreoffice', 'vlc', 'steam', 'minecraft',
+    'nautilus', 'files', 'calendar', 'weather', 'calculator', 'discord'
+  ], []);
+
+  const filteredApps = useMemo(() => {
+    if (!hideSystemApps) return deviceApps;
+    return deviceApps.filter((app) => {
+      const src = (app.source || '').toLowerCase();
+      if (['flatpak','snap','appimage','desktop'].includes(src)) return true;
+      const name = (app.name || '').toLowerCase();
+      const id = (app.app_id || '').toLowerCase();
+      return curatedKeywords.some(k => name.includes(k) || id.includes(k));
+    });
+  }, [deviceApps, hideSystemApps, curatedKeywords]);
+
+  const telemetryOnlyApps = useMemo(() => {
+    const idsFromUsage = Object.keys(appUsage || {});
+    const invIds = new Set(deviceApps.map(a => a.app_id));
+    return idsFromUsage.filter(id => !invIds.has(id));
+  }, [appUsage, deviceApps]);
 
   // Load children
   useEffect(() => {
@@ -148,6 +173,34 @@ const OSApps: React.FC = () => {
         console.error('Error refreshing data:', error);
       }
     }
+  };
+
+  const exportCsv = () => {
+    const rows = filteredApps.map(app => {
+      const policy = appPolicies.find(p => p.app_id === app.app_id);
+      const usage = appUsage[app.app_id];
+      return {
+        name: app.name || app.app_id,
+        app_id: app.app_id,
+        source: app.source || '',
+        version: app.version || '',
+        approved: policy?.approved ?? false,
+        hidden: policy?.hidden ?? false,
+        last7d_seconds: usage?.totalSeconds ?? 0,
+        sessions_7d: usage?.sessionsCount ?? 0,
+      };
+    });
+    const headers = ['name','app_id','source','version','approved','hidden','last7d_seconds','sessions_7d'];
+    const lines = [headers.join(',')].concat(
+      rows.map(r => headers.map(h => String((r as any)[h]).replace(/"/g,'""')).join(','))
+    );
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `apps-${selectedDeviceData?.device_name || selectedDevice}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const pendingApprovals = deviceApps.filter(app => {
@@ -281,19 +334,39 @@ const OSApps: React.FC = () => {
                   </TabsList>
 
                   <TabsContent value="control" className="space-y-4">
-                    <div className="text-sm text-muted-foreground mb-4">
-                      Manage installed applications on {selectedDeviceData.device_name || 'this device'}
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="text-sm text-muted-foreground">
+                        Manage installed applications on {selectedDeviceData.device_name || 'this device'}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Filter className="h-4 w-4" />
+                          <Label htmlFor="hide-system">Hide system apps</Label>
+                          <Switch id="hide-system" checked={hideSystemApps} onCheckedChange={setHideSystemApps} />
+                        </div>
+                        <Button variant="outline" size="sm" onClick={exportCsv}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download CSV
+                        </Button>
+                      </div>
                     </div>
+
+                    {telemetryOnlyApps.length > 0 && (
+                      <div className="p-3 rounded-md border bg-muted/40 text-sm">
+                        Seen in telemetry but not inventory: {telemetryOnlyApps.slice(0,5).join(', ')}
+                        {telemetryOnlyApps.length > 5 && ` +${telemetryOnlyApps.length - 5} more`}
+                      </div>
+                    )}
                     
-                    {deviceApps.length === 0 ? (
+                    {filteredApps.length === 0 ? (
                       <div className="text-center py-12 text-muted-foreground">
                         <Monitor className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <h3 className="text-lg font-medium mb-2">No Apps Found</h3>
-                        <p>No apps have been detected on this device yet.</p>
+                        <p>No apps match the current filter.</p>
                       </div>
                     ) : (
                       <div className="grid gap-4">
-                        {deviceApps.map((app) => {
+                        {filteredApps.map((app) => {
                           const policy = appPolicies.find(p => p.app_id === app.app_id);
                           const usage = appUsage[app.app_id];
                           return (
