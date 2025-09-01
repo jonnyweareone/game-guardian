@@ -60,23 +60,6 @@ export const speakers: Speaker[] = [
       "Lina Ghazal is an independent online safety and policy expert, formerly with Ofcom and Meta.",
   },
   {
-    slug: "sharon-pursey",
-    name: "Sharon Pursey",
-    tagline: "Co-Founder, SafeToNet",
-    bio:
-      "Sharon is Co-Founder of SafeToNet, a safety-tech company using AI to protect children from online risks. She has led SafeToNet in scaling globally, working with families, regulators, and educators to build safer digital spaces for children.",
-    agenda: agendaStd,
-    seedQuestions: [
-      "What role can AI and technology realistically play in keeping children safe online?",
-      "How do you balance privacy and safety in parental control solutions?",
-      "Are children safer now than 5 years ago, or just differently at risk?",
-      "What's the most exciting innovation you've seen in child protection tech?",
-    ],
-    prepNotes: prepStd,
-    preferredIntro:
-      "Sharon Pursey is the Co-Founder of SafeToNet, building AI-powered tools to protect children online.",
-  },
-  {
     slug: "maddy-holder",
     name: "Maddy Holder",
     tagline: "Safeguarding Innovator & Youth Advocate",

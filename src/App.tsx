@@ -15,6 +15,7 @@ import Account from "@/pages/Account";
 import Children from "@/pages/Children";
 import AdminDevices from "@/pages/admin/AdminDevices";
 import AdminAppCatalog from "@/pages/admin/AdminAppCatalog";
+import AdminLivestreamFeedback from "@/pages/admin/AdminLivestreamFeedback";
 import ChildApps from "@/pages/ChildApps";
 import HomePage from "@/pages/HomePage";
 import About from "@/pages/About";
@@ -26,6 +27,7 @@ import Rewards from "@/pages/Rewards";
 import Monitoring from "@/pages/Monitoring";
 import Education from "@/pages/Education";
 import OnlineSafetyLivestream from "@/pages/OnlineSafetyLivestream";
+import LivestreamSpeaker from "@/pages/LivestreamSpeaker";
 import OSApps from "@/pages/OSApps";
 
 const queryClient = new QueryClient();
@@ -49,6 +51,7 @@ export default function App() {
           
           {/* Public Event Page */}
           <Route path="/online-safety-livestream" element={<OnlineSafetyLivestream />} />
+          <Route path="/online-safety-livestream/speakers/:speakerSlug" element={<LivestreamSpeaker />} />
           
           {/* Docs Routes */}
           <Route path="/docs/*" element={<DocsRoutes />} />
@@ -164,6 +167,14 @@ export default function App() {
             element={
               <AdminRoute>
                 <AdminAppCatalog />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/livestream-feedback"
+            element={
+              <AdminRoute>
+                <AdminLivestreamFeedback />
               </AdminRoute>
             }
           />

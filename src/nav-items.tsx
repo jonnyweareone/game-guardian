@@ -99,6 +99,10 @@ export const navigation = [
         title: "App Catalog",
         url: "/admin/app-catalog",
       },
+      {
+        title: "Livestream Feedback",
+        url: "/admin/livestream-feedback",
+      },
     ],
   },
   {
