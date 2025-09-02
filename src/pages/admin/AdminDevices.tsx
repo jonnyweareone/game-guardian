@@ -1,5 +1,6 @@
 
 import AdminDeviceList from '@/components/admin/AdminDeviceList';
+import AdminDeviceHeartbeats from '@/components/admin/AdminDeviceHeartbeats';
 
 const AdminDevices = () => {
   return (
@@ -10,7 +11,11 @@ const AdminDevices = () => {
           Manage and monitor all registered Game Guardian devices
         </p>
       </div>
-      <AdminDeviceList />
+      
+      <div className="space-y-8">
+        <AdminDeviceList />
+        <AdminDeviceHeartbeats />
+      </div>
     </div>
   );
 };
