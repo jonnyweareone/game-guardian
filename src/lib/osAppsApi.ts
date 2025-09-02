@@ -112,3 +112,16 @@ export async function queueInstall(deviceId: string, app: AppCatalogItem) {
   // pre-approve now so it is usable once installed
   await approveApp(deviceId, app.app_id);
 }
+
+export async function addAppToInventory(deviceId: string, appId: string, name: string) {
+  const { error } = await supabase.functions.invoke('device-add-app-inventory', {
+    body: {
+      device_id: deviceId,
+      app_id: appId,
+      name: name,
+      source: 'manual'
+    }
+  });
+
+  if (error) throw error;
+}

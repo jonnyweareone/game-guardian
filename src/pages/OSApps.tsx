@@ -11,8 +11,8 @@ import { DeviceAppCard } from '@/components/apps/DeviceAppCard';
 import AppStoreTab from '@/components/apps/AppStoreTab';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { fetchDeviceApps, fetchDevicePolicies, fetchDeviceUsage } from '@/lib/osAppsApi';
-import { subscribePendingLocalInstalls } from '@/lib/realtimeHelpers';
+import { fetchDeviceApps, fetchDevicePolicies, fetchDeviceUsage, addAppToInventory } from '@/lib/osAppsApi';
+import { subscribePendingLocalInstalls, subscribeDeviceAppUpdates } from '@/lib/realtimeHelpers';
 import { supabase } from '@/integrations/supabase/client';
 import type { DeviceAppInventory, DeviceAppPolicy } from '@/types/os-apps';
 
@@ -147,13 +147,19 @@ const OSApps: React.FC = () => {
 
     loadDeviceData();
 
-    // Set up realtime subscription for app changes
-    const unsubscribe = subscribePendingLocalInstalls(() => {
+    // Set up realtime subscriptions for app changes
+    const unsubscribePending = subscribePendingLocalInstalls(() => {
       loadDeviceData();
     }, selectedDevice);
 
+    const unsubscribeUpdates = subscribeDeviceAppUpdates(() => {
+      // Refresh usage data more frequently for real-time updates
+      refreshData();
+    }, selectedDevice);
+
     return () => {
-      unsubscribe();
+      unsubscribePending();
+      unsubscribeUpdates();
     };
   }, [selectedDevice]);
 
@@ -352,9 +358,58 @@ const OSApps: React.FC = () => {
                     </div>
 
                     {telemetryOnlyApps.length > 0 && (
-                      <div className="p-3 rounded-md border bg-muted/40 text-sm">
-                        Seen in telemetry but not inventory: {telemetryOnlyApps.slice(0,5).join(', ')}
-                        {telemetryOnlyApps.length > 5 && ` +${telemetryOnlyApps.length - 5} more`}
+                      <div className="p-3 rounded-md border bg-muted/40 text-sm space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span>Seen in telemetry but not inventory:</span>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={async () => {
+                              if (!selectedDevice) return;
+                              try {
+                                await Promise.all(
+                                  telemetryOnlyApps.slice(0, 3).map(appId => 
+                                    addAppToInventory(selectedDevice, appId, appId)
+                                  )
+                                );
+                                toast.success('Apps added to inventory');
+                                refreshData();
+                              } catch (error) {
+                                console.error('Error adding apps:', error);
+                                toast.error('Failed to add apps to inventory');
+                              }
+                            }}
+                          >
+                            Add Top 3 to Inventory
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {telemetryOnlyApps.slice(0,5).map((appId, i) => (
+                            <div key={appId} className="flex items-center gap-1">
+                              <span className="text-xs font-mono bg-background px-1 rounded">{appId}</span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-1 text-xs"
+                                onClick={async () => {
+                                  if (!selectedDevice) return;
+                                  try {
+                                    await addAppToInventory(selectedDevice, appId, appId);
+                                    toast.success(`Added ${appId} to inventory`);
+                                    refreshData();
+                                  } catch (error) {
+                                    console.error('Error adding app:', error);
+                                    toast.error('Failed to add app to inventory');
+                                  }
+                                }}
+                              >
+                                +
+                              </Button>
+                              {i < Math.min(telemetryOnlyApps.length, 5) - 1 && <span className="text-muted-foreground">, </span>}
+                            </div>
+                          ))}
+                          {telemetryOnlyApps.length > 5 && <span className="text-muted-foreground">+{telemetryOnlyApps.length - 5} more</span>}
+                        </div>
                       </div>
                     )}
                     
