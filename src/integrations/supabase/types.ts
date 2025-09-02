@@ -2848,6 +2848,33 @@ export type Database = {
         }
         Relationships: []
       }
+      household_dns_configs: {
+        Row: {
+          config_name: string | null
+          created_at: string
+          id: string
+          nextdns_config_id: string
+          parent_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          config_name?: string | null
+          created_at?: string
+          id?: string
+          nextdns_config_id: string
+          parent_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          config_name?: string | null
+          created_at?: string
+          id?: string
+          nextdns_config_id?: string
+          parent_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       identity_verifications: {
         Row: {
           address_lat: number | null

@@ -175,36 +175,55 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
         }
       }
 
-      // Create web filter profile automatically (only for new children)
+      // Create NextDNS profile automatically (only for new children)
       if (!editingChild) {
         try {
-          const { error: webFilterError } = await supabase.functions.invoke('nextdns-profile-manager', {
-            body: {
-              action: 'create_profile',
-              child_id: childData.id,
-              child_name: name.trim(),
-              age: childAge,
-              school_hours_enabled: webFilterConfig.schoolHoursEnabled,
-              content_categories: {
-                social_media: webFilterConfig.socialMediaBlocked,
-                gaming: webFilterConfig.gamingBlocked,
-                entertainment: webFilterConfig.entertainmentBlocked
-              }
-            }
-          });
+          // Get or create household NextDNS config first
+          const { data: householdConfig } = await supabase
+            .from('household_dns_configs')
+            .select('nextdns_config_id')
+            .single();
 
-          if (webFilterError) {
-            console.warn('Failed to create web filter profile:', webFilterError);
-            toast({
-              title: "Web Filter Setup Warning",
-              description: "Child profile created but web filtering could not be configured automatically. You can set this up manually later.",
-              variant: "destructive"
+          let configId = householdConfig?.nextdns_config_id;
+
+          if (!configId) {
+            // Provision NextDNS config for this household
+            const { data: provisionResult, error: provisionError } = await supabase.functions.invoke('provision-nextdns', {
+              body: {
+                household_id: (await supabase.auth.getUser()).data.user?.id
+              }
             });
-          } else {
-            console.log('Web filter profile created successfully');
+
+            if (provisionError || !provisionResult?.ok) {
+              throw new Error(provisionResult?.error || 'Failed to provision NextDNS config');
+            }
+
+            configId = provisionResult.configId;
           }
-        } catch (webFilterError) {
-          console.warn('Failed to create web filter profile:', webFilterError);
+
+          // Ensure child has a NextDNS profile
+          if (configId) {
+            const { error: profileError } = await supabase.functions.invoke('ensure-child-profiles', {
+              body: {
+                configId,
+                children: [{
+                  id: childData.id,
+                  name: name.trim()
+                }]
+              }
+            });
+
+            if (profileError) {
+              console.warn('Failed to create NextDNS profile:', profileError);
+              toast({
+                title: "NextDNS Setup Warning",
+                description: "Child profile created but NextDNS filtering could not be configured automatically. You can set this up manually later.",
+                variant: "destructive"
+              });
+            }
+          }
+        } catch (nextdnsError) {
+          console.warn('Failed to setup NextDNS:', nextdnsError);
         }
       }
 

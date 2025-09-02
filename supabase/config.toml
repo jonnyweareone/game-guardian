@@ -19,6 +19,12 @@ port = 54323
 [functions.device-registration]
 verify_jwt = false
 
+[functions.provision-nextdns]
+verify_jwt = false
+
+[functions.ensure-child-profiles]
+verify_jwt = true
+
 [functions.activation-status]
 verify_jwt = false
 

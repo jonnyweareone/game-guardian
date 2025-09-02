@@ -179,6 +179,41 @@ export default function ActivationWizard({ deviceCode }: Props) {
       let jwt = "";
       console.log("Starting device activation polling for:", deviceCode);
       
+      // Provision NextDNS during activation
+      try {
+        const { data: nextdnsResult } = await supabase.functions.invoke('provision-nextdns', {
+          body: {
+            device_id: deviceCode,
+            household_id: user?.id
+          }
+        });
+
+        if (nextdnsResult?.ok && nextdnsResult?.configId) {
+          console.log('NextDNS provisioned:', nextdnsResult.configId);
+          
+          // Update DNS config with the provisioned config ID
+          setDnsConfig(prev => ({
+            ...prev,
+            nextDnsConfig: nextdnsResult.configId
+          }));
+
+          // Ensure child profiles for all children
+          if (children.length > 0) {
+            await supabase.functions.invoke('ensure-child-profiles', {
+              body: {
+                configId: nextdnsResult.configId,
+                children: children.map(child => ({
+                  id: child.id,
+                  name: child.name
+                }))
+              }
+            });
+          }
+        }
+      } catch (nextdnsError) {
+        console.warn('NextDNS provisioning failed:', nextdnsError);
+      }
+      
       // Primary polling: activation-status endpoint
       for (let i = 0; i < 20; i++) {
         try {
