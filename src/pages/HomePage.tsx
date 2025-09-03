@@ -59,7 +59,7 @@ const HomePage = () => {
             </p>
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
               <Button size="lg" className="text-lg px-8 py-6" asChild>
-                <Link to="/auth">
+                <Link to="/auth?intent=waitlist">
                   Join the Waitlist <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -323,7 +323,7 @@ const HomePage = () => {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button size="lg" variant="secondary" className="text-lg px-8 py-6" asChild>
-              <Link to="/auth">
+              <Link to="/auth?intent=waitlist">
                 <Download className="mr-2 h-5 w-5" />
                 Join the Waitlist
               </Link>
