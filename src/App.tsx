@@ -23,6 +23,22 @@ import Blog from "@/pages/Blog";
 import Products from "@/pages/Products";
 import HowToGuide from "@/pages/HowToGuide";
 import DocsRoutes from "@/pages/docs/routes";
+import AppStore from "@/pages/AppStore";
+import GuardianNova from "@/pages/GuardianNova";
+import NovaLearning from "@/pages/NovaLearning";
+import NovaReader from "@/pages/NovaReader";
+import HomeworkHelper from "@/pages/HomeworkHelper";
+import PitchDeck from "@/pages/PitchDeck";
+import PressReleases from "@/pages/PressReleases";
+import ProductDevice from "@/pages/ProductDevice";
+import ProductOSFull from "@/pages/ProductOSFull";
+import ProductOSMini from "@/pages/ProductOSMini";
+import ProductReceiver from "@/pages/ProductReceiver";
+import Security from "@/pages/Security";
+import BrandAssets from "@/pages/BrandAssets";
+import CodeShare from "@/pages/CodeShare";
+import CreatorMode from "@/pages/CreatorMode";
+import AdminWaitlist from "@/pages/AdminWaitlist";
 import Rewards from "@/pages/Rewards";
 import Monitoring from "@/pages/Monitoring";
 import Education from "@/pages/Education";
@@ -58,6 +74,24 @@ export default function App() {
           
           {/* Docs Routes */}
           <Route path="/docs/*" element={<DocsRoutes />} />
+          
+          {/* Additional Public Pages */}
+          <Route path="/app-store" element={<AppStore />} />
+          <Route path="/nova" element={<GuardianNova />} />
+          <Route path="/nova-learning" element={<NovaLearning />} />
+          <Route path="/nova-reader" element={<NovaReader />} />
+          <Route path="/homework-helper" element={<HomeworkHelper />} />
+          <Route path="/pitch-deck" element={<PitchDeck />} />
+          <Route path="/press-releases" element={<PressReleases />} />
+          <Route path="/product/device" element={<ProductDevice />} />
+          <Route path="/product/os-full" element={<ProductOSFull />} />
+          <Route path="/product/os-mini" element={<ProductOSMini />} />
+          <Route path="/product/receiver" element={<ProductReceiver />} />
+          <Route path="/security" element={<Security />} />
+          <Route path="/brand-assets" element={<BrandAssets />} />
+          <Route path="/code-share" element={<CodeShare />} />
+          <Route path="/creator-mode" element={<CreatorMode />} />
+          <Route path="/admin-waitlist" element={<AdminWaitlist />} />
 
           {/* Protected Routes */}
           <Route
