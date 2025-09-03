@@ -4,7 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wifi, WifiOff, Shield, RefreshCw } from 'lucide-react';
+import { Wifi, WifiOff, Shield, RefreshCw, MoreVertical, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { getChildren } from '@/lib/api';
 import DeviceChildAssignmentDialog from '@/components/DeviceChildAssignmentDialog';
@@ -108,6 +111,22 @@ const DevicesPage = () => {
     refetchDevices();
   };
 
+  const removeDevice = async (deviceId: string) => {
+    try {
+      const { error } = await supabase.rpc('rpc_remove_device', {
+        _device: deviceId
+      });
+
+      if (error) throw error;
+
+      toast.success('Device removed successfully');
+      refetchDevices();
+    } catch (error: any) {
+      console.error('Error removing device:', error);
+      toast.error(error.message || 'Failed to remove device');
+    }
+  };
+
   const getStatusDisplay = (device: Device) => {
     const isOnline = device.status === 'online';
     return {
@@ -176,10 +195,46 @@ const DevicesPage = () => {
               <Card key={device.id} className="relative">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
-                      {device.device_name || device.device_code}
-                    </CardTitle>
-                    {status.icon}
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">
+                        {device.device_name || device.device_code}
+                      </CardTitle>
+                      {status.icon}
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove Device
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove Device</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to remove device {device.device_code}? This action cannot be undone and will deactivate the device.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => removeDevice(device.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   <p className="text-sm text-muted-foreground">{device.device_code}</p>
                 </CardHeader>
