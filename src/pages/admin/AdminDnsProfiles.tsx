@@ -49,9 +49,14 @@ export default function AdminDnsProfiles() {
     setProvisionResult(null);
     
     try {
+      // Get current admin user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // For admin bulk provisioning, we'll create a household config directly for the admin user
       const { data, error } = await invokeEdgeFunction('provision-nextdns', {
-        device_id: 'admin-provision', // Special device ID for admin provisioning
-        config_name: 'admin-bulk-provision'
+        household_id: user.id, // Use admin's user ID as household ID
+        config_name: 'Guardian Admin Bulk Config'
       });
 
       if (error) throw error;
@@ -61,7 +66,7 @@ export default function AdminDnsProfiles() {
       toast.success('NextDNS config provisioned successfully');
     } catch (error) {
       console.error('Error provisioning config:', error);
-      toast.error(`Failed to provision config: ${error}`);
+      toast.error(`Failed to provision config: ${error.message || error}`);
     } finally {
       setIsProvisioning(false);
     }
