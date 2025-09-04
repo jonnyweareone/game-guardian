@@ -10,6 +10,8 @@ import html2canvas from "html2canvas";
 // Use the correct brand assets from public/lovable-uploads folder
 const logoTransparent = "/lovable-uploads/guardian-logo-transparent.png";
 const logo2Transparent = "/lovable-uploads/guardian-logo2-transparent.png";
+const logoShieldTextTransparent = "/lovable-uploads/guardian-logo-shield-text-transparent.png";
+const logoShieldTextDark = "/lovable-uploads/guardian-logo-shield-text-dark.png";
 const splashScreen = "/lovable-uploads/guardian-splash-screen.png";
 const wallpaperDesktop = "/lovable-uploads/guardian-wallpaper-desktop.png";
 const wallpaperMobile = "/lovable-uploads/guardian-wallpaper-mobile.png";
@@ -18,41 +20,62 @@ const BrandAssets = () => {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const logoRef = useRef<HTMLDivElement>(null);
 
-  // Component for the new logo2
-  const Logo2Component = () => (
-    <div ref={logoRef} className="flex items-center gap-3 bg-transparent p-8 rounded-lg">
-      <Shield className="h-16 w-16 text-blue-600" />
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Game Guardian AI™</h1>
-        <p className="text-lg text-gray-600">Intelligent Gaming Protection</p>
+  // Enhanced logo component with shield and text
+  const GuardianLogoComponent = () => (
+    <div ref={logoRef} className="flex items-center gap-4 bg-transparent p-8 rounded-lg" style={{ width: '1024px', height: '512px' }}>
+      <div className="relative">
+        <Shield className="h-32 w-32 text-blue-600 fill-blue-100" strokeWidth={1.5} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-12 h-12 bg-blue-600 rounded-full opacity-30"></div>
+        </div>
+      </div>
+      <div className="flex flex-col justify-center">
+        <h1 className="text-6xl font-bold text-gray-900 tracking-tight">Game Guardian AI™</h1>
+        <p className="text-3xl text-blue-600 font-medium mt-2">Intelligent Gaming Protection</p>
       </div>
     </div>
   );
 
   const assets = [
     {
-      title: "Logo (Transparent)",
-      description: "High-resolution logo with transparent background",
+      title: "Logo (Original Transparent)",
+      description: "Original high-resolution logo with transparent background",
       image: logoTransparent,
       filename: "game-guardian-logo-transparent.png",
       dimensions: "1024×512",
       wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo-transparent.png"
     },
     {
-      title: "Logo 2 (Shield + Text)",
+      title: "Shield + Text Logo (Transparent)",
       description: "Complete brand logo with shield icon and text layout - transparent background",
+      image: logoShieldTextTransparent,
+      filename: "guardian-logo-shield-text-transparent.png",
+      dimensions: "1024×512",
+      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-transparent.png"
+    },
+    {
+      title: "Shield + Text Logo (Dark Preview)",
+      description: "Complete brand logo with shield icon and text on dark background",
+      image: logoShieldTextDark,
+      filename: "guardian-logo-shield-text-dark.png",
+      dimensions: "1024×512",
+      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-dark.png"
+    },
+    {
+      title: "Shield + Text Logo (Interactive)",
+      description: "Interactive React component version - downloads as PNG with transparent background",
+      component: <GuardianLogoComponent />,
+      filename: "guardian-logo-shield-text-interactive.png",
+      dimensions: "1024×512",
+      isComponent: true
+    },
+    {
+      title: "Legacy Logo 2",
+      description: "Previous shield + text layout version",
       image: logo2Transparent,
       filename: "game-guardian-logo2-transparent.png",
       dimensions: "800×200",
       wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo2-transparent.png"
-    },
-    {
-      title: "Logo 2 (Interactive)",
-      description: "Interactive React component version - downloads as PNG with transparent background",
-      component: <Logo2Component />,
-      filename: "game-guardian-logo2-component.png",
-      dimensions: "800×200",
-      isComponent: true
     },
     {
       title: "Splash Screen",
@@ -112,8 +135,8 @@ const BrandAssets = () => {
       const canvas = await html2canvas(logoRef.current, {
         backgroundColor: null, // transparent background
         scale: 2,
-        width: 800,
-        height: 200,
+        width: 1024,
+        height: 512,
         useCORS: true
       });
       
@@ -209,7 +232,7 @@ const BrandAssets = () => {
                     {asset.isComponent && (
                       <div className="bg-muted p-3 rounded-md">
                         <p className="text-sm text-muted-foreground">
-                          Interactive component - Downloads as PNG with transparent background (800×200)
+                          Interactive component - Downloads as PNG with transparent background (1024×512)
                         </p>
                       </div>
                     )}
@@ -222,9 +245,11 @@ const BrandAssets = () => {
               <h2 className="text-xl font-semibold mb-4">Usage Guidelines & wget URLs</h2>
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-medium mb-2">Direct wget URLs:</h3>
+                  <h3 className="font-medium mb-2">Direct wget URLs for all assets:</h3>
                   <div className="space-y-1 text-sm text-muted-foreground font-mono">
                     <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo-transparent.png</div>
+                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-transparent.png</div>
+                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-dark.png</div>
                     <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo2-transparent.png</div>
                     <div>wget https://gameguardian.ai/lovable-uploads/guardian-splash-screen.png</div>
                     <div>wget https://gameguardian.ai/lovable-uploads/guardian-wallpaper-desktop.png</div>
