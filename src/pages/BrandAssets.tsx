@@ -2,8 +2,10 @@
 import SEOHead from "@/components/SEOHead";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Copy, Check, Shield } from "lucide-react";
-import { useState, useRef } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Download, Copy, Check, Shield, CheckCircle, XCircle, AlertTriangle, ExternalLink } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 
@@ -19,6 +21,8 @@ const wallpaperMobile = "/lovable-uploads/guardian-wallpaper-mobile.png";
 const BrandAssets = () => {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [copiedWget, setCopiedWget] = useState<string | null>(null);
+  const [assetStatus, setAssetStatus] = useState<Record<string, 'loading' | 'available' | 'unavailable'>>({});
+  const [domainMode, setDomainMode] = useState<'current' | 'lovable'>('current');
   const logoRef = useRef<HTMLDivElement>(null);
 
   // Enhanced logo component with shield and text
@@ -36,10 +40,6 @@ const BrandAssets = () => {
       </div>
     </div>
   );
-
-  const getWgetUrl = (assetPath: string) => {
-    return `${window.location.origin}${assetPath}`;
-  };
 
   const assets = [
     {
@@ -108,6 +108,78 @@ const BrandAssets = () => {
       size: "~900KB"
     }
   ];
+
+  // Check asset availability on mount
+  useEffect(() => {
+    const checkAssets = async () => {
+      const nonComponentAssets = assets.filter(asset => !asset.isComponent);
+      
+      for (const asset of nonComponentAssets) {
+        if (!asset.image) continue;
+        
+        setAssetStatus(prev => ({ ...prev, [asset.image!]: 'loading' }));
+        
+        try {
+          const response = await fetch(asset.image, { method: 'HEAD' });
+          setAssetStatus(prev => ({ 
+            ...prev, 
+            [asset.image!]: response.ok ? 'available' : 'unavailable' 
+          }));
+        } catch {
+          setAssetStatus(prev => ({ ...prev, [asset.image!]: 'unavailable' }));
+        }
+      }
+    };
+    
+    checkAssets();
+  }, []);
+
+  const getWgetUrl = (assetPath: string) => {
+    const currentDomain = window.location.origin;
+    const lovableDomain = "https://game-guardian.lovable.app";
+    
+    return domainMode === 'current' ? `${currentDomain}${assetPath}` : `${lovableDomain}${assetPath}`;
+  };
+
+  const getFallbackUrl = (assetPath: string) => {
+    return `https://game-guardian.lovable.app${assetPath}`;
+  };
+
+  const copyAllWgetCommands = async () => {
+    const nonComponentAssets = assets.filter(asset => !asset.isComponent && asset.image);
+    const commands = nonComponentAssets.map(asset => `wget ${getWgetUrl(asset.image!)}`).join('\n');
+    
+    try {
+      await navigator.clipboard.writeText(commands);
+      toast.success("All wget commands copied!");
+    } catch {
+      toast.error("Failed to copy wget commands");
+    }
+  };
+
+  const openAssetUrl = (assetPath: string) => {
+    window.open(getWgetUrl(assetPath), '_blank');
+  };
+
+  const getStatusIcon = (assetPath: string) => {
+    const status = assetStatus[assetPath];
+    switch (status) {
+      case 'loading': return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+      case 'available': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'unavailable': return <XCircle className="w-4 h-4 text-red-500" />;
+      default: return null;
+    }
+  };
+
+  const getStatusBadge = (assetPath: string) => {
+    const status = assetStatus[assetPath];
+    switch (status) {
+      case 'loading': return <Badge variant="secondary">Checking...</Badge>;
+      case 'available': return <Badge variant="default" className="bg-green-100 text-green-800">Available</Badge>;
+      case 'unavailable': return <Badge variant="destructive">404 Error</Badge>;
+      default: return null;
+    }
+  };
 
   const getFullUrl = (assetPath: string) => {
     return `${window.location.origin}${assetPath}`;
@@ -189,6 +261,60 @@ const BrandAssets = () => {
               </p>
             </div>
 
+            {/* Publish Reminder Alert */}
+            <Alert className="mb-8">
+              <AlertTriangle className="w-4 h-4" />
+              <AlertDescription>
+                <strong>Having 404 issues?</strong> Make sure to <Button variant="link" className="p-0 h-auto text-blue-600" onClick={() => window.open('/publish', '_blank')}>Publish your project</Button> first. 
+                Assets may not be available on custom domains until the latest build is published.
+              </AlertDescription>
+            </Alert>
+
+            {/* Asset Status & Controls Panel */}
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Asset Status & Controls
+                  <div className="flex gap-2">
+                    <Button
+                      variant={domainMode === 'current' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setDomainMode('current')}
+                    >
+                      Current Domain
+                    </Button>
+                    <Button
+                      variant={domainMode === 'lovable' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setDomainMode('lovable')}
+                    >
+                      Lovable.app
+                    </Button>
+                  </div>
+                </CardTitle>
+                <CardDescription>
+                  Check asset availability and copy all wget commands at once
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {assets.filter(asset => !asset.isComponent).map((asset, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      {getStatusIcon(asset.image!)}
+                      <span className="text-sm">{asset.title}</span>
+                      {getStatusBadge(asset.image!)}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={copyAllWgetCommands} className="flex-1">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy All wget Commands
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid gap-8 md:grid-cols-2">
               {assets.map((asset, index) => (
                 <Card key={index} className="overflow-hidden">
@@ -205,13 +331,19 @@ const BrandAssets = () => {
                   </div>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      {asset.title}
+                      <div className="flex items-center gap-2">
+                        {asset.title}
+                        {!asset.isComponent && getStatusIcon(asset.image!)}
+                      </div>
                       <div className="text-sm font-normal text-muted-foreground">
                         <div>{asset.dimensions}</div>
                         <div>{asset.size}</div>
                       </div>
                     </CardTitle>
-                    <CardDescription>{asset.description}</CardDescription>
+                    <CardDescription className="flex items-center justify-between">
+                      <span>{asset.description}</span>
+                      {!asset.isComponent && getStatusBadge(asset.image!)}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex gap-2">
@@ -254,6 +386,15 @@ const BrandAssets = () => {
                             <Copy className="w-3 h-3 mr-2" />
                           )}
                           Copy wget
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openAssetUrl(asset.image!)}
+                          className="flex-1"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-2" />
+                          Open URL
                         </Button>
                       </div>
                     )}
