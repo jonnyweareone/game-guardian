@@ -26,43 +26,10 @@ const prepStd = [
 
 export const speakers: Speaker[] = [
   {
-    slug: "andrew-briercliffe",
-    name: "Andrew Briercliffe",
-    tagline: "Online Harms & Trust/Safety Expert",
-    bio:
-      "Andrew is an Online Harms and Child Safety Professional with over 30 years' experience across government, law enforcement, and global tech. He has held senior roles in Trust & Safety at Twitter and as Head of Child Safety Online at Protection Group International.",
-    agenda: agendaStd,
-    seedQuestions: [
-      "What do you see as the biggest risks children face online today?",
-      "Is the Online Safety Act effective or flawed in practice?",
-      "How should responsibility be shared between tech companies, schools, and parents?",
-      "If you had one golden rule for parents, what would it be?",
-    ],
-    prepNotes: prepStd,
-    preferredIntro:
-      "Andrew Briercliffe is an online harms and child safety specialist with 30+ years across law enforcement, government, and global trust & safety.",
-  },
-  {
-    slug: "lina-ghazal",
-    name: "Lina Ghazal",
-    tagline: "Independent Online Safety Expert",
-    bio:
-      "Lina is an independent online safety expert with extensive experience in media and tech policy. She has held senior roles at Meta and Ofcom, focusing on global public affairs, regulation, and online safety strategy.",
-    agenda: agendaStd,
-    seedQuestions: [
-      "How has the Online Safety Act shifted responsibility between ISPs, platforms, schools, and parents?",
-      "Is current regulation actually improving safety, or mostly creating bureaucracy?",
-      "How should the UK balance regulation versus innovation in safety-tech?",
-      "If you could make one policy change tomorrow, what would it be?",
-    ],
-    prepNotes: prepStd,
-    preferredIntro:
-      "Lina Ghazal is an independent online safety and policy expert, formerly with Ofcom and Meta.",
-  },
-  {
     slug: "maddy-holder",
     name: "Maddy Holder",
     tagline: "Safeguarding Innovator & Youth Advocate",
+    headshotUrl: "/lovable-uploads/7ef1455e-eb29-4705-ba4d-74202236b8c4.png",
     bio:
       "Maddy is the Founder of SafeShout, a safeguarding intelligence system for schools. With a background in youth work and social care, she helps schools identify early warning signs and build trust with young people.",
     agenda: agendaStd,
@@ -77,9 +44,46 @@ export const speakers: Speaker[] = [
       "Maddy Holder is the founder of SafeShout and a safeguarding practitioner focused on early risk visibility in schools.",
   },
   {
+    slug: "lina-ghazal",
+    name: "Lina Ghazal",
+    tagline: "Independent Online Safety Expert",
+    headshotUrl: "/lovable-uploads/77a81e70-e735-4ff0-8148-f2f356299a13.png",
+    bio:
+      "Lina is an independent online safety expert with extensive experience in media and tech policy. She has held senior roles at Meta and Ofcom, focusing on global public affairs, regulation, and online safety strategy.",
+    agenda: agendaStd,
+    seedQuestions: [
+      "How has the Online Safety Act shifted responsibility between ISPs, platforms, schools, and parents?",
+      "Is current regulation actually improving safety, or mostly creating bureaucracy?",
+      "How should the UK balance regulation versus innovation in safety-tech?",
+      "If you could make one policy change tomorrow, what would it be?",
+    ],
+    prepNotes: prepStd,
+    preferredIntro:
+      "Lina Ghazal is an independent online safety and policy expert, formerly with Ofcom and Meta.",
+  },
+  {
+    slug: "andrew-briercliffe",
+    name: "Andrew Briercliffe",
+    tagline: "Online Harms & Trust/Safety Expert",
+    headshotUrl: "/lovable-uploads/d7edae5b-dad4-406d-ac8e-dae64ee810ad.png",
+    bio:
+      "Andrew is an Online Harms and Child Safety Professional with over 30 years' experience across government, law enforcement, and global tech. He has held senior roles in Trust & Safety at Twitter and as Head of Child Safety Online at Protection Group International.",
+    agenda: agendaStd,
+    seedQuestions: [
+      "What do you see as the biggest risks children face online today?",
+      "Is the Online Safety Act effective or flawed in practice?",
+      "How should responsibility be shared between tech companies, schools, and parents?",
+      "If you had one golden rule for parents, what would it be?",
+    ],
+    prepNotes: prepStd,
+    preferredIntro:
+      "Andrew Briercliffe is an online harms and child safety specialist with 30+ years across law enforcement, government, and global trust & safety.",
+  },
+  {
     slug: "tom-newton",
     name: "Tom Newton",
     tagline: "Qustodio — Parental Control Tech",
+    headshotUrl: "/lovable-uploads/3abc175b-1174-449b-95d7-4280e2786813.png",
     bio:
       "Tom represents Qustodio, a leading parental control and monitoring platform. He brings expertise in how families can use tech-based solutions to manage online risks.",
     agenda: agendaStd,
@@ -97,6 +101,7 @@ export const speakers: Speaker[] = [
     slug: "jeremy-chelot",
     name: "Jeremy Chelot",
     tagline: "CEO, Netomnia & YouFibre",
+    headshotUrl: "/lovable-uploads/b2755d2e-00ee-4872-a154-6ffc71b1713c.png",
     bio:
       "Jeremy is CEO of Netomnia and YouFibre, a fast-growing challenger ISP. He is outspoken on broadband policy and champions the role ISPs can play through parental controls, filtering, and IWF partnerships.",
     agenda: agendaStd,
