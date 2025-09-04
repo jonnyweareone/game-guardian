@@ -15,6 +15,7 @@ import Account from "@/pages/Account";
 import Children from "@/pages/Children";
 import AdminDevices from "@/pages/admin/AdminDevices";
 import AdminAppCatalog from "@/pages/admin/AdminAppCatalog";
+import AdminDnsProfiles from "@/pages/admin/AdminDnsProfiles";
 import AdminLivestreamFeedback from "@/pages/admin/AdminLivestreamFeedback";
 import ChildApps from "@/pages/ChildApps";
 import HomePage from "@/pages/HomePage";
@@ -230,6 +231,14 @@ export default function App() {
             element={
               <AdminRoute>
                 <AdminAppCatalog />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/dns-profiles"
+            element={
+              <AdminRoute>
+                <AdminDnsProfiles />
               </AdminRoute>
             }
           />

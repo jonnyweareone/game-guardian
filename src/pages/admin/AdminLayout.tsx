@@ -10,6 +10,7 @@ export default function AdminLayout() {
   const tabs = [
     { to: "/admin/devices", label: "Device Management" },
     { to: "/admin/app-catalog", label: "App Catalog" },
+    { to: "/admin/dns-profiles", label: "DNS Profiles" },
     { to: "/admin/ui-themes", label: "UI Themes" },
     { to: "/admin/content-push", label: "Content Push" },
     { to: "/admin/ota-demo", label: "OTA Demo" },
