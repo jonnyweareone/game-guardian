@@ -50,3 +50,16 @@ export const ingestBook = async (sourceUrl: string, bookId?: string) => {
   if (error) throw error;
   return data;
 };
+
+export const ensureChildDnsProfiles = async (configId: string, children?: Array<{ id: string; name?: string }>) => {
+  return await invokeEdgeFunction('ensure-child-profiles', {
+    configId,
+    ...(children && { children })
+  });
+};
+
+export const bulkCreateDnsProfiles = async (configId: string) => {
+  return await invokeEdgeFunction('ensure-child-profiles', {
+    configId
+  });
+};

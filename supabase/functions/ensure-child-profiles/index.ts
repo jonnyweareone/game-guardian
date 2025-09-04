@@ -75,8 +75,8 @@ serve(async (req) => {
 
     const { configId, children } = await req.json();
     
-    if (!configId || !children || !Array.isArray(children)) {
-      return json({ ok: false, error: 'configId and children array are required' }, 400);
+    if (!configId) {
+      return json({ ok: false, error: 'configId is required' }, 400);
     }
 
     const nextdnsApiKey = Deno.env.get('NEXTDNS_API_KEY');
@@ -96,11 +96,23 @@ serve(async (req) => {
       return json({ ok: false, error: 'NextDNS config not found or not owned by user' }, 403);
     }
 
+    // If no children provided, get all children for this parent
+    let childrenToProcess = children;
+    if (!children || !Array.isArray(children)) {
+      const { data: allChildren } = await supabase
+        .from('children')
+        .select('id, name')
+        .eq('parent_id', user.id);
+      
+      childrenToProcess = allChildren || [];
+      console.log(`Processing ${childrenToProcess.length} children for bulk profile creation`);
+    }
+
     // Get existing NextDNS profiles
     const existingProfiles = await listNextDNSProfiles(configId, nextdnsApiKey);
     const created: any[] = [];
 
-    for (const child of children) {
+    for (const child of childrenToProcess) {
       if (!child.id) {
         continue;
       }
