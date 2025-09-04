@@ -6,10 +6,39 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Users, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import speakers from '@/data/livestreamSpeakers';
+import SEOHead from '@/components/SEOHead';
+import shareImage from '@/assets/online-safety-livestream-share.jpg';
 
 export default function OnlineSafetyLivestream() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "name": "Online Safety For Children Live Panel",
+    "description": "A live-streamed discussion giving parents, carers, and professionals clear, practical advice on keeping children safe online.",
+    "startDate": "2024-09-11T19:30:00+01:00",
+    "endDate": "2024-09-11T20:30:00+01:00",
+    "eventStatus": "https://schema.org/EventScheduled",
+    "eventAttendanceMode": "https://schema.org/OnlineEventAttendanceMode",
+    "location": {
+      "@type": "VirtualLocation",
+      "url": "https://gameguardianai.com/online-safety-livestream"
+    },
+    "organizer": {
+      "@type": "Organization",
+      "name": "Guardian OS"
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead 
+        title="Online Safety For Children Live Panel | Guardian OS"
+        description="Join our live panel discussion on children's online safety. Expert insights from safeguarding professionals, tech experts, and ISP leaders. Thursday 11th September 7:30-8:30 PM BST."
+        keywords="online safety, children, parental controls, digital safety, livestream, panel discussion, Online Safety Act, safeguarding"
+        canonicalUrl="https://gameguardianai.com/online-safety-livestream"
+        ogImage={shareImage}
+        structuredData={structuredData}
+      />
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12">
         <div className="container mx-auto px-4">
