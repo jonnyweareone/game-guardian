@@ -109,7 +109,7 @@ const BrandAssets = () => {
     }
   ];
 
-  // Check asset availability on mount
+  // Check asset availability on mount with improved fallback
   useEffect(() => {
     const checkAssets = async () => {
       const nonComponentAssets = assets.filter(asset => !asset.isComponent);
@@ -120,11 +120,23 @@ const BrandAssets = () => {
         setAssetStatus(prev => ({ ...prev, [asset.image!]: 'loading' }));
         
         try {
+          // Try HEAD request first
           const response = await fetch(asset.image, { method: 'HEAD' });
-          setAssetStatus(prev => ({ 
-            ...prev, 
-            [asset.image!]: response.ok ? 'available' : 'unavailable' 
-          }));
+          if (response.ok) {
+            setAssetStatus(prev => ({ ...prev, [asset.image!]: 'available' }));
+            continue;
+          }
+        } catch {}
+        
+        try {
+          // Fallback: Try loading image element
+          const img = new Image();
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = asset.image!;
+          });
+          setAssetStatus(prev => ({ ...prev, [asset.image!]: 'available' }));
         } catch {
           setAssetStatus(prev => ({ ...prev, [asset.image!]: 'unavailable' }));
         }
@@ -134,7 +146,8 @@ const BrandAssets = () => {
     checkAssets();
   }, []);
 
-  const getWgetUrl = (assetPath: string) => {
+  // Unified URL generation for all actions
+  const getAssetUrl = (assetPath: string) => {
     const currentDomain = window.location.origin;
     const lovableDomain = "https://game-guardian.lovable.app";
     
@@ -147,7 +160,7 @@ const BrandAssets = () => {
 
   const copyAllWgetCommands = async () => {
     const nonComponentAssets = assets.filter(asset => !asset.isComponent && asset.image);
-    const commands = nonComponentAssets.map(asset => `wget ${getWgetUrl(asset.image!)}`).join('\n');
+    const commands = nonComponentAssets.map(asset => `wget ${getAssetUrl(asset.image!)}`).join('\n');
     
     try {
       await navigator.clipboard.writeText(commands);
@@ -158,7 +171,7 @@ const BrandAssets = () => {
   };
 
   const openAssetUrl = (assetPath: string) => {
-    window.open(getWgetUrl(assetPath), '_blank');
+    window.open(getAssetUrl(assetPath), '_blank');
   };
 
   const getStatusIcon = (assetPath: string) => {
@@ -181,11 +194,8 @@ const BrandAssets = () => {
     }
   };
 
-  const getFullUrl = (assetPath: string) => {
-    return `${window.location.origin}${assetPath}`;
-  };
-
-  const copyToClipboard = async (url: string) => {
+  const copyToClipboard = async (assetPath: string) => {
+    const url = getAssetUrl(assetPath);
     try {
       await navigator.clipboard.writeText(url);
       setCopiedUrl(url);
@@ -197,7 +207,7 @@ const BrandAssets = () => {
   };
 
   const copyWgetCommand = async (assetPath: string) => {
-    const wgetCommand = `wget ${getWgetUrl(assetPath)}`;
+    const wgetCommand = `wget ${getAssetUrl(assetPath)}`;
     try {
       await navigator.clipboard.writeText(wgetCommand);
       setCopiedWget(assetPath);
@@ -346,6 +356,22 @@ const BrandAssets = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    {!asset.isComponent && (
+                      <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded border-l-2 border-primary/30">
+                        <span className="font-medium">Resolved URL:</span> {getAssetUrl(asset.image!)}
+                        {assetStatus[asset.image!] === 'unavailable' && domainMode === 'current' && (
+                          <div className="mt-1">
+                            <span className="text-amber-600">Fallback:</span>{" "}
+                            <button 
+                              onClick={() => copyToClipboard(getFallbackUrl(asset.image!))}
+                              className="text-blue-600 hover:underline"
+                            >
+                              {getFallbackUrl(asset.image!)}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <Button
                         onClick={() => asset.isComponent 
@@ -360,10 +386,10 @@ const BrandAssets = () => {
                       {!asset.isComponent && (
                         <Button
                           variant="outline"
-                          onClick={() => copyToClipboard(getFullUrl(asset.image!))}
+                          onClick={() => copyToClipboard(asset.image!)}
                           className="flex-1"
                         >
-                          {copiedUrl === getFullUrl(asset.image!) ? (
+                          {copiedUrl === getAssetUrl(asset.image!) ? (
                             <Check className="w-4 h-4 mr-2" />
                           ) : (
                             <Copy className="w-4 h-4 mr-2" />
@@ -416,13 +442,13 @@ const BrandAssets = () => {
                 <div>
                   <h3 className="font-medium mb-2">wget commands for all assets:</h3>
                   <div className="space-y-1 text-sm text-muted-foreground font-mono">
-                    <div>wget {getWgetUrl(logoTransparent)}</div>
-                    <div>wget {getWgetUrl(logoShieldTextTransparent)}</div>
-                    <div>wget {getWgetUrl(logoShieldTextDark)}</div>
-                    <div>wget {getWgetUrl(logo2Transparent)}</div>
-                    <div>wget {getWgetUrl(splashScreen)}</div>
-                    <div>wget {getWgetUrl(wallpaperDesktop)}</div>
-                    <div>wget {getWgetUrl(wallpaperMobile)}</div>
+                    <div>wget {getAssetUrl(logoTransparent)}</div>
+                    <div>wget {getAssetUrl(logoShieldTextTransparent)}</div>
+                    <div>wget {getAssetUrl(logoShieldTextDark)}</div>
+                    <div>wget {getAssetUrl(logo2Transparent)}</div>
+                    <div>wget {getAssetUrl(splashScreen)}</div>
+                    <div>wget {getAssetUrl(wallpaperDesktop)}</div>
+                    <div>wget {getAssetUrl(wallpaperMobile)}</div>
                   </div>
                 </div>
                 <div>
