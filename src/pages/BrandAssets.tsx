@@ -18,6 +18,7 @@ const wallpaperMobile = "/lovable-uploads/guardian-wallpaper-mobile.png";
 
 const BrandAssets = () => {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [copiedWget, setCopiedWget] = useState<string | null>(null);
   const logoRef = useRef<HTMLDivElement>(null);
 
   // Enhanced logo component with shield and text
@@ -36,6 +37,10 @@ const BrandAssets = () => {
     </div>
   );
 
+  const getWgetUrl = (assetPath: string) => {
+    return `${window.location.origin}${assetPath}`;
+  };
+
   const assets = [
     {
       title: "Logo (Original Transparent)",
@@ -43,7 +48,7 @@ const BrandAssets = () => {
       image: logoTransparent,
       filename: "game-guardian-logo-transparent.png",
       dimensions: "1024×512",
-      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo-transparent.png"
+      size: "~150KB"
     },
     {
       title: "Shield + Text Logo (Transparent)",
@@ -51,7 +56,7 @@ const BrandAssets = () => {
       image: logoShieldTextTransparent,
       filename: "guardian-logo-shield-text-transparent.png",
       dimensions: "1024×512",
-      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-transparent.png"
+      size: "~200KB"
     },
     {
       title: "Shield + Text Logo (Dark Preview)",
@@ -59,7 +64,7 @@ const BrandAssets = () => {
       image: logoShieldTextDark,
       filename: "guardian-logo-shield-text-dark.png",
       dimensions: "1024×512",
-      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-dark.png"
+      size: "~180KB"
     },
     {
       title: "Shield + Text Logo (Interactive)",
@@ -67,6 +72,7 @@ const BrandAssets = () => {
       component: <GuardianLogoComponent />,
       filename: "guardian-logo-shield-text-interactive.png",
       dimensions: "1024×512",
+      size: "Generated",
       isComponent: true
     },
     {
@@ -75,7 +81,7 @@ const BrandAssets = () => {
       image: logo2Transparent,
       filename: "game-guardian-logo2-transparent.png",
       dimensions: "800×200",
-      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-logo2-transparent.png"
+      size: "~120KB"
     },
     {
       title: "Splash Screen",
@@ -83,7 +89,7 @@ const BrandAssets = () => {
       image: splashScreen,
       filename: "game-guardian-splash.png",
       dimensions: "1920×1080",
-      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-splash-screen.png"
+      size: "~800KB"
     },
     {
       title: "Desktop Wallpaper",
@@ -91,7 +97,7 @@ const BrandAssets = () => {
       image: wallpaperDesktop,
       filename: "game-guardian-wallpaper-desktop.png",
       dimensions: "1920×1080",
-      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-wallpaper-desktop.png"
+      size: "~1.2MB"
     },
     {
       title: "Mobile Wallpaper",
@@ -99,7 +105,7 @@ const BrandAssets = () => {
       image: wallpaperMobile,
       filename: "game-guardian-wallpaper-mobile.png",
       dimensions: "1080×1920",
-      wgetUrl: "https://gameguardian.ai/lovable-uploads/guardian-wallpaper-mobile.png"
+      size: "~900KB"
     }
   ];
 
@@ -115,6 +121,18 @@ const BrandAssets = () => {
       setTimeout(() => setCopiedUrl(null), 2000);
     } catch (err) {
       toast.error("Failed to copy URL");
+    }
+  };
+
+  const copyWgetCommand = async (assetPath: string) => {
+    const wgetCommand = `wget ${getWgetUrl(assetPath)}`;
+    try {
+      await navigator.clipboard.writeText(wgetCommand);
+      setCopiedWget(assetPath);
+      toast.success("wget command copied!");
+      setTimeout(() => setCopiedWget(null), 2000);
+    } catch (err) {
+      toast.error("Failed to copy wget command");
     }
   };
 
@@ -188,9 +206,10 @@ const BrandAssets = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       {asset.title}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {asset.dimensions}
-                      </span>
+                      <div className="text-sm font-normal text-muted-foreground">
+                        <div>{asset.dimensions}</div>
+                        <div>{asset.size}</div>
+                      </div>
                     </CardTitle>
                     <CardDescription>{asset.description}</CardDescription>
                   </CardHeader>
@@ -221,18 +240,27 @@ const BrandAssets = () => {
                         </Button>
                       )}
                     </div>
-                    {!asset.isComponent && asset.wgetUrl && (
-                      <div className="bg-muted p-3 rounded-md">
-                        <p className="text-xs text-muted-foreground mb-1">wget URL:</p>
-                        <p className="text-sm text-muted-foreground break-all font-mono">
-                          {asset.wgetUrl}
-                        </p>
+                    {!asset.isComponent && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => copyWgetCommand(asset.image!)}
+                          className="flex-1"
+                        >
+                          {copiedWget === asset.image ? (
+                            <Check className="w-3 h-3 mr-2" />
+                          ) : (
+                            <Copy className="w-3 h-3 mr-2" />
+                          )}
+                          Copy wget
+                        </Button>
                       </div>
                     )}
                     {asset.isComponent && (
                       <div className="bg-muted p-3 rounded-md">
                         <p className="text-sm text-muted-foreground">
-                          Interactive component - Downloads as PNG with transparent background (1024×512)
+                          Interactive component - Downloads as PNG with transparent background
                         </p>
                       </div>
                     )}
@@ -242,29 +270,32 @@ const BrandAssets = () => {
             </div>
 
             <div className="mt-12 p-6 bg-muted rounded-lg">
-              <h2 className="text-xl font-semibold mb-4">Usage Guidelines & wget URLs</h2>
+              <h2 className="text-xl font-semibold mb-4">CLI Download Commands</h2>
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-medium mb-2">Direct wget URLs for all assets:</h3>
+                  <h3 className="font-medium mb-2">wget commands for all assets:</h3>
                   <div className="space-y-1 text-sm text-muted-foreground font-mono">
-                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo-transparent.png</div>
-                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-transparent.png</div>
-                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-dark.png</div>
-                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-logo2-transparent.png</div>
-                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-splash-screen.png</div>
-                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-wallpaper-desktop.png</div>
-                    <div>wget https://gameguardian.ai/lovable-uploads/guardian-wallpaper-mobile.png</div>
+                    <div>wget {getWgetUrl(logoTransparent)}</div>
+                    <div>wget {getWgetUrl(logoShieldTextTransparent)}</div>
+                    <div>wget {getWgetUrl(logoShieldTextDark)}</div>
+                    <div>wget {getWgetUrl(logo2Transparent)}</div>
+                    <div>wget {getWgetUrl(splashScreen)}</div>
+                    <div>wget {getWgetUrl(wallpaperDesktop)}</div>
+                    <div>wget {getWgetUrl(wallpaperMobile)}</div>
                   </div>
                 </div>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>• These assets are official Game Guardian AI™ brand materials</li>
-                  <li>• Use the transparent logo for overlay on various backgrounds</li>
-                  <li>• Logo 2 is available both as a static PNG and interactive component</li>
-                  <li>• All logos have transparent backgrounds for versatile use</li>
-                  <li>• Splash screen is optimized for app loading screens</li>
-                  <li>• Wallpapers are available in both desktop and mobile formats</li>
-                  <li>• Maintain aspect ratios when resizing images</li>
-                </ul>
+                <div>
+                  <h3 className="font-medium mb-2">Usage Guidelines:</h3>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li>• Use "Copy wget" buttons above for individual download commands</li>
+                    <li>• URLs are automatically updated based on your current domain</li>
+                    <li>• All logos have transparent backgrounds for versatile use</li>
+                    <li>• Shield + Text logos are the current official brand identity</li>
+                    <li>• Splash screen is optimized for app loading screens</li>
+                    <li>• Wallpapers are available in both desktop and mobile formats</li>
+                    <li>• Maintain aspect ratios when resizing images</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
