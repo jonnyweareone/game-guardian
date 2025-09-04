@@ -27,9 +27,9 @@ export default function AdminDnsProfiles() {
     queryKey: ['admin-dns-counts'],
     queryFn: async (): Promise<DatabaseCounts> => {
       const [childrenRes, configsRes, profilesRes] = await Promise.all([
-        supabase.from('children').select('id', { count: 'exact' }),
-        supabase.from('household_dns_configs').select('id', { count: 'exact' }),
-        supabase.from('child_dns_profiles').select('id', { count: 'exact' })
+        supabase.from('children').select('*', { count: 'exact', head: true }),
+        supabase.from('household_dns_configs').select('*', { count: 'exact', head: true }),
+        supabase.from('child_dns_profiles').select('*', { count: 'exact', head: true })
       ]);
 
       if (childrenRes.error) throw childrenRes.error;
@@ -61,6 +61,7 @@ export default function AdminDnsProfiles() {
 
       if (error) throw error;
 
+      console.debug('Provision NextDNS response:', data);
       setProvisionResult(data);
       await refetchCounts();
       toast.success('NextDNS config provisioned successfully');
@@ -86,12 +87,13 @@ export default function AdminDnsProfiles() {
 
       if (error) throw error;
 
+      console.debug('Create profiles response:', data);
       setProfilesResult(data);
       await refetchCounts();
       toast.success(`Created ${data?.created?.length || 0} DNS profiles successfully`);
     } catch (error) {
       console.error('Error creating profiles:', error);
-      toast.error(`Failed to create profiles: ${error}`);
+      toast.error(`Failed to create profiles: ${error.message || error}`);
     } finally {
       setIsCreatingProfiles(false);
     }
@@ -187,7 +189,7 @@ export default function AdminDnsProfiles() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Create DNS profiles for all existing children. Each child will get a profile named with their UUID for anonymity.
+              Create DNS profiles for all children in the current household. Each child will get a profile named with their UUID for anonymity.
             </p>
             <Button 
               onClick={handleCreateProfiles} 
