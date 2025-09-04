@@ -1,5 +1,4 @@
 
-
 project_id = "xzxjwuzwltoapifcyzww"
 
 [api]
@@ -23,6 +22,12 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.ensure-child-profiles]
+verify_jwt = true
+
+[functions.nextdns-anonymize]
+verify_jwt = true
+
+[functions.nextdns-analytics]
 verify_jwt = true
 
 [functions.activation-status]
@@ -120,4 +125,3 @@ verify_jwt = false
 
 [functions.device-app-usage]
 verify_jwt = false
-

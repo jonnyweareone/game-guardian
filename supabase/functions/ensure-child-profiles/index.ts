@@ -101,16 +101,19 @@ serve(async (req) => {
     const created: any[] = [];
 
     for (const child of children) {
-      if (!child.id || !child.name) {
+      if (!child.id) {
         continue;
       }
 
+      // Use parentUUID:childUUID format for profile name
+      const profileName = `${user.id}:${child.id}`;
+
       // Check if profile already exists
-      let profile = existingProfiles.find((p: any) => p.name === child.name);
+      let profile = existingProfiles.find((p: any) => p.name === profileName);
       
       if (!profile) {
-        // Create new profile
-        profile = await createNextDNSProfile(configId, child.name, nextdnsApiKey);
+        // Create new profile with anonymous name
+        profile = await createNextDNSProfile(configId, profileName, nextdnsApiKey);
       }
 
       // Store/update in our database
@@ -129,7 +132,7 @@ serve(async (req) => {
       created.push({
         childId: child.id,
         profileId: profile.id,
-        name: profile.name
+        name: profileName
       });
     }
 

@@ -82,10 +82,19 @@ async function createNextDNSProfile({
   nextdnsApiKey 
 }: any) {
   try {
+    // Get parent ID for anonymous naming
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Use parentUUID:childUUID format for anonymous naming
+    const profileName = `${user.id}:${child_id}`;
+    
     // First, create a minimal profile to get an ID
     const minimalProfile = {
-      name: `Guardian AI - ${child_name}`,
-      description: `Age-appropriate web filtering for ${child_name} (Age ${age})`
+      name: profileName,
+      description: "Guardian AI web filter"
     };
 
     console.log("Creating NextDNS profile with minimal payload:", minimalProfile);
@@ -175,7 +184,7 @@ async function createNextDNSProfile({
     return json({ 
       success: true, 
       profile_id: profileId,
-      message: `Web filter profile created for ${child_name}`
+      message: "Web filter profile created"
     });
   } catch (error) {
     console.error("Error creating NextDNS profile:", error);
@@ -210,7 +219,7 @@ async function updateNextDNSProfile({ child_id, age, school_hours_enabled, conte
       // No existing profile, create one instead
       return await createNextDNSProfile({
         child_id,
-        child_name: `Child-${child_id.slice(0, 8)}`,
+        child_name: null, // Will be ignored in favor of UUID naming
         age,
         school_hours_enabled,
         content_categories,
@@ -341,7 +350,9 @@ function getAgeAppropriateSettings(age: number, schoolHoursEnabled: boolean, con
       youtube: true,
       duckduckgo: true,
       yandex: true
-    }
+    },
+    youtubeRestrictedMode: true, // Force YouTube Restricted Mode
+    safeMode: true // Additional safety mode
   };
 
   // Automatic protections (always enabled)

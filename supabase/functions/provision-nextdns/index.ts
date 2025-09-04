@@ -95,8 +95,8 @@ serve(async (req) => {
       });
     }
 
-    // Create or find NextDNS config
-    const targetName = config_name ?? `Guardian ${parentId.slice(0, 8)}`;
+    // Create or find NextDNS config using parent UUID as name
+    const targetName = parentId;
     const configs = await listNextDNSConfigs(nextdnsApiKey);
     let nextdnsConfig = configs.find((c: any) => c.name === targetName);
 
