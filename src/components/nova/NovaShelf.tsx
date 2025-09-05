@@ -69,7 +69,7 @@ export function NovaShelf({ childId }: NovaShelfProps) {
     const token = sessionStorage.getItem('nova_token');
     const tokenParam = token ? `&token=${token}` : '';
     
-    navigate(`/novalearning/reading/${item.books?.id || item.book_id}?child=${childId}${tokenParam}`);
+    navigate(`/nova-reader/${item.books?.id || item.book_id}?child=${childId}${tokenParam}`);
   };
 
   if (isLoading) {
@@ -98,7 +98,7 @@ export function NovaShelf({ childId }: NovaShelfProps) {
               <p className="text-muted-foreground mb-4">
                 Start reading a book from the library to see it here.
               </p>
-              <Button onClick={() => navigate('/novalearning')}>
+              <Button onClick={() => navigate('/nova-learning')}>
                 Browse Library
               </Button>
             </CardContent>
