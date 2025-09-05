@@ -64,9 +64,9 @@ const HomePage = () => {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="text-lg px-8 py-6" asChild>
-                <Link to="/products">
+                <Link to="/demo">
                   <PlayCircle className="mr-2 h-5 w-5" />
-                  Watch Demo
+                  Live Demo
                 </Link>
               </Button>
             </div>

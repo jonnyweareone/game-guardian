@@ -14,6 +14,7 @@ import DevicesPage from "@/pages/DevicesPage";
 import Account from "@/pages/Account";
 import Children from "@/pages/Children";
 import AdminDemo from "@/pages/admin/AdminDemo";
+import DemoAdmin from "@/pages/DemoAdmin";
 import AdminDevices from "@/pages/admin/AdminDevices";
 import AdminAppCatalog from "@/pages/admin/AdminAppCatalog";
 import AdminDnsProfiles from "@/pages/admin/AdminDnsProfiles";
@@ -63,6 +64,7 @@ export default function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/demo" element={<DemoAdmin />} />
           <Route path="/auth" element={<AuthGuard requireAuth={false}><Auth /></AuthGuard>} />
           <Route path="/reset" element={<AuthGuard requireAuth={false}><ResetPassword /></AuthGuard>} />
           <Route path="/about" element={<About />} />
