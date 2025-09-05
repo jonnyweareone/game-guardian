@@ -30,27 +30,23 @@ export default function AdminDemo() {
   useEffect(() => {
     const load = async () => {
       try {
-        // Use service role direct queries to demo schema
-        const response = await fetch(`https://xzxjwuzwltoapifcyzww.supabase.co/rest/v1/rpc/demo_get_data`, {
-          method: 'POST',
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eGp3dXp3bHRvYXBpZmN5end3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NTQwNzksImV4cCI6MjA3MDEzMDA3OX0.w4QLWZSKig3hdoPOyq4dhTS6sleGsObryIolphhi9yo',
-            'Content-Type': 'application/json'
-          }
-        });
+        // Use the RPC function to get demo data
+        const { data, error } = await supabase.rpc('get_demo_data');
         
-        if (response.ok) {
-          const data = await response.json();
-          setDevices(data.devices || []);
-          setEvents(data.events || []);
+        if (error) {
+          console.error("RPC error:", error);
+          setDevices([]);
+          setEvents([]);
+        } else if (data) {
+          const demoData = data as { devices?: any[], events?: any[] };
+          setDevices(demoData.devices || []);
+          setEvents(demoData.events || []);
         } else {
-          // Fallback: set empty arrays for initial load
           setDevices([]);
           setEvents([]);
         }
       } catch (error) {
         console.error("Failed to load demo data:", error);
-        // Fallback to empty arrays if schema access fails
         setDevices([]);
         setEvents([]);
       } finally {

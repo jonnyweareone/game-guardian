@@ -125,3 +125,6 @@ verify_jwt = false
 
 [functions.device-app-usage]
 verify_jwt = false
+
+[functions.demo-ingest]
+verify_jwt = false

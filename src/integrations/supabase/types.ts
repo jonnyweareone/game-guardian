@@ -4917,6 +4917,10 @@ export type Database = {
         Args: { p_child: string }
         Returns: undefined
       }
+      get_demo_data: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_verified_apps: {
         Args: Record<PropertyKey, never>
         Returns: {
