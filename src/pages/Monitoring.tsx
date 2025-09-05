@@ -27,9 +27,10 @@ export default function Monitoring() {
   useEffect(() => {
     let isMounted = true;
     
-    const loadChildren = async () => {
+  const loadChildren = async () => {
       try {
         const childrenData = await getChildrenWithAvatars();
+        console.log('Loaded children data:', childrenData);
         if (!isMounted) return;
         
         setChildren(childrenData);
@@ -45,7 +46,7 @@ export default function Monitoring() {
         if (isMounted) {
           toast({
             title: 'Error',
-            description: 'Failed to load children data',
+            description: `Failed to load children data: ${error.message}`,
             variant: 'destructive'
           });
         }

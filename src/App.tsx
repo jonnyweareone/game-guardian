@@ -83,6 +83,7 @@ export default function App() {
           <Route path="/app-store" element={<AppStore />} />
           <Route path="/nova" element={<GuardianNova />} />
           <Route path="/nova-learning" element={<NovaLearning />} />
+          <Route path="/nova-education" element={<Navigate to="/education" replace />} />
           <Route path="/nova-reader" element={<NovaReader />} />
           <Route path="/homework-helper" element={<HomeworkHelper />} />
           <Route path="/pitch-deck" element={<PitchDeck />} />
