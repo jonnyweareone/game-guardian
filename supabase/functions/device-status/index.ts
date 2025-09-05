@@ -35,7 +35,7 @@ serve(async (req) => {
 
     const { data, error } = await supabase
       .from("devices")
-      .select("device_jwt, is_active, paired_at")
+      .select("device_jwt, is_active, paired_at, status")
       .eq("device_code", deviceCode.toUpperCase())
       .maybeSingle();
 
@@ -44,8 +44,24 @@ serve(async (req) => {
       return json({ error: "Query failed" }, { status: 400 });
     }
 
-    const activated = !!(data?.is_active || data?.paired_at || data?.device_jwt);
-    return json({ ...(data || {}), activated });
+    // Enhanced activation logic
+    const activated = !!(
+      data?.is_active || 
+      data?.paired_at || 
+      data?.device_jwt || 
+      data?.status === 'active'
+    );
+
+    // Add expires_at field for JWT expiry (30 days from now as placeholder)
+    const expires_at = data?.device_jwt ? 
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : 
+      null;
+
+    return json({ 
+      ...(data || {}), 
+      activated,
+      expires_at
+    });
   } catch (e) {
     console.error("device-status error:", e);
     return json({ error: "Internal error" }, { status: 500 });

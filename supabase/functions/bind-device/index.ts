@@ -167,11 +167,35 @@ serve(async (req) => {
 
     console.log("bind-device: Device upserted successfully", upserted);
 
-    // Generate refresh secret and JWT
-    const raw = new Uint8Array(48);
-    crypto.getRandomValues(raw);
-    const refresh_secret = b64url(raw);
-    const refresh_secret_hash = await sha256b64url(refresh_secret);
+    // Check for existing bootstrap secret first, then generate new one
+    let refresh_secret = "";
+    let refresh_secret_hash = "";
+    
+    const { data: bootstrapSecret, error: bootstrapError } = await serviceClient
+      .from("device_bootstrap_secrets")
+      .select("refresh_secret_hash")
+      .eq("device_code", deviceCode)
+      .maybeSingle();
+
+    if (bootstrapSecret?.refresh_secret_hash) {
+      // Use existing bootstrap secret
+      refresh_secret_hash = bootstrapSecret.refresh_secret_hash;
+      refresh_secret = ""; // Don't expose in response since device already has it
+      console.log("bind-device: Using existing bootstrap secret");
+      
+      // Mark as used
+      await serviceClient
+        .from("device_bootstrap_secrets")
+        .update({ used_at: new Date().toISOString() })
+        .eq("device_code", deviceCode);
+    } else {
+      // Generate new refresh secret
+      const raw = new Uint8Array(48);
+      crypto.getRandomValues(raw);
+      refresh_secret = b64url(raw);
+      refresh_secret_hash = await sha256b64url(refresh_secret);
+      console.log("bind-device: Generated new refresh secret");
+    }
 
     const token = await signDeviceJWT(deviceCode);
 
@@ -288,15 +312,21 @@ serve(async (req) => {
 
     console.log("bind-device: Process completed successfully");
 
-    return json({ 
+    const response: Record<string, any> = { 
       ok: true, 
       device_id: deviceId, 
       device_code: deviceCode, 
-      device_jwt: token, 
-      refresh_secret,
+      device_jwt: token,
       trial_started: !subRow,
       child_assigned: !!validChildId
-    });
+    };
+
+    // Only include refresh_secret if we generated a new one
+    if (refresh_secret) {
+      response.refresh_secret = refresh_secret;
+    }
+
+    return json(response);
   } catch (e) {
     console.error("bind-device error:", e);
     return json({ error: "Internal error" }, { status: 500 });

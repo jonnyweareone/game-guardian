@@ -214,6 +214,9 @@ export default function ActivationWizard({ deviceCode }: Props) {
         console.warn('NextDNS provisioning failed:', nextdnsError);
       }
       
+      // Show polling message to user
+      console.log("Device is now polling for activation. The device agent should display this code:", deviceCode);
+      
       // Primary polling: activation-status endpoint
       for (let i = 0; i < 20; i++) {
         try {
@@ -557,7 +560,25 @@ export default function ActivationWizard({ deviceCode }: Props) {
   }
 
   if (stage === "poll") {
-    return <Spinner title="Finishing sync…" subtitle={`Device ${deviceCode}`} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <CardTitle>Activating Device</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Device <span className="font-mono">{deviceCode}</span> is polling for activation
+            </p>
+            <div className="mt-4 p-3 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground">
+                💡 Your device agent should now be automatically polling our servers 
+                and will receive the activation token as soon as this wizard completes.
+              </p>
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+    );
   }
 
   if (stage === "posting") {

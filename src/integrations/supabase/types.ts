@@ -2168,6 +2168,30 @@ export type Database = {
         }
         Relationships: []
       }
+      device_bootstrap_secrets: {
+        Row: {
+          created_at: string
+          device_code: string
+          id: string
+          refresh_secret_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_code: string
+          id?: string
+          refresh_secret_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_code?: string
+          id?: string
+          refresh_secret_hash?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       device_child_assignments: {
         Row: {
           child_id: string

@@ -1,26 +1,34 @@
-# Guardian AI Client API Documentation
+# Guardian AI Device API Documentation
 
-## Base URLs
+## Two-Phase Desktop OS Agent Flow
+
+### Overview
+The Guardian AI device registration flow uses a two-phase approach:
+1. **Phase 1**: Device boots, registers, and polls for activation (no parent involved)
+2. **Phase 2**: Parent uses `/activate` page to bind device and assign child
+
+### Base URLs
 - **Production**: `https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/`
-- **Data Handler**: `guardian-data-handler`
-- **Device Registration**: `device-registration`
+- **Key Endpoints**: `device-registration`, `device-status`, `guardian-data-handler`, `device-bootstrap`
 
-## Authentication
-All requests require the device ID in the `x-device-id` header:
-```
-x-device-id: GG-XXXX-XXXX
-```
+---
 
-## 1. Device Registration
+## Phase 1: Device Self-Registration & Polling
 
-### Register New Device
+### Step 1: Register Device
 **POST** `/device-registration`
 
+**Headers:**
+```
+x-device-id: GG-XXXX-XXXX
+Content-Type: application/json
+```
+
+**Body (optional):**
 ```json
 {
-  "device_code": "GG-ABCD-1234", // Optional, will be generated if not provided
-  "device_info": {               // Optional
-    "os": "GuardianOS",
+  "device_info": {
+    "os": "GuardianOS", 
     "version": "1.0.0",
     "hardware_id": "unique-hw-id"
   }
@@ -30,36 +38,138 @@ x-device-id: GG-XXXX-XXXX
 **Response:**
 ```json
 {
-  "device_code": "GG-ABCD-1234",
-  "device_id": "uuid-here",
-  "status": "registered",
-  "pairing_required": true
+  "ok": true,
+  "status": "pending", 
+  "approval_required": true
 }
 ```
 
-### Check Device Status
-**GET** `/device-registration?device_code=GG-ABCD-1234`
+### Step 2: Poll for Device Token
+**GET** `/device-status?device_id=GG-XXXX-XXXX`
+
+Poll every 3-5 seconds until activated. Returns when parent completes activation:
+
+**Response (activated):**
+```json
+{
+  "activated": true,
+  "is_active": true, 
+  "device_jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_at": "2024-02-07T10:30:00Z"
+}
+```
+
+### Step 3: Use Device JWT for Operations
+Once you have `device_jwt`, use it for all device operations:
+
+**Headers for authenticated requests:**
+```
+Authorization: Bearer <device_jwt>
+x-device-id: GG-XXXX-XXXX
+```
+
+---
+
+## Phase 2: Parent Activation (Web UI)
+
+Parent visits `/activate?device_id=GG-XXXX-XXXX` which:
+1. Calls `bind-device` with parent's auth token
+2. Sets `parent_id`, `is_active=true`, `status=active`
+3. Mints `device_jwt` and stores in database
+4. Optionally assigns a child to the device
+
+The device's polling of `/device-status` will immediately pick up the new JWT.
+
+---
+
+## Authenticated Device Operations
+
+### Heartbeat
+**POST** `/device-heartbeat`
+```json
+{
+  "status": "online",
+  "agent_version": "1.2.3",
+  "metrics": {
+    "uptime": 3600,
+    "memory_usage": 0.75
+  },
+  "alerts": []
+}
+```
+
+### Jobs Polling
+**POST** `/device-jobs-poll`
+```json
+{
+  "limit": 10
+}
+```
+
+### Job Reporting
+**POST** `/device-jobs-report` 
+```json
+{
+  "job_id": "uuid-here",
+  "status": "completed",
+  "result": {
+    "success": true,
+    "data": "..."
+  }
+}
+```
+
+### Configuration Fetch
+**GET** `/device-config`
+
+Returns device-specific configuration including web filters, app policies, etc.
+
+---
+
+## Optional: Perpetual Token Refresh
+
+For devices that need long-term autonomy without parent involvement:
+
+### Device Bootstrap (before activation)
+**POST** `/device-bootstrap`
+```json
+{
+  "device_code": "GG-XXXX-XXXX",
+  "refresh_secret": "base64url-encoded-secret"
+}
+```
+
+This allows the device to later use `/device-refresh` for JWT rotation without parent tokens.
+
+### Token Refresh
+**POST** `/device-refresh`
+```json
+{
+  "device_code": "GG-XXXX-XXXX", 
+  "refresh_secret": "original-secret-from-bootstrap"
+}
+```
 
 **Response:**
 ```json
 {
-  "device_code": "GG-ABCD-1234",
-  "is_paired": true,
-  "parent_name": "John Doe",
-  "child_name": "Alex",
-  "paired_at": "2024-01-07T10:30:00Z"
+  "ok": true,
+  "device_jwt": "new-jwt-here"
 }
 ```
 
-## 2. Data Ingestion
+---
+
+## Data Ingestion
 
 ### Send Data to Dashboard
 **POST** `/guardian-data-handler`
 
 **Headers:**
 ```
+Authorization: Bearer <device_jwt>
+x-device-id: GG-XXXX-XXXX
 Content-Type: application/json
-x-device-id: GG-ABCD-1234
 ```
 
 ### Data Format Options
@@ -79,7 +189,7 @@ x-device-id: GG-ABCD-1234
 ```json
 {
   "device_id": "GG-ABCD-1234",
-  "child_id": "child-uuid", // Optional if device is assigned to specific child
+  "child_id": "child-uuid",
   "conversation_data": {
     "platform": "Discord",
     "participants": ["ChildName", "Friend1", "Friend2"],
@@ -88,16 +198,11 @@ x-device-id: GG-ABCD-1234
         "timestamp": "2024-01-07T10:30:00Z",
         "speaker": "ChildName",
         "message": "Hey guys, want to play Minecraft?"
-      },
-      {
-        "timestamp": "2024-01-07T10:30:15Z",
-        "speaker": "Friend1", 
-        "message": "Sure! I'll join your server"
       }
     ],
     "session_start": "2024-01-07T10:30:00Z",
-    "session_end": "2024-01-07T11:30:00Z", // Optional if ongoing
-    "conversation_type": "voice_chat" // voice_chat, text_chat, gaming
+    "session_end": "2024-01-07T11:30:00Z",
+    "conversation_type": "voice_chat"
   }
 }
 ```
@@ -108,80 +213,31 @@ x-device-id: GG-ABCD-1234
   "device_id": "GG-ABCD-1234",
   "child_id": "child-uuid",
   "alert_data": {
-    "alert_type": "cyberbullying", // See enum values below
-    "risk_level": "high",          // low, medium, high, critical
-    "ai_summary": "Child experienced verbal harassment from multiple players who used degrading language.",
-    "transcript_snippet": "\"You're terrible\" - \"Nobody wants you here\" - \"Just quit\"",
-    "confidence_score": 0.95,      // 0.0 to 1.0
-    "emotional_impact": "high",    // low, medium, high
-    "social_context": "group_chat" // private_chat, group_chat, public_forum
-  }
-}
-```
-
-#### 4. Combined Data (Conversation + Alert)
-```json
-{
-  "device_id": "GG-ABCD-1234",
-  "child_id": "child-uuid",
-  "conversation_data": {
-    "platform": "Xbox Live",
-    "participants": ["ChildName", "Bully1", "Bully2"],
-    "transcript": [
-      {
-        "timestamp": "2024-01-07T10:30:00Z",
-        "speaker": "Bully1",
-        "message": "You're terrible at this game"
-      },
-      {
-        "timestamp": "2024-01-07T10:30:15Z",
-        "speaker": "ChildName",
-        "message": "I'm still learning"
-      }
-    ],
-    "session_start": "2024-01-07T10:30:00Z",
-    "session_end": "2024-01-07T11:00:00Z",
-    "conversation_type": "voice_chat"
-  },
-  "alert_data": {
     "alert_type": "cyberbullying",
-    "risk_level": "critical",
-    "ai_summary": "Severe cyberbullying detected with multiple attackers targeting child's gaming abilities.",
+    "risk_level": "high",
+    "ai_summary": "Child experienced verbal harassment from multiple players...",
     "transcript_snippet": "\"You're terrible\" - \"Nobody wants you here\"",
-    "confidence_score": 0.98,
+    "confidence_score": 0.95,
     "emotional_impact": "high",
     "social_context": "group_chat"
   }
 }
 ```
 
-## Alert Types Enum
-- `inappropriate_sharing` - Child sharing personal information
-- `cyberbullying` - Harassment or bullying behavior
-- `stranger_contact` - Unknown person initiating contact
-- `inappropriate_content` - Exposure to adult/harmful content
-- `positive_interaction` - Good social behavior (for highlights)
-- `suspicious_behavior` - Unusual patterns detected
-- `gaming_addiction` - Excessive gaming time patterns
-- `other` - Other concerns not covered above
+---
 
-## Risk Levels
-- `low` - Informational, no immediate action needed
-- `medium` - Monitor situation, may require attention
-- `high` - Requires parental review and possible discussion
-- `critical` - Immediate parental intervention recommended
+## Response Formats
 
-## Response Format
-All successful requests return:
+### Success Response
 ```json
 {
   "success": true,
-  "device_id": "GG-ABCD-1234",
+  "device_id": "GG-ABCD-1234", 
   "processed_at": "2024-01-07T10:30:00Z"
 }
 ```
 
-Error responses:
+### Error Response
 ```json
 {
   "error": "Device not found or inactive",
@@ -189,42 +245,131 @@ Error responses:
 }
 ```
 
-## Implementation Notes
+---
 
-1. **Device Registration**: Call once when device first boots up
-2. **Status Checks**: Poll periodically to check if device has been paired
-3. **Heartbeats**: Send every 5-10 minutes to maintain connection status
-4. **Conversation Data**: Send when gaming sessions end or every 30 minutes for long sessions
-5. **Alerts**: Send immediately when AI detects concerning behavior
+## Alert Types & Risk Levels
 
-## Example Client Flow
+### Alert Types
+- `inappropriate_sharing` - Child sharing personal information
+- `cyberbullying` - Harassment or bullying behavior  
+- `stranger_contact` - Unknown person initiating contact
+- `inappropriate_content` - Exposure to adult/harmful content
+- `positive_interaction` - Good social behavior (for highlights)
+- `suspicious_behavior` - Unusual patterns detected
+- `gaming_addiction` - Excessive gaming time patterns
+- `other` - Other concerns not covered above
 
-```python
-# 1. Register device on first boot
-response = requests.post(f"{BASE_URL}/device-registration", json={
-    "device_info": {"os": "GuardianOS", "version": "1.0.0"}
-})
-device_code = response.json()["device_code"]
+### Risk Levels
+- `low` - Informational, no immediate action needed
+- `medium` - Monitor situation, may require attention
+- `high` - Requires parental review and possible discussion  
+- `critical` - Immediate parental intervention recommended
 
-# 2. Display device code to user for pairing
-print(f"Pair this device with code: {device_code}")
+---
 
-# 3. Check pairing status
-while not is_paired:
-    response = requests.get(f"{BASE_URL}/device-registration?device_code={device_code}")
-    is_paired = response.json()["is_paired"]
-    time.sleep(30)  # Check every 30 seconds
+## Implementation Examples
 
-# 4. Send conversation data
-conversation_data = {
-    "device_id": device_code,
-    "conversation_data": {...},
-    "alert_data": {...}  # If AI detected issues
-}
+### Minimal Agent Sequence
+```bash
+#!/bin/bash
 
-response = requests.post(
-    f"{BASE_URL}/guardian-data-handler",
-    headers={"x-device-id": device_code},
-    json=conversation_data
-)
+DEVICE_CODE="GG-04EA-7EE4"
+BASE_URL="https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1"
+
+# 1. Register device
+echo "Registering device $DEVICE_CODE..."
+curl -X POST "$BASE_URL/device-registration" \
+  -H "x-device-id: $DEVICE_CODE" \
+  -H "Content-Type: application/json" \
+  -d '{"device_info": {"os": "GuardianOS", "version": "1.0.0"}}'
+
+# 2. Poll for activation
+echo "Polling for activation..."
+while true; do
+  response=$(curl -s "$BASE_URL/device-status?device_id=$DEVICE_CODE")
+  activated=$(echo "$response" | jq -r '.activated // false')
+  
+  if [ "$activated" = "true" ]; then
+    device_jwt=$(echo "$response" | jq -r '.device_jwt')
+    echo "Device activated! JWT: ${device_jwt:0:20}..."
+    break
+  fi
+  
+  echo "Waiting for activation..."
+  sleep 5
+done
+
+# 3. Send heartbeat
+echo "Sending heartbeat..."
+curl -X POST "$BASE_URL/device-heartbeat" \
+  -H "Authorization: Bearer $device_jwt" \
+  -H "x-device-id: $DEVICE_CODE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "online",
+    "agent_version": "1.0.0",
+    "metrics": {"uptime": 60}
+  }'
 ```
+
+### Python Client Example
+```python
+import requests
+import time
+import json
+
+BASE_URL = "https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1"
+DEVICE_CODE = "GG-04EA-7EE4"
+
+# 1. Register device
+response = requests.post(f"{BASE_URL}/device-registration", 
+    headers={"x-device-id": DEVICE_CODE, "Content-Type": "application/json"},
+    json={"device_info": {"os": "GuardianOS", "version": "1.0.0"}})
+
+if response.ok:
+    print(f"Device {DEVICE_CODE} registered successfully")
+    
+    # 2. Poll for activation
+    device_jwt = None
+    while not device_jwt:
+        status_response = requests.get(f"{BASE_URL}/device-status", 
+            params={"device_id": DEVICE_CODE})
+        
+        if status_response.ok:
+            data = status_response.json()
+            if data.get("activated") and data.get("device_jwt"):
+                device_jwt = data["device_jwt"]
+                print("Device activated!")
+                break
+        
+        print("Waiting for activation...")
+        time.sleep(5)
+    
+    # 3. Use JWT for operations
+    headers = {
+        "Authorization": f"Bearer {device_jwt}",
+        "x-device-id": DEVICE_CODE,
+        "Content-Type": "application/json"
+    }
+    
+    # Send heartbeat
+    heartbeat_response = requests.post(f"{BASE_URL}/device-heartbeat",
+        headers=headers,
+        json={"status": "online", "agent_version": "1.0.0"})
+    
+    if heartbeat_response.ok:
+        print("Heartbeat sent successfully")
+```
+
+---
+
+## Key Implementation Notes
+
+1. **Device Registration**: Call once on first boot
+2. **Status Polling**: Poll every 3-5 seconds during activation
+3. **JWT Storage**: Securely store device_jwt for subsequent requests
+4. **Heartbeats**: Send every 5-10 minutes to maintain connection
+5. **Error Handling**: Implement retry logic with exponential backoff
+6. **Security**: Always use HTTPS and validate JWT expiry dates
+
+The device agent should display the device code to the user and instruct them to visit the activation URL to complete setup.

@@ -20,11 +20,36 @@ serve(async (req) => {
       { global: { headers: { "x-gg-fn": "device-registration" } } },
     );
 
+    // Check if device already exists and is owned
+    const { data: existingDevice, error: checkError } = await supabase
+      .from("devices")
+      .select("id, device_code, parent_id, status")
+      .eq("device_code", deviceCode)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error("device-registration check error", checkError);
+      return new Response(JSON.stringify({ error: "Registration check failed", details: checkError.message }), { status: 500, headers: corsHeaders });
+    }
+
+    // If device exists and is owned, return appropriate status
+    if (existingDevice?.parent_id) {
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        status: existingDevice.status || "active",
+        approval_required: false,
+        message: "Device already registered and owned"
+      }), { 
+        headers: { "content-type": "application/json", ...corsHeaders } 
+      });
+    }
+
+    // Upsert device (create or update last_seen)
     const { data, error } = await supabase
       .from("devices")
       .upsert({
         device_code: deviceCode,
-        status: "pending",
+        status: existingDevice ? existingDevice.status : "pending",
         last_seen: new Date().toISOString(),
       }, { onConflict: "device_code" })
       .select("*")
