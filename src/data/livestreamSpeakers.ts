@@ -46,7 +46,7 @@ export const speakers: Speaker[] = [
   {
     slug: "lina-ghazal",
     name: "Lina Ghazal",
-    tagline: "Independent Online Safety Expert",
+    tagline: "Online Safety Expert",
     headshotUrl: "/lovable-uploads/77a81e70-e735-4ff0-8148-f2f356299a13.png",
     bio:
       "Lina is an independent online safety expert with extensive experience in media and tech policy. She has held senior roles at Meta and Ofcom, focusing on global public affairs, regulation, and online safety strategy.",
