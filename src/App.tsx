@@ -13,6 +13,7 @@ import Dashboard from "@/pages/Dashboard";
 import DevicesPage from "@/pages/DevicesPage";
 import Account from "@/pages/Account";
 import Children from "@/pages/Children";
+import AdminDemo from "@/pages/admin/AdminDemo";
 import AdminDevices from "@/pages/admin/AdminDevices";
 import AdminAppCatalog from "@/pages/admin/AdminAppCatalog";
 import AdminDnsProfiles from "@/pages/admin/AdminDnsProfiles";
@@ -223,6 +224,14 @@ export default function App() {
             element={
               <AdminRoute>
                 <AdminDevices />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/demo"
+            element={
+              <AdminRoute>
+                <AdminDemo />
               </AdminRoute>
             }
           />
