@@ -11,13 +11,13 @@ import { Loader2, CheckCircle, Shield, User, Copy, ArrowLeft, ArrowRight } from 
 import { toast } from "sonner";
 import Confetti from "react-confetti";
 import Auth from "@/pages/Auth";
-import AppSelectionStep from "@/components/AppSelectionStep";
+
 import { DNSControlsStep } from "@/components/DNSControlsStep";
 
 type Props = { deviceCode: string };
 type Child = { id: string; name: string; dob?: string };
 
-type Stage = "auth" | "bind" | "child" | "apps" | "dns" | "poll" | "posting" | "done" | "error";
+type Stage = "auth" | "bind" | "child" | "dns" | "poll" | "posting" | "done" | "error";
 
 interface DNSConfig {
   schoolHoursEnabled: boolean;
@@ -54,7 +54,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [newChildName, setNewChildName] = useState("");
   const [newChildDob, setNewChildDob] = useState("");
-  const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
+  
   const [dnsConfig, setDnsConfig] = useState<DNSConfig>({
     schoolHoursEnabled: false,
     nextDnsConfig: "",
@@ -116,9 +116,8 @@ export default function ActivationWizard({ deviceCode }: Props) {
   }, [stage, deviceCode]);
 
   // Continue buttons
-  async function goApps() {
+  async function goDns() {
     let childId = selectedChildId;
-    let childAge = 8; // default age
     
     // Create new child if needed
     if (newChildName.trim()) {
@@ -141,17 +140,10 @@ export default function ActivationWizard({ deviceCode }: Props) {
         if (createError) throw createError;
         childId = newChild.id;
         setSelectedChildId(childId);
-        childAge = calculateAge(newChild.dob);
       } catch (e: any) {
         console.error("Create child error:", e);
         toast.error("Failed to create child profile");
         return;
-      }
-    } else {
-      // Use existing child - calculate age from their DOB
-      const selectedChild = children.find(c => c.id === selectedChildId);
-      if (selectedChild?.dob) {
-        childAge = calculateAge(selectedChild.dob);
       }
     }
     
@@ -160,11 +152,7 @@ export default function ActivationWizard({ deviceCode }: Props) {
       return; 
     }
     
-    // Store child age for the apps step
-    setStage("apps");
-  }
-
-  function goDns() {
+    // Skip apps step - OS will send preinstalled apps
     setStage("dns");
   }
 
@@ -272,8 +260,8 @@ export default function ActivationWizard({ deviceCode }: Props) {
       
       setDeviceJwt(jwt);
 
-      // Build postinstall payload
-      const app_ids = Array.from(selectedApps);
+      // Build postinstall payload - no app_ids needed as OS will send inventory
+      const app_ids: string[] = [];
       
       const web_filter_config = {
         nextdns_profile: dnsConfig.nextDnsConfig || null,
@@ -467,12 +455,12 @@ export default function ActivationWizard({ deviceCode }: Props) {
             </div>
             
             <Button 
-              onClick={goApps} 
+              onClick={goDns} 
               className="w-full"
               disabled={!selectedChildId && !newChildName.trim()}
             >
               <ArrowRight className="h-4 w-4 mr-2" />
-              Continue
+              Continue to DNS Settings
             </Button>
           </CardContent>
         </Card>
@@ -480,50 +468,6 @@ export default function ActivationWizard({ deviceCode }: Props) {
     );
   }
 
-  if (stage === "apps") {
-    const selectedChild = children.find(c => c.id === selectedChildId);
-    const childAge = selectedChild?.dob ? calculateAge(selectedChild.dob) : 8; // fallback to 8 if no DOB
-    
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-        <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
-          <CardHeader>
-            <CardTitle>Select Apps for {selectedChild?.name || 'this child'}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="max-h-[60vh] overflow-y-auto">
-              <AppSelectionStep
-                onNext={goDns}
-                onBack={() => setStage("child")}
-                selectedApps={Array.from(selectedApps)}
-                onAppToggle={(appId, selected) => {
-                  const newSelection = new Set(selectedApps);
-                  if (selected) {
-                    newSelection.add(appId);
-                  } else {
-                    newSelection.delete(appId);
-                  }
-                  setSelectedApps(newSelection);
-                }}
-                childAge={childAge}
-              />
-            </div>
-            
-            <div className="flex justify-between pt-4 border-t">
-              <Button variant="outline" onClick={() => setStage("child")}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-              <Button onClick={goDns}>
-                <ArrowRight className="h-4 w-4 mr-2" />
-                Continue
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   if (stage === "dns") {
     const selectedChild = children.find(c => c.id === selectedChildId);
@@ -544,9 +488,9 @@ export default function ActivationWizard({ deviceCode }: Props) {
             </div>
             
             <div className="flex justify-between pt-4 border-t">
-              <Button variant="outline" onClick={() => setStage("apps")}>
+              <Button variant="outline" onClick={() => setStage("child")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
+                Back to Child Selection
               </Button>
               <Button onClick={finish}>
                 <CheckCircle className="h-4 w-4 mr-2" />

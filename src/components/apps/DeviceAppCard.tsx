@@ -38,12 +38,19 @@ export const DeviceAppCard: React.FC<DeviceAppCardProps> = ({
     setIsUpdating(true);
     try {
       if (updates.approved !== undefined) {
-        // Use RPC for approval/blocking
+        // Use RPC for approval/blocking - convert device_id to string
         if (updates.approved) {
-          await approveApp(policy.device_id, policy.app_id, updates.blocked_reason);
+          await approveApp(String(policy.device_id), policy.app_id, updates.blocked_reason);
         } else {
-          await blockApp(policy.device_id, policy.app_id, updates.blocked_reason);
+          await blockApp(String(policy.device_id), policy.app_id, updates.blocked_reason);
         }
+      } else if (updates.hidden !== undefined) {
+        // For hidden status, use toggle RPC with current approval status
+        await (updates.hidden ? blockApp : approveApp)(
+          String(policy.device_id), 
+          policy.app_id, 
+          updates.blocked_reason
+        );
       }
 
       toast.success('App policy updated');
@@ -61,7 +68,7 @@ export const DeviceAppCard: React.FC<DeviceAppCardProps> = ({
     
     setIsUpdating(true);
     try {
-      await setSchedule(policy.device_id, policy.app_id, localSchedule);
+      await setSchedule(String(policy.device_id), policy.app_id, localSchedule);
       toast.success('Schedule updated');
       onPolicyUpdate();
       setShowSchedule(false);
