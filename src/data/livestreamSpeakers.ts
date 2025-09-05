@@ -49,7 +49,7 @@ export const speakers: Speaker[] = [
     tagline: "Online Safety Expert",
     headshotUrl: "/lovable-uploads/77a81e70-e735-4ff0-8148-f2f356299a13.png",
     bio:
-      "Lina is an independent online safety expert with extensive experience in media and tech policy. She has held senior roles at Meta and Ofcom, focusing on global public affairs, regulation, and online safety strategy.",
+      "Lina is an online safety expert with extensive experience in media and tech policy. She has held senior roles at Meta and Ofcom, focusing on global public affairs, regulation, and online safety strategy.",
     agenda: agendaStd,
     seedQuestions: [
       "How has the Online Safety Act shifted responsibility between ISPs, platforms, schools, and parents?",
@@ -59,7 +59,7 @@ export const speakers: Speaker[] = [
     ],
     prepNotes: prepStd,
     preferredIntro:
-      "Lina Ghazal is an independent online safety and policy expert, formerly with Ofcom and Meta.",
+      "Lina Ghazal is an online safety and policy expert, formerly with Ofcom and Meta.",
   },
   {
     slug: "andrew-briercliffe",
