@@ -9,7 +9,7 @@ import { Plus, Users, ArrowLeft, ArrowRight, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarSelector } from './AvatarSelector';
-import AppSelectionStep from './AppSelectionStep';
+
 import { WebFiltersStep } from './WebFiltersStep';
 import { bulkUpsertChildAppSelections } from '@/lib/api';
 import { format } from 'date-fns';
@@ -34,7 +34,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = controlledOnOpenChange || setInternalOpen;
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'basic' | 'apps' | 'webfilters'>('basic');
+  const [step, setStep] = useState<'basic' | 'webfilters'>('basic');
   const [name, setName] = useState('');
   const [dob, setDob] = useState<Date | undefined>(undefined);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
@@ -84,7 +84,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
       if (!dob) {
         toast({
           title: "Date of birth required",
-          description: "Please select your child's date of birth to show appropriate apps.",
+          description: "Please select your child's date of birth to show appropriate web filtering.",
           variant: "destructive"
         });
         return;
@@ -94,31 +94,16 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
         handleSubmit({ preventDefault: () => {} } as React.FormEvent);
         return;
       }
-      setStep('apps');
-    } else if (step === 'apps') {
       setStep('webfilters');
     }
   };
 
   const handleBack = () => {
-    if (step === 'apps') {
+    if (step === 'webfilters') {
       setStep('basic');
-    } else if (step === 'webfilters') {
-      setStep('apps');
     }
   };
 
-  const handleAppToggle = (appId: string, selected: boolean) => {
-    setSelectedApps(prev => {
-      const newSet = new Set(prev);
-      if (selected) {
-        newSet.add(appId);
-      } else {
-        newSet.delete(appId);
-      }
-      return newSet;
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,19 +146,8 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
         childData = newChild;
       }
 
-      // Save app selections (only for new children or if apps were modified)
-      if (!editingChild && selectedApps.size > 0) {
-        const selections = Array.from(selectedApps).map(appId => ({
-          app_id: appId,
-          selected: true
-        }));
-        
-        try {
-          await bulkUpsertChildAppSelections(childData.id, selections);
-        } catch (appError) {
-          console.warn('Failed to save app selections:', appError);
-        }
-      }
+      // App selections are now handled automatically by devices
+      // No need to save app selections during profile creation
 
       // Create NextDNS profile automatically (only for new children)
       if (!editingChild) {
@@ -231,7 +205,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
         title: editingChild ? "Child profile updated" : "Child profile created",
         description: editingChild 
           ? `${name}'s profile has been updated successfully.`
-          : `${name} has been added to your family dashboard with age-appropriate app selections and web filtering.`
+          : `${name} has been added to your family dashboard with web filtering configured.`
       });
 
       // Reset form
@@ -254,7 +228,6 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
     setName('');
     setDob(undefined);
     setSelectedAvatar(null);
-    setSelectedApps(new Set());
     setWebFilterConfig({
       schoolHoursEnabled: false,
       socialMediaBlocked: true,
@@ -273,7 +246,6 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
   const getStepTitle = () => {
     switch (step) {
       case 'basic': return editingChild ? 'Edit Basic Information' : 'Basic Information';
-      case 'apps': return 'App Selection';
       case 'webfilters': return 'Web Filters';
       default: return editingChild ? 'Edit Child Profile' : 'Add Child Profile';
     }
@@ -282,7 +254,6 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
   const getStepDescription = () => {
     switch (step) {
       case 'basic': return editingChild ? 'Update your child\'s profile information and avatar.' : 'Set up your child\'s profile with basic information and avatar.';
-      case 'apps': return `Choose age-appropriate apps for ${name} (Age ${childAge}).`;
       case 'webfilters': return `Configure web filtering and parental controls for ${name}.`;
       default: return editingChild ? 'Edit your child\'s profile information.' : 'Add a new child to your Game Guardian AI monitoring dashboard.';
     }
@@ -303,7 +274,7 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             {getStepTitle()}
-            <span className="text-sm font-normal text-muted-foreground">- Step {step === 'basic' ? 1 : step === 'apps' ? 2 : 3} of 3</span>
+            <span className="text-sm font-normal text-muted-foreground">- Step {step === 'basic' ? 1 : 2} of 2</span>
           </DialogTitle>
           <DialogDescription>
             {getStepDescription()}
@@ -377,33 +348,12 @@ const AddChildDialog = ({ open: controlledOpen, onOpenChange: controlledOnOpenCh
                   ) : (
                     <>
                       <ArrowRight className="h-4 w-4 mr-2" />
-                      Next: Choose Apps
+                      Next: Web Filters
                     </>
                   )}
                 </Button>
               </div>
             </form>
-          ) : step === 'apps' ? (
-            <div className="space-y-4">
-              <AppSelectionStep
-                onNext={handleNext}
-                onBack={handleBack}
-                selectedApps={Array.from(selectedApps)}
-                onAppToggle={handleAppToggle}
-                childAge={childAge || 8}
-              />
-              
-              <div className="flex gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-                <Button type="button" onClick={handleNext} className="flex-1">
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                  Next: Web Filters
-                </Button>
-              </div>
-            </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <WebFiltersStep

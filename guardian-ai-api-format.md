@@ -1,4 +1,274 @@
-# Guardian AI Device API Documentation
+# Device Apps & Activation API Guide
+
+## Base URLs and Authentication
+
+**Supabase Base URL:** `https://xzxjwuzwltoapifcyzww.supabase.co`  
+**Anon Key:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eGp3dXp3bHRvYXBpZmN5end3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1NTQwNzksImV4cCI6MjA3MDEzMDA3OX0.w4QLWZSKig3hdoPOyq4dhTS6sleGsObryIolphhi9yo`
+
+**Activation Web URL:** `https://lovable.dev/activate?device_id=GG-XXXX-XXXX`
+
+## Phase 1: Device Registration & Token Polling
+
+### 1. Device Registration
+**POST** `/functions/v1/device-registration`
+```bash
+curl -X POST "https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/device-registration" \
+  -H "Content-Type: application/json" \
+  -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "device_code": "GG-1234-5678",
+    "platform": "linux",
+    "arch": "x86_64",
+    "version": "1.0.0"
+  }'
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "device_id": "abc123...",
+  "activation_url": "https://lovable.dev/activate?device_id=GG-1234-5678",
+  "message": "Device registered. Visit activation_url to continue setup."
+}
+```
+
+### 2. Poll for Device JWT
+**GET** `/functions/v1/device-status?device_id=GG-1234-5678`
+```bash
+# Poll this every 3-5 seconds until JWT is available
+curl "https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/device-status?device_id=GG-1234-5678" \
+  -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**Response (not activated yet):**
+```json
+{
+  "activated": false,
+  "device_jwt": null,
+  "message": "Device not activated yet. Visit activation URL."
+}
+```
+
+**Response (activated):**
+```json
+{
+  "activated": true,
+  "device_jwt": "eyJ0eXAiOiJKV1Qi...",
+  "message": "Device activated successfully"
+}
+```
+
+## Phase 2: Parent Web Activation
+
+### Web URL Format
+```
+https://lovable.dev/activate?device_id=GG-1234-5678
+```
+
+Parent visits this URL, signs in, selects/creates child profile, configures DNS settings, and approves device. **No app selection needed - OS will send preinstalled apps.**
+
+## Phase 3: Device-Authenticated Operations
+
+All following calls require the Device JWT from Phase 1:
+
+### 3. Send App Inventory
+**POST** `/functions/v1/device-app-inventory`
+```bash
+curl -X POST "https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/device-app-inventory" \
+  -H "Authorization: Bearer ${DEVICE_JWT}" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {
+      "app_id": "org.mozilla.Firefox",
+      "name": "Firefox",
+      "version": "121.0",
+      "source": "flatpak",
+      "installed_by": "agent"
+    },
+    {
+      "app_id": "com.github.joseexposito.touche",
+      "name": "Touché",
+      "version": "2.0.21",
+      "source": "flatpak",
+      "installed_by": "agent"
+    }
+  ]'
+```
+
+**Response:** HTTP 204 (success)
+
+### 4. Send App Usage Data
+**POST** `/functions/v1/device-app-usage`
+```bash
+curl -X POST "https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/device-app-usage" \
+  -H "Authorization: Bearer ${DEVICE_JWT}" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {
+      "app_id": "org.mozilla.Firefox",
+      "name": "Firefox", 
+      "started_at": "2025-01-15T10:00:00Z",
+      "ended_at": "2025-01-15T10:30:00Z",
+      "duration_s": 1800
+    }
+  ]'
+```
+
+**Response:** HTTP 204 (success)
+
+### 5. Heartbeat
+**POST** `/functions/v1/device-heartbeat`
+```bash
+curl -X POST "https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/device-heartbeat" \
+  -H "Authorization: Bearer ${DEVICE_JWT}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_code": "GG-1234-5678",
+    "status": "online",
+    "battery": 85,
+    "location": {"lat": 51.5074, "lng": -0.1278}
+  }'
+```
+
+### 6. Poll for Jobs
+**GET** `/functions/v1/device-jobs-poll`
+```bash
+curl "https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/device-jobs-poll" \
+  -H "Authorization: Bearer ${DEVICE_JWT}"
+```
+
+**Response:**
+```json
+{
+  "id": "job-uuid-123",
+  "type": "install_app",
+  "payload": {
+    "method": "flatpak",
+    "source": "flathub",
+    "name": "GIMP",
+    "app_id": "org.gimp.GIMP"
+  }
+}
+```
+
+### 7. Report Job Status
+**POST** `/functions/v1/device-jobs-report`
+```bash
+curl -X POST "https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/device-jobs-report" \
+  -H "Authorization: Bearer ${DEVICE_JWT}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "job_id": "job-uuid-123",
+    "status": "completed",
+    "result": {"installed": true, "version": "2.10.36"}
+  }'
+```
+
+### 8. Fetch Configuration
+**GET** `/functions/v1/device-config`
+```bash
+curl "https://xzxjwuzwltoapifcyzww.supabase.co/functions/v1/device-config" \
+  -H "Authorization: Bearer ${DEVICE_JWT}"
+```
+
+**Response:**
+```json
+{
+  "device_code": "GG-1234-5678",
+  "child_id": "child-uuid-456", 
+  "apps": [
+    {
+      "app_id": "org.mozilla.Firefox",
+      "name": "Firefox",
+      "allowed": true,
+      "schedule": {"Mon": ["09:00-17:00"], "Tue": ["09:00-17:00"]}
+    }
+  ],
+  "dns_config": {
+    "nextdns_profile": "abc123",
+    "social_media_blocked": true,
+    "gaming_blocked": false
+  }
+}
+```
+
+## Web App Real-Time Features
+
+### Push App to Device
+Web app calls Supabase RPC to queue install job:
+```typescript
+await supabase.rpc('queueInstall', {
+  deviceId: 'device-uuid',
+  appId: 'org.gimp.GIMP'
+});
+```
+
+### Toggle App Approval
+Web app calls RPC to approve/block apps:
+```typescript
+// Approve app
+await supabase.rpc('toggle_app_policy', {
+  p_device_id: 'device-uuid',
+  p_app_id: 'org.mozilla.Firefox',
+  p_enable: true
+});
+
+// Block app with reason
+await supabase.rpc('toggle_app_policy', {
+  p_device_id: 'device-uuid', 
+  p_app_id: 'com.discord.Discord',
+  p_enable: false,
+  p_reason: 'Inappropriate for age'
+});
+```
+
+### Real-time App Updates
+Web app subscribes to real-time changes:
+```typescript
+supabase.channel('device-apps')
+  .on('postgres_changes', {
+    event: '*',
+    schema: 'public', 
+    table: 'device_app_inventory'
+  }, handleAppUpdate)
+  .subscribe();
+```
+
+## Minimal End-to-End Test
+
+```bash
+#!/bin/bash
+BASE="https://xzxjwuzwltoapifcyzww.supabase.co"
+KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+# 1. Register device
+echo "1. Registering device..."
+curl -s -X POST "$BASE/functions/v1/device-registration" \
+  -H "apikey: $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"device_code":"GG-TEST-0001","platform":"linux"}' | jq
+
+# 2. Poll for activation (would normally loop)
+echo "2. Polling for activation..."
+curl -s "$BASE/functions/v1/device-status?device_id=GG-TEST-0001" \
+  -H "apikey: $KEY" | jq
+
+# Parent visits: https://lovable.dev/activate?device_id=GG-TEST-0001
+echo "Parent should visit: https://lovable.dev/activate?device_id=GG-TEST-0001"
+
+# 3. After activation, get JWT and send inventory
+echo "3. Send app inventory (after getting JWT)..."
+# JWT=$(curl -s "$BASE/functions/v1/device-status?device_id=GG-TEST-0001" -H "apikey: $KEY" | jq -r .device_jwt)
+# curl -X POST "$BASE/functions/v1/device-app-inventory" \
+#   -H "Authorization: Bearer $JWT" \
+#   -H "Content-Type: application/json" \
+#   -d '[{"app_id":"test.app","name":"Test App","version":"1.0","source":"flatpak","installed_by":"agent"}]'
+```
+
+---
+
+# Original Guardian AI Device API Documentation
 
 ## Two-Phase Desktop OS Agent Flow
 
