@@ -162,13 +162,11 @@ export default function PressReleaseDetail() {
           <div className="mb-8">
             <Button 
               variant="ghost" 
-              asChild 
-              className="mb-6"
+              onClick={() => window.history.back()}
+              className="mb-6 inline-flex items-center gap-2"
             >
-              <a href="/press-releases" className="inline-flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Press Releases
-              </a>
+              <ArrowLeft className="h-4 w-4" />
+              Back to Press Releases
             </Button>
             
             {release.logo_image && (
