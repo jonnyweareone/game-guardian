@@ -125,6 +125,18 @@ export default function PressReleaseDetail() {
     }
   };
 
+  const formatInline = (text: string) => {
+    if (!text) return '';
+    let t = text;
+    // Bold **text**
+    t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Italic *text* (not part of **bold**)
+    t = t.replace(/(^|\s)\*(?!\*)([^*]+?)\*(?!\*)((?=\s|$|[.,;:!?]))/g, '$1<em>$2</em>');
+    // Links [text](url)
+    t = t.replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline decoration-primary">$1<\/a>');
+    return t;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <SEOHead 
@@ -245,22 +257,18 @@ export default function PressReleaseDetail() {
                 .map(line => {
                   // Handle headers
                   if (line.startsWith('##')) {
-                    return `<h2 class="text-2xl font-bold mt-8 mb-4">${line.replace('## ', '')}</h2>`;
+                    return `<h2 class="text-2xl font-bold mt-8 mb-4">${formatInline(line.replace('## ', ''))}</h2>`;
                   }
                   
                   // Handle blockquotes
                   if (line.startsWith('> ')) {
-                    let quoteLine = line.replace('> ', '');
-                    // Handle bold text in quotes
-                    quoteLine = quoteLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    const quoteLine = formatInline(line.replace('> ', ''));
                     return `<blockquote class="border-l-4 border-primary pl-6 py-4 my-6 bg-muted/50 rounded-r-lg"><p class="text-lg italic font-medium">${quoteLine}</p></blockquote>`;
                   }
                   
                   // Handle list items
                   if (line.startsWith('- ')) {
-                    let listLine = line.replace('- ', '');
-                    // Handle bold text and emojis in list items
-                    listLine = listLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    const listLine = formatInline(line.replace('- ', ''));
                     return `<li class="mb-2">${listLine}</li>`;
                   }
                   
@@ -272,7 +280,7 @@ export default function PressReleaseDetail() {
                     }
                   }
                   
-                  // Handle italic text (single asterisks, not bold)
+                  // Handle italic-only caption lines (single asterisks spanning whole line)
                   if (line.startsWith('*') && line.endsWith('*') && !line.includes('**')) {
                     return `<p class="text-center text-sm text-muted-foreground italic mb-6">${line.replace(/\*/g, '')}</p>`;
                   }
@@ -282,18 +290,14 @@ export default function PressReleaseDetail() {
                     return `<hr class="my-8 border-border" />`;
                   }
                   
-                  // Handle regular paragraphs (with bold text formatting)
+                  // Standalone bold lines
+                  if (line.startsWith('**') && line.endsWith('**')) {
+                    return `<p class="font-semibold text-lg mb-4">${formatInline(line)}</p>`;
+                  }
+                  
+                  // Handle regular paragraphs with inline formatting
                   if (line.trim()) {
-                    let formattedLine = line;
-                    
-                    // Convert **text** to bold
-                    formattedLine = formattedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    
-                    // Handle standalone bold lines (like titles)
-                    if (line.startsWith('**') && line.endsWith('**')) {
-                      return `<p class="font-semibold text-lg mb-4">${formattedLine}</p>`;
-                    }
-                    
+                    const formattedLine = formatInline(line);
                     return `<p class="mb-4 leading-relaxed">${formattedLine}</p>`;
                   }
                   
