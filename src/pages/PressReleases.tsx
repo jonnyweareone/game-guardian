@@ -10,11 +10,11 @@ const PressReleases = () => {
 
   const pressReleases = [
     {
-      title: "Game Guardian AI Launches Revolutionary Child Safety Technology for Online Gaming",
-      excerpt: "UK-based startup introduces the first AI-powered system specifically designed to protect children from online threats during gaming sessions, addressing growing concerns about digital safety.",
-      date: "2024-12-15",
+      title: "Guardian AI Limited Announces Guardian OS: The World's First Operating System Built to Keep Children Safe While They Play, Learn, and Explore",
+      excerpt: "Guardian OS launches 12 September 2025. The first OS built for child safety—safe by design—with AI protection, family app store, and a parent dashboard. Freemium with 30-day trial; premium from £8.99 single / £14.99 family.",
+      date: "2025-09-09",
       category: "Product Launch",
-      slug: "game-guardian-ai-launch",
+      slug: "2025-09-09-guardian-os-launch",
       featured: true
     },
     {
