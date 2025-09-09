@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield, Users } from 'lucide-react';
 import { EnhancedChildCard } from '@/components/dashboard-v2/EnhancedChildCard';
+import StatisticsCards from '@/components/dashboard-v2/StatisticsCards';
+import CompactAlertsList from '@/components/dashboard-v2/CompactAlertsList';
 import { getChildrenWithAvatars } from '@/lib/dashboardV2Api';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +24,12 @@ export default function Monitoring() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [childDevice, setChildDevice] = useState<any>(null);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const [stats, setStats] = useState({
+    activeDevices: 0,
+    totalChildren: 0,
+    activeAlerts: 0,
+    todaySessions: 0
+  });
 
   // Load children on mount
   useEffect(() => {
@@ -41,6 +49,9 @@ export default function Monitoring() {
           setSelectedChildId(firstChildId);
           navigate(`/monitoring?child=${firstChildId}`, { replace: true });
         }
+
+        // Load statistics
+        await loadStatistics(childrenData);
       } catch (error) {
         console.error('Failed to load children:', error);
         if (isMounted) {
@@ -61,6 +72,47 @@ export default function Monitoring() {
     return () => { isMounted = false; };
   }, [selectedChildId, navigate, toast]);
 
+  // Load statistics
+  const loadStatistics = async (childrenData: any[]) => {
+    try {
+      // Count active devices
+      const { data: devices } = await supabase
+        .from('devices')
+        .select('id, status')
+        .eq('is_active', true);
+      
+      const activeDevices = devices?.filter(d => d.status === 'online').length || 0;
+
+      // Count active alerts
+      const { data: alertsData } = await supabase
+        .from('alerts')
+        .select('id, is_reviewed')
+        .eq('is_reviewed', false);
+      
+      const activeAlerts = alertsData?.length || 0;
+
+      // Count today's app sessions
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { data: sessions } = await supabase
+        .from('app_activity')
+        .select('id')
+        .gte('session_start', today.toISOString());
+      
+      const todaySessions = sessions?.length || 0;
+
+      setStats({
+        activeDevices,
+        totalChildren: childrenData.length,
+        activeAlerts,
+        todaySessions
+      });
+    } catch (error) {
+      console.error('Failed to load statistics:', error);
+    }
+  };
+
   // Load alerts for selected child
   useEffect(() => {
     if (!selectedChildId) return;
@@ -71,14 +123,30 @@ export default function Monitoring() {
       try {
         const { data, error } = await supabase
           .from('alerts')
-          .select('id,alert_type,risk_level,ai_summary,flagged_at,is_reviewed,confidence_score')
+          .select(`
+            id,
+            child_id,
+            alert_type,
+            risk_level,
+            ai_summary,
+            flagged_at,
+            is_reviewed,
+            confidence_score,
+            transcript_snippet,
+            children!inner(name)
+          `)
           .eq('child_id', selectedChildId)
           .order('flagged_at', { ascending: false })
-          .limit(20);
+          .limit(50);
         
         if (error) throw error;
         if (isMounted) {
-          setAlerts(data || []);
+          // Format alerts with child names for CompactAlertsList
+          const formattedAlerts = (data || []).map(alert => ({
+            ...alert,
+            child_name: alert.children?.name || 'Unknown'
+          }));
+          setAlerts(formattedAlerts);
         }
       } catch (error) {
         console.error('Failed to load alerts:', error);
@@ -152,6 +220,11 @@ export default function Monitoring() {
     }
   };
 
+  const handleViewAlertDetails = (alertId: string) => {
+    console.log('View alert details:', alertId);
+    // TODO: Implement alert details modal or navigation
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -216,62 +289,43 @@ export default function Monitoring() {
         )}
       </div>
 
+      {/* Statistics Overview */}
+      <StatisticsCards 
+        activeDevices={stats.activeDevices}
+        totalChildren={stats.totalChildren}
+        activeAlerts={stats.activeAlerts}
+        todaySessions={stats.todaySessions}
+      />
+
       {selectedChild && (
         <div className="space-y-6">
           <EnhancedChildCard
             child={selectedChild}
             device={childDevice}
-            alerts={alerts}
+            alerts={alerts.slice(0, 3)}
           />
           
-          {/* Alerts Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Alerts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {alerts.length === 0 ? (
-                <div className="text-center py-8">
-                  <Shield className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No recent alerts yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    When safety concerns are detected, they'll appear here
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {alerts.slice(0, 10).map(alert => (
-                    <div key={alert.id} className="flex items-start justify-between gap-3 p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium capitalize">{alert.alert_type.replace('_', ' ')}</span>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            alert.risk_level === 'high' ? 'bg-red-100 text-red-800' :
-                            alert.risk_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {alert.risk_level}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">{alert.ai_summary}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(alert.flagged_at).toLocaleString()}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant={alert.is_reviewed ? "secondary" : "default"}
-                        disabled={alert.is_reviewed}
-                        onClick={() => handleMarkReviewed(alert.id)}
-                      >
-                        {alert.is_reviewed ? 'Reviewed' : 'Mark Reviewed'}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Comprehensive Alerts Management */}
+          {alerts.length > 0 ? (
+            <CompactAlertsList
+              alerts={alerts}
+              onMarkReviewed={handleMarkReviewed}
+              onViewDetails={handleViewAlertDetails}
+            />
+          ) : (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Shield className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">All Clear!</h3>
+                <p className="text-muted-foreground mb-4">
+                  No safety alerts for {selectedChild.name} at this time.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Our AI monitoring continues to protect your child's digital experience.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>
