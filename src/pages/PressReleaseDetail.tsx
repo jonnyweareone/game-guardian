@@ -1,7 +1,7 @@
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
+import { Calendar, ExternalLink, Share2 } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
 
 const pressReleaseContent = {
@@ -168,26 +168,25 @@ export default function PressReleaseDetail() {
         }}
       />
       
-      <article className="container mx-auto px-4 py-16">
+      {/* Logo Header */}
+      <div className="container mx-auto px-4 py-6">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <Button 
-              variant="ghost" 
-              onClick={() => window.history.back()}
-              className="mb-6 inline-flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Press Releases
-            </Button>
-            
-            {release.logo_image && (
+          {release.logo_image && (
+            <Link to="/" className="inline-block">
               <img 
                 src={release.logo_image} 
                 alt="Guardian AI Logo"
-                className="h-12 mb-6"
+                className="h-12 hover:opacity-80 transition-opacity"
               />
-            )}
+            </Link>
+          )}
+        </div>
+      </div>
+      
+      <article className="container mx-auto px-4 pb-16">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
             
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -254,6 +253,7 @@ export default function PressReleaseDetail() {
             <div dangerouslySetInnerHTML={{ 
               __html: release.content
                 .split('\n')
+                .filter(line => !line.match(/^##\s*FOR\s+IMMEDIATE\s+RELEASE\s*$/i))
                 .map(line => {
                   // Handle headers
                   if (line.startsWith('##')) {

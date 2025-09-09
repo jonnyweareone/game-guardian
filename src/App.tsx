@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import AuthGuard from "@/components/AuthGuard";
 import AdminRoute from "@/components/AdminRoute";
 import Navigation from "@/components/Navigation";
@@ -56,14 +56,14 @@ import ChildDetail from "@/pages/ChildDetail";
 
 const queryClient = new QueryClient();
 
-export default function App() {
-  const [_, __] = useState(false);
+function AppContent() {
+  const location = useLocation();
+  const shouldHideNavigation = location.pathname.match(/^\/press-releases\/[^/]+$/);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Navigation />
-        <Routes>
+    <>
+      {!shouldHideNavigation && <Navigation />}
+      <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/demo" element={<DemoAdmin />} />
@@ -281,6 +281,17 @@ export default function App() {
           {/* Catch-all 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+    </>
+  );
+}
+
+export default function App() {
+  const [_, __] = useState(false);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AppContent />
       </BrowserRouter>
       <Toaster />
     </QueryClientProvider>
