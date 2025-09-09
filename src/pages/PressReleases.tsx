@@ -51,11 +51,26 @@ const PressReleases = () => {
   return (
     <>
       <SEOHead
-        title="Game Guardian Press Releases - Latest Company News & Announcements"
-        description="Stay updated with the latest news, product launches, and company announcements from Game Guardian AI. Media resources and press materials available."
-        keywords="game guardian press releases, company news, product announcements, media resources, ai gaming safety news"
-        canonicalUrl="https://guardianai.co.uk/press-releases"
-        structuredData={structuredData}
+        title="Guardian AI Press Releases - Latest News & Announcements"
+        description="Get the latest news from Guardian AI Limited about Guardian OS launch, child online safety innovations, and family protection technology updates. Official press releases and media resources."
+        keywords="Guardian AI press releases, Guardian OS news, child safety technology, parental controls, online safety announcements, media resources"
+        canonicalUrl="https://gameguardian.ai/press-releases"
+        ogImage="/lovable-uploads/guardian-logo-shield-text-dark.png"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "Guardian AI Press Releases",
+          "description": "Latest news and announcements from Guardian AI Limited about Guardian OS and child online safety technology",
+          "url": "https://gameguardian.ai/press-releases",
+          "publisher": {
+            "@type": "Organization",
+            "name": "Guardian AI Limited",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-dark.png"
+            }
+          }
+        }}
       />
 
       <div className="min-h-screen bg-background">

@@ -128,10 +128,32 @@ export default function PressReleaseDetail() {
   return (
     <div className="min-h-screen bg-background">
       <SEOHead 
-        title={`${release.title} - Guardian AI Press Release`}
-        description={release.summary}
-        keywords={release.tags.join(', ')}
+        title={`${release.title} | Guardian AI Press Release`}
+        description={`${release.summary} Read the full press release from Guardian AI Limited.`}
+        keywords={`${release.tags.join(', ')}, Guardian AI Limited, press release, announcement`}
+        canonicalUrl={`https://gameguardian.ai/press-releases/${slug}`}
         ogImage={release.hero_image}
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "NewsArticle",
+          "headline": release.title,
+          "description": release.summary,
+          "author": {
+            "@type": "Organization",
+            "name": release.author
+          },
+          "publisher": {
+            "@type": "Organization", 
+            "name": "Guardian AI Limited",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://gameguardian.ai/lovable-uploads/guardian-logo-shield-text-dark.png"
+            }
+          },
+          "datePublished": release.date,
+          "image": release.hero_image,
+          "url": `https://gameguardian.ai/press-releases/${slug}`
+        }}
       />
       
       <article className="container mx-auto px-4 py-16">
