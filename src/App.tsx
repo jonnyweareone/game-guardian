@@ -33,6 +33,7 @@ import NovaReader from "@/pages/NovaReader";
 import HomeworkHelper from "@/pages/HomeworkHelper";
 import PitchDeck from "@/pages/PitchDeck";
 import PressReleases from "@/pages/PressReleases";
+import PressReleaseDetail from "@/pages/PressReleaseDetail";
 import ProductDevice from "@/pages/ProductDevice";
 import ProductOSFull from "@/pages/ProductOSFull";
 import ProductOSMini from "@/pages/ProductOSMini";
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/homework-helper" element={<HomeworkHelper />} />
           <Route path="/pitch-deck" element={<PitchDeck />} />
           <Route path="/press-releases" element={<PressReleases />} />
+          <Route path="/press-releases/:slug" element={<PressReleaseDetail />} />
           <Route path="/product/device" element={<ProductDevice />} />
           <Route path="/product/os-full" element={<ProductOSFull />} />
           <Route path="/product/os-mini" element={<ProductOSMini />} />
