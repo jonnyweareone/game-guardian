@@ -51,6 +51,7 @@ import OSApps from "@/pages/OSApps";
 import ActivatePage from "@/pages/ActivatePage";
 import DeviceActivation from "@/pages/DeviceActivation";
 import ActivationComplete from "@/pages/ActivationComplete";
+import ChildDetail from "@/pages/ChildDetail";
 
 const queryClient = new QueryClient();
 
@@ -132,6 +133,14 @@ export default function App() {
             element={
               <AuthGuard>
                 <Children />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/children/:childId"
+            element={
+              <AuthGuard>
+                <ChildDetail />
               </AuthGuard>
             }
           />
