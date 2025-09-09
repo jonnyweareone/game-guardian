@@ -5,7 +5,7 @@ import { Calendar, ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
 
 const pressReleaseContent = {
-  "guardian-os-launch": {
+  "2025-09-09-guardian-os-launch": {
     title: "Guardian AI Limited Announces Guardian OS: The World's First Operating System Built to Keep Children Safe While They Play, Learn, and Explore",
     date: "2025-09-09",
     author: "Guardian AI Limited",
