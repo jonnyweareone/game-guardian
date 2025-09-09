@@ -243,33 +243,60 @@ export default function PressReleaseDetail() {
               __html: release.content
                 .split('\n')
                 .map(line => {
+                  // Handle headers
                   if (line.startsWith('##')) {
                     return `<h2 class="text-2xl font-bold mt-8 mb-4">${line.replace('## ', '')}</h2>`;
                   }
-                  if (line.startsWith('**') && line.endsWith('**')) {
-                    return `<p class="font-semibold text-lg mb-4">${line}</p>`;
-                  }
+                  
+                  // Handle blockquotes
                   if (line.startsWith('> ')) {
-                    return `<blockquote class="border-l-4 border-primary pl-6 py-4 my-6 bg-muted/50 rounded-r-lg"><p class="text-lg italic font-medium">${line.replace('> ', '')}</p></blockquote>`;
+                    let quoteLine = line.replace('> ', '');
+                    // Handle bold text in quotes
+                    quoteLine = quoteLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    return `<blockquote class="border-l-4 border-primary pl-6 py-4 my-6 bg-muted/50 rounded-r-lg"><p class="text-lg italic font-medium">${quoteLine}</p></blockquote>`;
                   }
+                  
+                  // Handle list items
                   if (line.startsWith('- ')) {
-                    return `<li class="mb-2">${line.replace('- ', '')}</li>`;
+                    let listLine = line.replace('- ', '');
+                    // Handle bold text and emojis in list items
+                    listLine = listLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    return `<li class="mb-2">${listLine}</li>`;
                   }
+                  
+                  // Handle images
                   if (line.includes('![')) {
                     const imgMatch = line.match(/!\[(.*?)\]\((.*?)\)/);
                     if (imgMatch) {
                       return `<div class="my-8"><img src="${imgMatch[2]}" alt="${imgMatch[1]}" class="w-full rounded-lg shadow-md" /><p class="text-center text-sm text-muted-foreground mt-2 italic">${imgMatch[1]}</p></div>`;
                     }
                   }
+                  
+                  // Handle italic text (single asterisks, not bold)
                   if (line.startsWith('*') && line.endsWith('*') && !line.includes('**')) {
                     return `<p class="text-center text-sm text-muted-foreground italic mb-6">${line.replace(/\*/g, '')}</p>`;
                   }
+                  
+                  // Handle horizontal rules
                   if (line.trim() === '---') {
                     return `<hr class="my-8 border-border" />`;
                   }
-                  if (line.trim() && !line.includes('**Key features include:**')) {
-                    return `<p class="mb-4 leading-relaxed">${line}</p>`;
+                  
+                  // Handle regular paragraphs (with bold text formatting)
+                  if (line.trim()) {
+                    let formattedLine = line;
+                    
+                    // Convert **text** to bold
+                    formattedLine = formattedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    
+                    // Handle standalone bold lines (like titles)
+                    if (line.startsWith('**') && line.endsWith('**')) {
+                      return `<p class="font-semibold text-lg mb-4">${formattedLine}</p>`;
+                    }
+                    
+                    return `<p class="mb-4 leading-relaxed">${formattedLine}</p>`;
                   }
+                  
                   return '';
                 })
                 .join('')
