@@ -17,7 +17,7 @@ const Products = () => {
       features: ["Real-time voice monitoring", "Bluetooth & USB connectivity", "3.5mm headset output", "Instant parent alerts"],
       status: "available",
       price: "Starting at £59.99",
-      link: "/products/device"
+      link: "/product/device"
     },
     {
       id: "os-mini",
@@ -27,7 +27,7 @@ const Products = () => {
       features: ["USB bootable image", "Pre-installed option", "VM/Container support", "Low power consumption"],
       status: "available",
       price: "Free download",
-      link: "/products/os-mini"
+      link: "/product/os-mini"
     },
     {
       id: "os-full",
@@ -37,7 +37,7 @@ const Products = () => {
       features: ["Complete PC protection", "Content controls", "Screen time limits", "Kiosk mode"],
       status: "available",
       price: "Free for families",
-      link: "/products/os-full"
+      link: "/product/os-full"
     },
     {
       id: "receiver",
