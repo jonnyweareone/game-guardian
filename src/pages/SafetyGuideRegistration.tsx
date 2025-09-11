@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { BookOpen, Shield, Users, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import SEOHead from "@/components/SEOHead";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function SafetyGuideRegistration() {
   const [formData, setFormData] = useState({
@@ -34,12 +35,34 @@ export default function SafetyGuideRegistration() {
 
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const { error } = await supabase
+        .from('safety_guide_registrations')
+        .insert({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          parent_type: formData.parentType,
+          children_ages: formData.childrenAges,
+          primary_concerns: formData.primaryConcerns,
+          communication_preference: formData.communicationPreference,
+          agreed_to_terms: formData.agreedToTerms
+        });
+
+      if (error) {
+        console.error('Registration error:', error);
+        toast.error("Registration failed. Please try again.");
+        return;
+      }
+
       setIsSubmitted(true);
       toast.success("Registration successful! You'll receive your safety guide soon.");
-    }, 1500);
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {

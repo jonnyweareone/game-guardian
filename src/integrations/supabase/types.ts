@@ -4251,6 +4251,48 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_guide_registrations: {
+        Row: {
+          agreed_to_terms: boolean
+          children_ages: string | null
+          communication_preference: string | null
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          parent_type: string | null
+          primary_concerns: string | null
+          updated_at: string
+        }
+        Insert: {
+          agreed_to_terms?: boolean
+          children_ages?: string | null
+          communication_preference?: string | null
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          parent_type?: string | null
+          primary_concerns?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agreed_to_terms?: boolean
+          children_ages?: string | null
+          communication_preference?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          parent_type?: string | null
+          primary_concerns?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       schools: {
         Row: {
           address: string | null
