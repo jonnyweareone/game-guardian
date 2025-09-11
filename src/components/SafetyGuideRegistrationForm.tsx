@@ -129,6 +129,12 @@ export default function SafetyGuideRegistrationForm({
           <CardDescription>
             Register to receive expert tips and strategies for keeping your children safe online.
           </CardDescription>
+          <div className="mt-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+            <p className="text-sm font-medium text-amber-800 mb-1">🎁 Bonus: Enter to Win!</p>
+            <p className="text-xs text-amber-700">
+              All registrations automatically entered into a draw to win a £20 Amazon voucher. Winner announced Friday 25th September.
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -214,6 +220,12 @@ export default function SafetyGuideRegistrationForm({
           <CardDescription>
             Fill out the form below to receive your personalized online safety guide
           </CardDescription>
+          <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+            <p className="font-medium text-amber-800 mb-2">🎁 Bonus: Enter to Win a £20 Amazon Voucher!</p>
+            <p className="text-sm text-amber-700">
+              All registrations are automatically entered into our prize draw. Winner will be announced on Friday 25th September.
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
