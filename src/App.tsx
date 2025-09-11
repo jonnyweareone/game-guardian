@@ -48,6 +48,7 @@ import Monitoring from "@/pages/Monitoring";
 import Education from "@/pages/Education";
 import OnlineSafetyLivestream from "@/pages/OnlineSafetyLivestream";
 import LivestreamSpeaker from "@/pages/LivestreamSpeaker";
+import SafetyGuideRegistration from "@/pages/SafetyGuideRegistration";
 import OSApps from "@/pages/OSApps";
 import ActivatePage from "@/pages/ActivatePage";
 import DeviceActivation from "@/pages/DeviceActivation";
@@ -77,6 +78,7 @@ function AppContent() {
           {/* Public Event Page */}
           <Route path="/online-safety-livestream" element={<OnlineSafetyLivestream />} />
           <Route path="/online-safety-livestream/speakers/:speakerSlug" element={<LivestreamSpeaker />} />
+          <Route path="/safety-guide-registration" element={<SafetyGuideRegistration />} />
           
           {/* Docs Routes */}
           <Route path="/docs/*" element={<DocsRoutes />} />

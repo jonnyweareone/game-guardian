@@ -96,6 +96,14 @@ export default function OnlineSafetyLivestream() {
                 <p className="text-sm text-muted-foreground">
                   Opens in a new window on StreamYard
                 </p>
+                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium mb-2">Want the after-event safety guide?</p>
+                  <Button variant="outline" asChild>
+                    <a href="/safety-guide-registration">
+                      Get Free Safety Guide
+                    </a>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
