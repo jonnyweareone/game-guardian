@@ -77,7 +77,7 @@ export default function OnlineSafetyLivestream() {
             <div className="max-w-4xl mx-auto">
               <div className="relative w-full" style={{paddingBottom: '56.25%'}}>
                 <iframe 
-                  src="https://streamyard.com/watch/ksTWs6r6XpXV?embed=true" 
+                  src="https://streamyard.com/watch/ksTWs6r6XpXV" 
                   className="absolute top-0 left-0 w-full h-full rounded-lg border"
                   frameBorder="0" 
                   allow="autoplay; fullscreen; camera; microphone; encrypted-media"
