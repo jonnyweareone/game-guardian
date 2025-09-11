@@ -78,11 +78,22 @@ export default function OnlineSafetyLivestream() {
               <div className="relative w-full" style={{paddingBottom: '56.25%'}}>
                 <iframe 
                   src="https://streamyard.com/watch/ksTWs6r6XpXV?embed=true" 
-                  className="absolute top-0 left-0 w-full h-full rounded-lg"
+                  className="absolute top-0 left-0 w-full h-full rounded-lg border"
                   frameBorder="0" 
-                  allow="autoplay; fullscreen"
+                  allow="autoplay; fullscreen; camera; microphone"
+                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                   title="Online Safety For Children Live Panel"
                 />
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground">
+                  If the stream doesn't load above, 
+                  <Button variant="link" asChild className="p-0 h-auto text-sm">
+                    <a href="https://streamyard.com/watch/ksTWs6r6XpXV" target="_blank" rel="noopener noreferrer">
+                      watch directly on StreamYard
+                    </a>
+                  </Button>
+                </p>
               </div>
             </div>
           </div>
