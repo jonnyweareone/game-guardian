@@ -80,8 +80,8 @@ export default function OnlineSafetyLivestream() {
                   src="https://streamyard.com/watch/ksTWs6r6XpXV?embed=true" 
                   className="absolute top-0 left-0 w-full h-full rounded-lg border"
                   frameBorder="0" 
-                  allow="autoplay; fullscreen; camera; microphone"
-                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                  allow="autoplay; fullscreen; camera; microphone; encrypted-media"
+                  allowFullScreen
                   title="Online Safety For Children Live Panel"
                 />
               </div>
