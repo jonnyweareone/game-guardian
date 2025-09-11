@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import speakers from '@/data/livestreamSpeakers';
 import SEOHead from '@/components/SEOHead';
 import shareImage from '@/assets/online-safety-livestream-share.jpg';
+import SafetyGuideRegistrationForm from '@/components/SafetyGuideRegistrationForm';
 
 export default function OnlineSafetyLivestream() {
   const structuredData = {
@@ -106,6 +107,22 @@ export default function OnlineSafetyLivestream() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Safety Guide Registration Section */}
+      <div className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-4 mb-12">
+            <h2 className="text-3xl font-bold">Get Your Free Online Safety Guide</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Can't make the live event? Register below to receive our comprehensive safety guide with expert insights from the panel.
+            </p>
+          </div>
+          
+          <div className="max-w-lg mx-auto">
+            <SafetyGuideRegistrationForm variant="compact" />
           </div>
         </div>
       </div>
