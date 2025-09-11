@@ -69,40 +69,21 @@ export default function OnlineSafetyLivestream() {
         </div>
       </div>
 
-      {/* Streaming Links Section */}
+      {/* Live Stream Section */}
       <div className="py-8 bg-muted/50">
         <div className="container mx-auto px-4">
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl font-semibold">Watch Live or Catch the Replay</h2>
-            <p className="text-muted-foreground">Streaming links coming soon</p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button 
-                id="btnLinkedInStream"
-                disabled 
-                className="opacity-50 cursor-not-allowed"
-                title="Links available closer to the event"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                LinkedIn (coming soon)
-              </Button>
-              <Button 
-                id="btnFacebookStream"
-                disabled 
-                className="opacity-50 cursor-not-allowed"
-                title="Links available closer to the event"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Facebook (coming soon)
-              </Button>
-              <Button 
-                id="btnYouTubeStream"
-                disabled 
-                className="opacity-50 cursor-not-allowed"
-                title="Links available closer to the event"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                YouTube (coming soon)
-              </Button>
+          <div className="text-center space-y-6">
+            <h2 className="text-2xl font-semibold">Watch Live</h2>
+            <div className="max-w-4xl mx-auto">
+              <div className="relative w-full" style={{paddingBottom: '56.25%'}}>
+                <iframe 
+                  src="https://streamyard.com/watch/ksTWs6r6XpXV?embed=true" 
+                  className="absolute top-0 left-0 w-full h-full rounded-lg"
+                  frameBorder="0" 
+                  allow="autoplay; fullscreen"
+                  title="Online Safety For Children Live Panel"
+                />
+              </div>
             </div>
           </div>
         </div>
