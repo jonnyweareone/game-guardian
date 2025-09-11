@@ -75,24 +75,26 @@ export default function OnlineSafetyLivestream() {
           <div className="text-center space-y-6">
             <h2 className="text-2xl font-semibold">Watch Live</h2>
             <div className="max-w-4xl mx-auto">
-              <div className="relative w-full" style={{paddingBottom: '56.25%'}}>
-                <iframe 
-                  src="https://streamyard.com/watch/ksTWs6r6XpXV" 
-                  className="absolute top-0 left-0 w-full h-full rounded-lg border"
-                  frameBorder="0" 
-                  allow="autoplay; fullscreen; camera; microphone; encrypted-media"
-                  allowFullScreen
-                  title="Online Safety For Children Live Panel"
-                />
-              </div>
-              <div className="mt-4">
+              <div className="bg-card rounded-lg border p-8 text-center space-y-4">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                  <ExternalLink className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold">Join the Live Stream</h3>
+                <p className="text-muted-foreground">
+                  Click below to watch the live panel discussion on StreamYard
+                </p>
+                <Button asChild size="lg" className="mt-4">
+                  <a 
+                    href="https://streamyard.com/watch/ksTWs6r6XpXV" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Watch Live Stream
+                  </a>
+                </Button>
                 <p className="text-sm text-muted-foreground">
-                  If the stream doesn't load above, 
-                  <Button variant="link" asChild className="p-0 h-auto text-sm">
-                    <a href="https://streamyard.com/watch/ksTWs6r6XpXV" target="_blank" rel="noopener noreferrer">
-                      watch directly on StreamYard
-                    </a>
-                  </Button>
+                  Opens in a new window on StreamYard
                 </p>
               </div>
             </div>
