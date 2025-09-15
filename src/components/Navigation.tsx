@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Menu, Shield, User, LogOut, Settings, Home, BookOpen, Package, Zap, Users, Gift } from 'lucide-react';
+import { Menu, Shield, User, LogOut, Settings, Home, BookOpen, Package, Zap, Users, Gift, Router } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,6 +43,7 @@ const Navigation = () => {
     { href: '/education', label: 'Education', icon: BookOpen },
     { href: '/children', label: 'Children', icon: Users },
     { href: '/devices', label: 'Device Management', icon: Shield },
+    { href: '/network/gateways', label: 'Network & Devices', icon: Router },
     { href: '/os-apps', label: 'OS Apps', icon: Package },
     { href: '/rewards', label: 'Rewards', icon: Gift },
     { href: '/account', label: 'Settings', icon: Settings },

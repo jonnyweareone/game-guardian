@@ -54,6 +54,7 @@ import ActivatePage from "@/pages/ActivatePage";
 import DeviceActivation from "@/pages/DeviceActivation";
 import ActivationComplete from "@/pages/ActivationComplete";
 import ChildDetail from "@/pages/ChildDetail";
+import NetworkGateways from "@/pages/NetworkGateways";
 
 const queryClient = new QueryClient();
 
@@ -207,6 +208,16 @@ function AppContent() {
             element={
               <AuthGuard>
                 <OSApps />
+              </AuthGuard>
+            }
+          />
+          
+          {/* Network Routes - Feature flagged by entitlements */}
+          <Route
+            path="/network/gateways"
+            element={
+              <AuthGuard>
+                <NetworkGateways />
               </AuthGuard>
             }
           />

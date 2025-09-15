@@ -18,16 +18,22 @@ const key = await crypto.subtle.importKey(
   ["sign", "verify"]
 );
 
-// Sign a token for a device code with 30 day expiry
-export async function signDeviceJWT(deviceCode: string) {
+// Sign a token for a device code with optional parent_id for CPE devices
+export async function signDeviceJWT(deviceCode: string, parentId?: string, ttlSeconds?: number) {
   try {
-    const payload = {
+    const defaultTtl = ttlSeconds || (60 * 60 * 24 * 30); // 30 days default
+    const payload: any = {
       sub: deviceCode,
       iss: JWT_ISSUER,
       aud: JWT_AUDIENCE,
       iat: Math.floor(Date.now() / 1000),
-      exp: getNumericDate(60 * 60 * 24 * 30), // 30 days
+      exp: getNumericDate(defaultTtl),
     };
+    
+    // Add parent_id for CPE devices to enable RLS
+    if (parentId) {
+      payload.parent_id = parentId;
+    }
     
     return await create({ alg: "HS256", typ: "JWT" }, payload, key);
   } catch (error) {

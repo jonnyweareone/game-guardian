@@ -1861,6 +1861,164 @@ export type Database = {
           },
         ]
       }
+      cpe_clients: {
+        Row: {
+          child_id: string | null
+          first_seen: string | null
+          gateway_id: string | null
+          hostname: string | null
+          id: string
+          last_seen: string | null
+          mac: string
+          parent_id: string
+        }
+        Insert: {
+          child_id?: string | null
+          first_seen?: string | null
+          gateway_id?: string | null
+          hostname?: string | null
+          id?: string
+          last_seen?: string | null
+          mac: string
+          parent_id: string
+        }
+        Update: {
+          child_id?: string | null
+          first_seen?: string | null
+          gateway_id?: string | null
+          hostname?: string | null
+          id?: string
+          last_seen?: string | null
+          mac?: string
+          parent_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cpe_clients_gateway_id_fkey"
+            columns: ["gateway_id"]
+            isOneToOne: false
+            referencedRelation: "cpe_gateways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cpe_gateways: {
+        Row: {
+          created_at: string | null
+          external_id: string
+          firmware: string | null
+          id: string
+          last_heartbeat: string | null
+          model: string | null
+          parent_id: string
+          site_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          external_id: string
+          firmware?: string | null
+          id?: string
+          last_heartbeat?: string | null
+          model?: string | null
+          parent_id: string
+          site_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          external_id?: string
+          firmware?: string | null
+          id?: string
+          last_heartbeat?: string | null
+          model?: string | null
+          parent_id?: string
+          site_name?: string | null
+        }
+        Relationships: []
+      }
+      cpe_policy_assignments: {
+        Row: {
+          assigned_at: string | null
+          client_id: string | null
+          id: string
+          parent_id: string
+          profile_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          client_id?: string | null
+          id?: string
+          parent_id: string
+          profile_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          client_id?: string | null
+          id?: string
+          parent_id?: string
+          profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cpe_policy_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "cpe_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cpe_policy_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "cpe_policy_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cpe_policy_profiles: {
+        Row: {
+          bedtime: Json | null
+          category_blocks: string[] | null
+          created_at: string | null
+          id: string
+          kill_switch_mode: string | null
+          l7_enabled: boolean | null
+          name: string
+          nextdns_profile_id: string | null
+          parent_id: string
+          safe_search: boolean | null
+          study_mode: boolean | null
+          vpn_detection: boolean | null
+        }
+        Insert: {
+          bedtime?: Json | null
+          category_blocks?: string[] | null
+          created_at?: string | null
+          id?: string
+          kill_switch_mode?: string | null
+          l7_enabled?: boolean | null
+          name: string
+          nextdns_profile_id?: string | null
+          parent_id: string
+          safe_search?: boolean | null
+          study_mode?: boolean | null
+          vpn_detection?: boolean | null
+        }
+        Update: {
+          bedtime?: Json | null
+          category_blocks?: string[] | null
+          created_at?: string | null
+          id?: string
+          kill_switch_mode?: string | null
+          l7_enabled?: boolean | null
+          name?: string
+          nextdns_profile_id?: string | null
+          parent_id?: string
+          safe_search?: boolean | null
+          study_mode?: boolean | null
+          vpn_detection?: boolean | null
+        }
+        Relationships: []
+      }
       curriculum_topics: {
         Row: {
           id: string
@@ -2698,6 +2856,30 @@ export type Database = {
             referencedColumns: ["child_id"]
           },
         ]
+      }
+      entitlements: {
+        Row: {
+          created_at: string | null
+          features: Json | null
+          id: string
+          parent_id: string
+          tier: string
+        }
+        Insert: {
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          parent_id: string
+          tier: string
+        }
+        Update: {
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          parent_id?: string
+          tier?: string
+        }
+        Relationships: []
       }
       game_events: {
         Row: {
@@ -4370,6 +4552,30 @@ export type Database = {
           },
         ]
       }
+      tenant_theme: {
+        Row: {
+          help_url: string | null
+          logo_url: string | null
+          parent_id: string
+          primary_hex: string | null
+          support_email: string | null
+        }
+        Insert: {
+          help_url?: string | null
+          logo_url?: string | null
+          parent_id: string
+          primary_hex?: string | null
+          support_email?: string | null
+        }
+        Update: {
+          help_url?: string | null
+          logo_url?: string | null
+          parent_id?: string
+          primary_hex?: string | null
+          support_email?: string | null
+        }
+        Relationships: []
+      }
       tts_analysis_cache: {
         Row: {
           analysis: Json
@@ -4581,6 +4787,33 @@ export type Database = {
           totp_secret?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      usp_events_raw: {
+        Row: {
+          device_external_id: string
+          id: number
+          parent_id: string
+          topic: string
+          ts: string | null
+          usp_b64: string
+        }
+        Insert: {
+          device_external_id: string
+          id?: number
+          parent_id: string
+          topic: string
+          ts?: string | null
+          usp_b64: string
+        }
+        Update: {
+          device_external_id?: string
+          id?: number
+          parent_id?: string
+          topic?: string
+          ts?: string | null
+          usp_b64?: string
         }
         Relationships: []
       }

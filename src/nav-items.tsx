@@ -10,7 +10,8 @@ import {
   Trophy,
   Store,
   MonitorSpeaker,
-  Database
+  Database,
+  Router
 } from "lucide-react";
 
 export const navigation = [
@@ -82,6 +83,29 @@ export const navigation = [
       {
         title: "Tux Math",
         url: "/play/tuxmath",
+      },
+    ],
+  },
+  {
+    title: "Network",
+    url: "/network",
+    icon: Router,
+    items: [
+      {
+        title: "Gateways",
+        url: "/network/gateways",
+      },
+      {
+        title: "Clients", 
+        url: "/network/clients",
+      },
+      {
+        title: "Policies",
+        url: "/network/profiles",
+      },
+      {
+        title: "Activity",
+        url: "/network/activity",
       },
     ],
   },

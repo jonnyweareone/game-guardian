@@ -134,3 +134,15 @@ verify_jwt = false
 
 [functions.auth-register]
 verify_jwt = false
+
+[functions.usp-events]
+verify_jwt = false
+
+[functions.policy-render]
+verify_jwt = true
+
+[functions.get-device-jwt]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
