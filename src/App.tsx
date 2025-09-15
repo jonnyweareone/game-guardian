@@ -55,6 +55,9 @@ import DeviceActivation from "@/pages/DeviceActivation";
 import ActivationComplete from "@/pages/ActivationComplete";
 import ChildDetail from "@/pages/ChildDetail";
 import NetworkGateways from "@/pages/NetworkGateways";
+import NetworkClients from "@/pages/NetworkClients";
+import NetworkProfiles from "@/pages/NetworkProfiles";
+import NetworkActivity from "@/pages/NetworkActivity";
 
 const queryClient = new QueryClient();
 
@@ -218,6 +221,30 @@ function AppContent() {
             element={
               <AuthGuard>
                 <NetworkGateways />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/network/clients"
+            element={
+              <AuthGuard>
+                <NetworkClients />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/network/profiles"
+            element={
+              <AuthGuard>
+                <NetworkProfiles />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/network/activity"
+            element={
+              <AuthGuard>
+                <NetworkActivity />
               </AuthGuard>
             }
           />
