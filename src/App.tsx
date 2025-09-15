@@ -3,6 +3,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import AuthGuard from "@/components/AuthGuard";
+import ISPAuth from "./pages/ISPAuth";
+import ISPDashboard from "./pages/ISPDashboard";
+import { ISPAuthProvider } from "./hooks/useISPAuth";
 import AdminRoute from "@/components/AdminRoute";
 import Navigation from "@/components/Navigation";
 import Index from "@/pages/Index";
@@ -68,7 +71,11 @@ function AppContent() {
   return (
     <>
       {!shouldHideNavigation && <Navigation />}
-      <Routes>
+        <Routes>
+          {/* ISP Routes */}
+          <Route path="/isp/auth" element={<ISPAuth />} />
+          <Route path="/isp/dashboard" element={<ISPDashboard />} />
+          
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/demo" element={<DemoAdmin />} />
@@ -330,10 +337,12 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-      <Toaster />
+      <ISPAuthProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+        <Toaster />
+      </ISPAuthProvider>
     </QueryClientProvider>
   );
 }

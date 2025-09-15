@@ -845,6 +845,94 @@ export type Database = {
         }
         Relationships: []
       }
+      bridge_auth_tokens: {
+        Row: {
+          created_at: string
+          device_code: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          isp_tenant_id: string
+          last_used_at: string | null
+          parent_id: string | null
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          device_code: string
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          isp_tenant_id: string
+          last_used_at?: string | null
+          parent_id?: string | null
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          device_code?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          isp_tenant_id?: string
+          last_used_at?: string | null
+          parent_id?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bridge_auth_tokens_isp_tenant_id_fkey"
+            columns: ["isp_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "isp_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bridge_sync_logs: {
+        Row: {
+          created_at: string
+          device_code: string
+          error_message: string | null
+          id: string
+          isp_tenant_id: string
+          payload: Json | null
+          response_body: string | null
+          response_status: number | null
+          sync_type: string
+        }
+        Insert: {
+          created_at?: string
+          device_code: string
+          error_message?: string | null
+          id?: string
+          isp_tenant_id: string
+          payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          sync_type: string
+        }
+        Update: {
+          created_at?: string
+          device_code?: string
+          error_message?: string | null
+          id?: string
+          isp_tenant_id?: string
+          payload?: Json | null
+          response_body?: string | null
+          response_status?: number | null
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bridge_sync_logs_isp_tenant_id_fkey"
+            columns: ["isp_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "isp_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_completions: {
         Row: {
           child_id: string
@@ -3249,6 +3337,45 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      isp_tenants: {
+        Row: {
+          api_key: string
+          bridge_endpoint: string | null
+          contact_email: string
+          created_at: string
+          id: string
+          is_active: boolean
+          isp_code: string
+          name: string
+          updated_at: string
+          webhook_secret: string | null
+        }
+        Insert: {
+          api_key?: string
+          bridge_endpoint?: string | null
+          contact_email: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          isp_code: string
+          name: string
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Update: {
+          api_key?: string
+          bridge_endpoint?: string | null
+          contact_email?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          isp_code?: string
+          name?: string
+          updated_at?: string
+          webhook_secret?: string | null
         }
         Relationships: []
       }
