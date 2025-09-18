@@ -60,6 +60,20 @@ export type Database = {
             foreignKeyName: "activation_codes_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "activation_codes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "activation_codes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -139,6 +153,20 @@ export type Database = {
             foreignKeyName: "alerts_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -209,11 +237,13 @@ export type Database = {
         Row: {
           age_max: number | null
           age_min: number | null
+          age_rating: string | null
           category: string
           created_at: string
           cross_platform_progress: string | null
           description: string | null
           description_long: string | null
+          detection_priority: number | null
           enabled: boolean
           guardian_enabled: boolean | null
           hero_url: string | null
@@ -226,8 +256,10 @@ export type Database = {
           is_mobile_compatible: boolean | null
           last_tested_at: string | null
           launch_url: string | null
+          logo_url: string | null
           method: string | null
           name: string
+          parental_category: string | null
           pegi_descriptors: string[] | null
           pegi_rating: number | null
           platform: string | null
@@ -235,6 +267,7 @@ export type Database = {
           slug: string | null
           source: string | null
           tags: string[] | null
+          time_limit_recommended: number | null
           type: string | null
           updated_at: string
           verified: boolean
@@ -244,11 +277,13 @@ export type Database = {
         Insert: {
           age_max?: number | null
           age_min?: number | null
+          age_rating?: string | null
           category: string
           created_at?: string
           cross_platform_progress?: string | null
           description?: string | null
           description_long?: string | null
+          detection_priority?: number | null
           enabled?: boolean
           guardian_enabled?: boolean | null
           hero_url?: string | null
@@ -261,8 +296,10 @@ export type Database = {
           is_mobile_compatible?: boolean | null
           last_tested_at?: string | null
           launch_url?: string | null
+          logo_url?: string | null
           method?: string | null
           name: string
+          parental_category?: string | null
           pegi_descriptors?: string[] | null
           pegi_rating?: number | null
           platform?: string | null
@@ -270,6 +307,7 @@ export type Database = {
           slug?: string | null
           source?: string | null
           tags?: string[] | null
+          time_limit_recommended?: number | null
           type?: string | null
           updated_at?: string
           verified?: boolean
@@ -279,11 +317,13 @@ export type Database = {
         Update: {
           age_max?: number | null
           age_min?: number | null
+          age_rating?: string | null
           category?: string
           created_at?: string
           cross_platform_progress?: string | null
           description?: string | null
           description_long?: string | null
+          detection_priority?: number | null
           enabled?: boolean
           guardian_enabled?: boolean | null
           hero_url?: string | null
@@ -296,8 +336,10 @@ export type Database = {
           is_mobile_compatible?: boolean | null
           last_tested_at?: string | null
           launch_url?: string | null
+          logo_url?: string | null
           method?: string | null
           name?: string
+          parental_category?: string | null
           pegi_descriptors?: string[] | null
           pegi_rating?: number | null
           platform?: string | null
@@ -305,6 +347,7 @@ export type Database = {
           slug?: string | null
           source?: string | null
           tags?: string[] | null
+          time_limit_recommended?: number | null
           type?: string | null
           updated_at?: string
           verified?: boolean
@@ -369,6 +412,57 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      app_network_info: {
+        Row: {
+          app_id: string
+          confidence_weight: number | null
+          created_at: string | null
+          detection_type: string
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          pattern: string
+          updated_at: string | null
+        }
+        Insert: {
+          app_id: string
+          confidence_weight?: number | null
+          created_at?: string | null
+          detection_type: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          pattern: string
+          updated_at?: string | null
+        }
+        Update: {
+          app_id?: string
+          confidence_weight?: number | null
+          created_at?: string | null
+          detection_type?: string
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          pattern?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_network_info_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_network_info_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_app_selections"
+            referencedColumns: ["app_id"]
+          },
+        ]
       }
       app_policies: {
         Row: {
@@ -973,6 +1067,20 @@ export type Database = {
             foreignKeyName: "challenge_completions_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "challenge_completions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "challenge_completions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -1141,6 +1249,20 @@ export type Database = {
             foreignKeyName: "child_app_selections_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_app_selections_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_app_selections_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -1297,6 +1419,20 @@ export type Database = {
             foreignKeyName: "child_homework_links_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_homework_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_homework_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -1335,6 +1471,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_interests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_interests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "child_interests_child_id_fkey"
@@ -1398,6 +1548,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_listening_state_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_listening_state_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "child_listening_state_child_id_fkey"
@@ -1472,6 +1636,20 @@ export type Database = {
             foreignKeyName: "child_page_progress_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_page_progress_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_page_progress_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -1537,6 +1715,20 @@ export type Database = {
             foreignKeyName: "child_reading_sessions_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -1593,6 +1785,20 @@ export type Database = {
             foreignKeyName: "child_reading_timeline_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_reading_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_reading_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -1641,6 +1847,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_time_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_time_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "child_time_policies_child_id_fkey"
@@ -1709,36 +1929,129 @@ export type Database = {
         }
         Relationships: []
       }
+      child_xbox_links: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          gamertag: string
+          id: string
+          last_presence_sync: string | null
+          link_status: string | null
+          oauth_tokens: Json
+          permissions_granted: Json | null
+          token_expires_at: string
+          updated_at: string | null
+          xuid: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          gamertag: string
+          id?: string
+          last_presence_sync?: string | null
+          link_status?: string | null
+          oauth_tokens: Json
+          permissions_granted?: Json | null
+          token_expires_at: string
+          updated_at?: string | null
+          xuid: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          gamertag?: string
+          id?: string
+          last_presence_sync?: string | null
+          link_status?: string | null
+          oauth_tokens?: Json
+          permissions_granted?: Json | null
+          token_expires_at?: string
+          updated_at?: string | null
+          xuid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_xbox_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_xbox_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_xbox_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_xbox_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_xbox_links_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
       children: {
         Row: {
           age: number | null
+          assigned_devices: Json | null
           avatar_url: string | null
           created_at: string
           dob: string | null
+          guardian_metadata: Json | null
           id: string
           name: string
           parent_id: string
+          status: string | null
+          timezone: string | null
           updated_at: string
+          xbox_gamertag: string | null
         }
         Insert: {
           age?: number | null
+          assigned_devices?: Json | null
           avatar_url?: string | null
           created_at?: string
           dob?: string | null
+          guardian_metadata?: Json | null
           id?: string
           name: string
           parent_id: string
+          status?: string | null
+          timezone?: string | null
           updated_at?: string
+          xbox_gamertag?: string | null
         }
         Update: {
           age?: number | null
+          assigned_devices?: Json | null
           avatar_url?: string | null
           created_at?: string
           dob?: string | null
+          guardian_metadata?: Json | null
           id?: string
           name?: string
           parent_id?: string
+          status?: string | null
+          timezone?: string | null
           updated_at?: string
+          xbox_gamertag?: string | null
         }
         Relationships: [
           {
@@ -1747,6 +2060,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "children_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "v_household_dashboard"
+            referencedColumns: ["parent_id"]
           },
         ]
       }
@@ -1797,6 +2117,93 @@ export type Database = {
           youtube_video_id?: string | null
         }
         Relationships: []
+      }
+      console_policies: {
+        Row: {
+          child_id: string
+          cloud_gaming_allowed: boolean | null
+          content_rating_max: string | null
+          created_at: string | null
+          device_id: string | null
+          friend_requests_allowed: boolean | null
+          game_captures_allowed: boolean | null
+          id: string
+          livestreaming_allowed: boolean | null
+          multiplayer_allowed: boolean | null
+          purchases_allowed: boolean | null
+          text_chat_allowed: boolean | null
+          updated_at: string | null
+          voice_chat_allowed: boolean | null
+        }
+        Insert: {
+          child_id: string
+          cloud_gaming_allowed?: boolean | null
+          content_rating_max?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          friend_requests_allowed?: boolean | null
+          game_captures_allowed?: boolean | null
+          id?: string
+          livestreaming_allowed?: boolean | null
+          multiplayer_allowed?: boolean | null
+          purchases_allowed?: boolean | null
+          text_chat_allowed?: boolean | null
+          updated_at?: string | null
+          voice_chat_allowed?: boolean | null
+        }
+        Update: {
+          child_id?: string
+          cloud_gaming_allowed?: boolean | null
+          content_rating_max?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          friend_requests_allowed?: boolean | null
+          game_captures_allowed?: boolean | null
+          id?: string
+          livestreaming_allowed?: boolean | null
+          multiplayer_allowed?: boolean | null
+          purchases_allowed?: boolean | null
+          text_chat_allowed?: boolean | null
+          updated_at?: string | null
+          voice_chat_allowed?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "console_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "console_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "console_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "console_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "console_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
       }
       content_items: {
         Row: {
@@ -1935,6 +2342,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "conversations_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "conversations_child_id_fkey"
@@ -2223,6 +2644,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "device_activations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_household_dashboard"
+            referencedColumns: ["parent_id"]
+          },
         ]
       }
       device_app_events: {
@@ -2473,6 +2901,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_child_assignments_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "device_child_assignments_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "device_child_assignments_child_id_fkey"
@@ -2756,6 +3198,20 @@ export type Database = {
             foreignKeyName: "device_pair_tokens_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "device_pair_tokens_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "device_pair_tokens_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -2880,6 +3336,20 @@ export type Database = {
             foreignKeyName: "devices_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "devices_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "devices_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -2896,6 +3366,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "devices_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "v_household_dashboard"
+            referencedColumns: ["parent_id"]
           },
         ]
       }
@@ -2931,6 +3408,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "education_profiles_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "education_profiles_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "education_profiles_child_id_fkey"
@@ -3009,11 +3500,317 @@ export type Database = {
             foreignKeyName: "game_events_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "game_events_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "game_events_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "game_events_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
+      guardian_alerts: {
+        Row: {
+          alert_category: string | null
+          alert_data: Json | null
+          alert_type: string
+          app_id: string | null
+          child_id: string | null
+          created_at: string | null
+          id: string
+          message: string
+          read_at: string | null
+          severity: string | null
+          status: string | null
+          title: string
+          xbox_link_id: string | null
+        }
+        Insert: {
+          alert_category?: string | null
+          alert_data?: Json | null
+          alert_type: string
+          app_id?: string | null
+          child_id?: string | null
+          created_at?: string | null
+          id?: string
+          message: string
+          read_at?: string | null
+          severity?: string | null
+          status?: string | null
+          title: string
+          xbox_link_id?: string | null
+        }
+        Update: {
+          alert_category?: string | null
+          alert_data?: Json | null
+          alert_type?: string
+          app_id?: string | null
+          child_id?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string
+          read_at?: string | null
+          severity?: string | null
+          status?: string | null
+          title?: string
+          xbox_link_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_alerts_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_alerts_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_app_selections"
+            referencedColumns: ["app_id"]
+          },
+          {
+            foreignKeyName: "guardian_alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_alerts_xbox_link_id_fkey"
+            columns: ["xbox_link_id"]
+            isOneToOne: false
+            referencedRelation: "child_xbox_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guardian_app_policies: {
+        Row: {
+          action: string | null
+          age_override_allowed: boolean | null
+          allowed_time_windows: Json | null
+          app_id: string
+          bedtime_enforcement: boolean | null
+          child_id: string
+          created_at: string | null
+          daily_limit_minutes: number | null
+          id: string
+          updated_at: string | null
+          weekly_limit_minutes: number | null
+        }
+        Insert: {
+          action?: string | null
+          age_override_allowed?: boolean | null
+          allowed_time_windows?: Json | null
+          app_id: string
+          bedtime_enforcement?: boolean | null
+          child_id: string
+          created_at?: string | null
+          daily_limit_minutes?: number | null
+          id?: string
+          updated_at?: string | null
+          weekly_limit_minutes?: number | null
+        }
+        Update: {
+          action?: string | null
+          age_override_allowed?: boolean | null
+          allowed_time_windows?: Json | null
+          app_id?: string
+          bedtime_enforcement?: boolean | null
+          child_id?: string
+          created_at?: string | null
+          daily_limit_minutes?: number | null
+          id?: string
+          updated_at?: string | null
+          weekly_limit_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_app_policies_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_app_policies_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_app_selections"
+            referencedColumns: ["app_id"]
+          },
+          {
+            foreignKeyName: "guardian_app_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_app_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_app_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_app_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_app_policies_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
+          },
+        ]
+      }
+      guardian_app_sessions: {
+        Row: {
+          app_id: string
+          bytes_transferred: number | null
+          child_id: string | null
+          detection_confidence: string | null
+          detection_method: string | null
+          device_id: string | null
+          duration_minutes: number | null
+          ended_at: string | null
+          id: string
+          session_metadata: Json | null
+          session_source: string | null
+          started_at: string | null
+        }
+        Insert: {
+          app_id: string
+          bytes_transferred?: number | null
+          child_id?: string | null
+          detection_confidence?: string | null
+          detection_method?: string | null
+          device_id?: string | null
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          session_metadata?: Json | null
+          session_source?: string | null
+          started_at?: string | null
+        }
+        Update: {
+          app_id?: string
+          bytes_transferred?: number | null
+          child_id?: string | null
+          detection_confidence?: string | null
+          detection_method?: string | null
+          device_id?: string | null
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          session_metadata?: Json | null
+          session_source?: string | null
+          started_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_app_sessions_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_app_sessions_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_app_selections"
+            referencedColumns: ["app_id"]
+          },
+          {
+            foreignKeyName: "guardian_app_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_app_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_app_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_app_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "guardian_app_sessions_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
             referencedRelation: "v_effective_app_policy"
@@ -3286,6 +4083,20 @@ export type Database = {
             foreignKeyName: "installed_apps_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "installed_apps_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "installed_apps_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -3435,6 +4246,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_activities_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "learning_activities_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "learning_activities_child_id_fkey"
@@ -3638,6 +4463,20 @@ export type Database = {
             foreignKeyName: "notification_preferences_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -3685,6 +4524,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nova_child_tokens_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "nova_child_tokens_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "nova_child_tokens_child_id_fkey"
@@ -4116,6 +4969,20 @@ export type Database = {
             foreignKeyName: "parent_timeline_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "parent_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "parent_timeline_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -4185,6 +5052,20 @@ export type Database = {
             foreignKeyName: "pending_requests_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "pending_requests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "pending_requests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -4224,6 +5105,36 @@ export type Database = {
           subject_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      policy_presets: {
+        Row: {
+          age_band: string
+          app_defaults: Json
+          console_defaults: Json
+          created_at: string | null
+          id: string
+          is_system_preset: boolean | null
+          name: string
+        }
+        Insert: {
+          age_band: string
+          app_defaults?: Json
+          console_defaults?: Json
+          created_at?: string | null
+          id?: string
+          is_system_preset?: boolean | null
+          name: string
+        }
+        Update: {
+          age_band?: string
+          app_defaults?: Json
+          console_defaults?: Json
+          created_at?: string | null
+          id?: string
+          is_system_preset?: boolean | null
+          name?: string
         }
         Relationships: []
       }
@@ -4307,6 +5218,20 @@ export type Database = {
             foreignKeyName: "reading_chunks_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reading_chunks_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reading_chunks_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -4374,6 +5299,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_rollups_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reading_rollups_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "reading_rollups_child_id_fkey"
@@ -4459,6 +5398,20 @@ export type Database = {
             foreignKeyName: "reading_sessions_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reading_sessions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -4517,6 +5470,20 @@ export type Database = {
             foreignKeyName: "reward_redemptions_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reward_redemptions_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -4533,6 +5500,78 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "parent_rewards"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      reward_time_grants: {
+        Row: {
+          child_id: string
+          created_at: string | null
+          expires_at: string | null
+          granted_by_user_id: string | null
+          id: string
+          minutes_granted: number
+          minutes_used: number | null
+          reason: string | null
+          status: string | null
+        }
+        Insert: {
+          child_id: string
+          created_at?: string | null
+          expires_at?: string | null
+          granted_by_user_id?: string | null
+          id?: string
+          minutes_granted: number
+          minutes_used?: number | null
+          reason?: string | null
+          status?: string | null
+        }
+        Update: {
+          child_id?: string
+          created_at?: string | null
+          expires_at?: string | null
+          granted_by_user_id?: string | null
+          id?: string
+          minutes_granted?: number
+          minutes_used?: number | null
+          reason?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_time_grants_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_time_grants_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reward_time_grants_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reward_time_grants_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_children_with_parent"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "reward_time_grants_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_effective_app_policy"
+            referencedColumns: ["child_id"]
           },
         ]
       }
@@ -4680,6 +5719,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_household_dashboard"
+            referencedColumns: ["parent_id"]
+          },
         ]
       }
       tenant_theme: {
@@ -4813,6 +5859,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "children"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ui_manifests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "ui_manifests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
           },
           {
             foreignKeyName: "ui_manifests_profile_id_fkey"
@@ -5020,6 +6080,20 @@ export type Database = {
             foreignKeyName: "wallets_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: true
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "wallets_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "wallets_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -5101,6 +6175,50 @@ export type Database = {
         }
         Relationships: []
       }
+      xbox_presence_cache: {
+        Row: {
+          cached_at: string | null
+          current_game: string | null
+          device_type: string | null
+          game_start_time: string | null
+          id: string
+          is_online: boolean | null
+          presence_state: string | null
+          raw_presence_data: Json | null
+          xbox_link_id: string
+        }
+        Insert: {
+          cached_at?: string | null
+          current_game?: string | null
+          device_type?: string | null
+          game_start_time?: string | null
+          id?: string
+          is_online?: boolean | null
+          presence_state?: string | null
+          raw_presence_data?: Json | null
+          xbox_link_id: string
+        }
+        Update: {
+          cached_at?: string | null
+          current_game?: string | null
+          device_type?: string | null
+          game_start_time?: string | null
+          id?: string
+          is_online?: boolean | null
+          presence_state?: string | null
+          raw_presence_data?: Json | null
+          xbox_link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xbox_presence_cache_xbox_link_id_fkey"
+            columns: ["xbox_link_id"]
+            isOneToOne: false
+            referencedRelation: "child_xbox_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       device_app_inventory_view: {
@@ -5128,6 +6246,19 @@ export type Database = {
         }
         Relationships: []
       }
+      v_app_usage_today: {
+        Row: {
+          app_name: string | null
+          child_id: string | null
+          child_name: string | null
+          daily_limit: number | null
+          last_used_at: string | null
+          parental_category: string | null
+          session_count: number | null
+          total_minutes_today: number | null
+        }
+        Relationships: []
+      }
       v_child_app_selections: {
         Row: {
           app_age_rating: number | null
@@ -5152,6 +6283,20 @@ export type Database = {
             foreignKeyName: "child_app_selections_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_app_selections_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "child_app_selections_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -5163,6 +6308,22 @@ export type Database = {
             referencedColumns: ["child_id"]
           },
         ]
+      }
+      v_child_live_status: {
+        Row: {
+          active_sessions: number | null
+          age: number | null
+          child_id: string | null
+          child_name: string | null
+          child_status: string | null
+          current_game: string | null
+          game_start_time: string | null
+          todays_screen_time_minutes: number | null
+          xbox_gamertag: string | null
+          xbox_online: boolean | null
+          xbox_status: string | null
+        }
+        Relationships: []
       }
       v_children_with_parent: {
         Row: {
@@ -5183,6 +6344,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "children_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "v_household_dashboard"
+            referencedColumns: ["parent_id"]
+          },
         ]
       }
       v_effective_app_policy: {
@@ -5197,6 +6365,18 @@ export type Database = {
           icon_url: string | null
           is_active: boolean | null
           name: string | null
+        }
+        Relationships: []
+      }
+      v_household_dashboard: {
+        Row: {
+          active_children: number | null
+          children_count: number | null
+          critical_alerts: number | null
+          parent_id: string | null
+          parent_name: string | null
+          unread_alerts: number | null
+          xbox_links_count: number | null
         }
         Relationships: []
       }
@@ -5243,6 +6423,20 @@ export type Database = {
             foreignKeyName: "device_child_assignments_child_id_fkey"
             columns: ["active_child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "device_child_assignments_child_id_fkey"
+            columns: ["active_child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "device_child_assignments_child_id_fkey"
+            columns: ["active_child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -5264,6 +6458,20 @@ export type Database = {
             foreignKeyName: "devices_child_id_fkey"
             columns: ["child_id"]
             isOneToOne: false
+            referencedRelation: "v_app_usage_today"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "devices_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "v_child_live_status"
+            referencedColumns: ["child_id"]
+          },
+          {
+            foreignKeyName: "devices_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
             referencedRelation: "v_children_with_parent"
             referencedColumns: ["child_id"]
           },
@@ -5280,6 +6488,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "devices_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "v_household_dashboard"
+            referencedColumns: ["parent_id"]
           },
         ]
       }
