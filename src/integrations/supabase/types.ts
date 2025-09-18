@@ -215,6 +215,7 @@ export type Database = {
           description: string | null
           description_long: string | null
           enabled: boolean
+          guardian_enabled: boolean | null
           hero_url: string | null
           icon_url: string | null
           id: string
@@ -249,6 +250,7 @@ export type Database = {
           description?: string | null
           description_long?: string | null
           enabled?: boolean
+          guardian_enabled?: boolean | null
           hero_url?: string | null
           icon_url?: string | null
           id: string
@@ -283,6 +285,7 @@ export type Database = {
           description?: string | null
           description_long?: string | null
           enabled?: boolean
+          guardian_enabled?: boolean | null
           hero_url?: string | null
           icon_url?: string | null
           id?: string

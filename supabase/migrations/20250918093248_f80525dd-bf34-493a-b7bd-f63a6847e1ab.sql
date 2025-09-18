@@ -1,0 +1,1 @@
+ALTER TABLE app_catalog ADD COLUMN guardian_enabled BOOLEAN DEFAULT FALSE;
